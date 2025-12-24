@@ -33,6 +33,7 @@ namespace NovelMind::editor::qt {
 class NMDockPanel;
 class NMSceneViewPanel;
 class NMStoryGraphPanel;
+class NMSceneDialogueGraphPanel;
 class NMInspectorPanel;
 class NMConsolePanel;
 class NMAssetBrowserPanel;
@@ -440,6 +441,7 @@ private:
 
   NMSceneViewPanel *m_sceneViewPanel = nullptr;
   NMStoryGraphPanel *m_storyGraphPanel = nullptr;
+  NMSceneDialogueGraphPanel *m_sceneDialogueGraphPanel = nullptr;
   NMInspectorPanel *m_inspectorPanel = nullptr;
   NMConsolePanel *m_consolePanel = nullptr;
   NMAssetBrowserPanel *m_assetBrowserPanel = nullptr;

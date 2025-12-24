@@ -601,7 +601,18 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
       }
     }
   } else if (isScene && selectedAction == editDialogueFlowAction) {
-    // TODO: Emit signal to open embedded dialogue graph editor
+    // Emit signal to open embedded dialogue graph editor
+    if (scene() && !scene()->views().isEmpty()) {
+      if (auto *graphScene = qobject_cast<NMStoryGraphScene *>(scene())) {
+        // Find the parent panel to emit the signal
+        for (QObject *obj = graphScene; obj; obj = obj->parent()) {
+          if (auto *panel = qobject_cast<NMStoryGraphPanel *>(obj)) {
+            emit panel->editDialogueFlowRequested(m_sceneId);
+            break;
+          }
+        }
+      }
+    }
     qDebug() << "[StoryGraph] Edit dialogue flow for scene:" << m_sceneId;
   } else if (isScene && editAnimationsAction && selectedAction == editAnimationsAction) {
     // Emit signal to open Timeline and Scene View for animation editing

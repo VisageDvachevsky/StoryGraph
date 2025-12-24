@@ -17,6 +17,7 @@
 #include "NovelMind/editor/qt/panels/nm_script_doc_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+#include "NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_timeline_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp"
@@ -39,6 +40,10 @@ void NMMainWindow::setupPanels() {
   m_storyGraphPanel = new NMStoryGraphPanel(this);
   m_storyGraphPanel->setObjectName("StoryGraphPanel");
   m_storyGraphPanel->setWindowIcon(iconMgr.getIcon("panel-graph", 16));
+
+  m_sceneDialogueGraphPanel = new NMSceneDialogueGraphPanel(this);
+  m_sceneDialogueGraphPanel->setObjectName("SceneDialogueGraphPanel");
+  m_sceneDialogueGraphPanel->setWindowIcon(iconMgr.getIcon("node-dialogue", 16));
 
   m_inspectorPanel = new NMInspectorPanel(this);
   m_inspectorPanel->setObjectName("InspectorPanel");
@@ -144,8 +149,13 @@ void NMMainWindow::setupPanels() {
   setCentralWidget(nullptr);
   addDockWidget(Qt::TopDockWidgetArea, m_sceneViewPanel);
   addDockWidget(Qt::TopDockWidgetArea, m_storyGraphPanel);
+  addDockWidget(Qt::TopDockWidgetArea, m_sceneDialogueGraphPanel);
   tabifyDockWidget(m_sceneViewPanel, m_storyGraphPanel);
+  tabifyDockWidget(m_storyGraphPanel, m_sceneDialogueGraphPanel);
   m_sceneViewPanel->raise(); // Make Scene View the active tab
+
+  // Initially hide the dialogue graph panel (shown on demand)
+  m_sceneDialogueGraphPanel->hide();
 
   // Tab the left panels
   tabifyDockWidget(m_scenePalettePanel, m_hierarchyPanel);

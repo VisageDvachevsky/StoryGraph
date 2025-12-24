@@ -118,6 +118,7 @@ add_library(novelmind_editor STATIC
     src/qt/panels/nm_story_graph_view.cpp
     src/qt/panels/nm_story_graph_minimap.cpp
     src/qt/panels/nm_story_graph_voice_integration.cpp
+    src/qt/panels/nm_scene_dialogue_graph_panel.cpp
     src/qt/panels/nm_inspector_panel.cpp
     src/qt/panels/nm_inspector_panel_group.cpp
     src/qt/panels/nm_console_panel.cpp
@@ -177,6 +178,7 @@ add_library(novelmind_editor STATIC
     include/NovelMind/editor/qt/panels/nm_scene_view_panel.hpp
     include/NovelMind/editor/qt/panels/nm_story_graph_panel.hpp
     include/NovelMind/editor/qt/panels/nm_story_graph_minimap.hpp
+    include/NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp
     include/NovelMind/editor/qt/panels/nm_inspector_panel.hpp
     include/NovelMind/editor/qt/panels/nm_console_panel.hpp
     include/NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp
