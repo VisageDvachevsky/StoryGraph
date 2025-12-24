@@ -335,6 +335,7 @@ public:
   }
 
   void setRenderDialogue(bool enabled) { m_renderDialogue = enabled; }
+  void setRenderChoice(bool enabled) { m_renderChoice = enabled; }
 
   [[nodiscard]] QString fontAtlasStatus() const { return m_fontAtlasStatus; }
   [[nodiscard]] bool hasFontAtlas() const {
@@ -392,6 +393,9 @@ protected:
     renderObjects();
     if (m_renderDialogue) {
       renderDialogue();
+    }
+    if (m_renderChoice) {
+      renderChoice();
     }
   }
 
@@ -653,6 +657,126 @@ private:
     }
   }
 
+  void renderChoice() {
+    if (!m_snapshot.choiceMenuVisible) {
+      return;
+    }
+    if (!m_fontAtlas || !m_fontAtlas->isValid()) {
+      return;
+    }
+    if (m_snapshot.choiceOptions.empty()) {
+      return;
+    }
+
+    renderer::TextStyle style;
+    style.size = 22.0f;
+    style.color = renderer::Color::white();
+
+    m_textLayout.setFontAtlas(m_fontAtlas);
+    m_textLayout.setDefaultStyle(style);
+
+    const f32 choiceWidth = static_cast<f32>(width()) * 0.6f;
+    const f32 choiceHeight = 40.0f;
+    const f32 choiceSpacing = 12.0f;
+    const f32 totalHeight = static_cast<f32>(m_snapshot.choiceOptions.size()) *
+                            (choiceHeight + choiceSpacing) - choiceSpacing;
+
+    f32 originX = (static_cast<f32>(width()) - choiceWidth) * 0.5f;
+    f32 originY = (static_cast<f32>(height()) - totalHeight) * 0.5f;
+
+    glDisable(GL_TEXTURE_2D);
+
+    for (size_t i = 0; i < m_snapshot.choiceOptions.size(); ++i) {
+      const f32 y = originY + static_cast<f32>(i) * (choiceHeight + choiceSpacing);
+
+      // Draw choice background
+      renderer::Color bgColor = (static_cast<i32>(i) == m_snapshot.selectedChoice)
+                                  ? renderer::Color(40, 50, 70, 230)
+                                  : renderer::Color(20, 25, 35, 220);
+
+      glColor4f(static_cast<f32>(bgColor.r) / 255.0f,
+                static_cast<f32>(bgColor.g) / 255.0f,
+                static_cast<f32>(bgColor.b) / 255.0f,
+                static_cast<f32>(bgColor.a) / 255.0f);
+
+      glBegin(GL_QUADS);
+      glVertex2f(originX, y);
+      glVertex2f(originX + choiceWidth, y);
+      glVertex2f(originX + choiceWidth, y + choiceHeight);
+      glVertex2f(originX, y + choiceHeight);
+      glEnd();
+
+      // Draw border
+      renderer::Color borderColor = (static_cast<i32>(i) == m_snapshot.selectedChoice)
+                                      ? renderer::Color(100, 140, 200, 255)
+                                      : renderer::Color(60, 70, 90, 255);
+
+      glColor4f(static_cast<f32>(borderColor.r) / 255.0f,
+                static_cast<f32>(borderColor.g) / 255.0f,
+                static_cast<f32>(borderColor.b) / 255.0f,
+                static_cast<f32>(borderColor.a) / 255.0f);
+
+      glLineWidth(2.0f);
+      glBegin(GL_LINE_LOOP);
+      glVertex2f(originX, y);
+      glVertex2f(originX + choiceWidth, y);
+      glVertex2f(originX + choiceWidth, y + choiceHeight);
+      glVertex2f(originX, y + choiceHeight);
+      glEnd();
+    }
+
+    glEnable(GL_TEXTURE_2D);
+
+    // Render choice text
+    const auto &atlasTex = m_fontAtlas->getAtlasTexture();
+    auto atlasId =
+        static_cast<GLuint>(reinterpret_cast<uintptr_t>(atlasTex.getNativeHandle()));
+    if (atlasId == 0) {
+      return;
+    }
+
+    glBindTexture(GL_TEXTURE_2D, atlasId);
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
+    for (size_t i = 0; i < m_snapshot.choiceOptions.size(); ++i) {
+      const f32 y = originY + static_cast<f32>(i) * (choiceHeight + choiceSpacing);
+      const std::string &choiceText = m_snapshot.choiceOptions[i];
+
+      f32 penX = originX + 16.0f;
+      const f32 baseline = y + choiceHeight * 0.65f;
+
+      for (char c : choiceText) {
+        const auto *glyph =
+            m_fontAtlas->getGlyph(static_cast<unsigned char>(c));
+        if (!glyph) {
+          continue;
+        }
+
+        f32 x0 = penX + glyph->bearingX;
+        f32 y0 = baseline - glyph->bearingY;
+        f32 x1 = x0 + glyph->width;
+        f32 y1 = y0 + glyph->height;
+
+        glBegin(GL_QUADS);
+        glTexCoord2f(glyph->uv.x, glyph->uv.y);
+        glVertex2f(x0, y0);
+
+        glTexCoord2f(glyph->uv.x + glyph->uv.width, glyph->uv.y);
+        glVertex2f(x1, y0);
+
+        glTexCoord2f(glyph->uv.x + glyph->uv.width,
+                     glyph->uv.y + glyph->uv.height);
+        glVertex2f(x1, y1);
+
+        glTexCoord2f(glyph->uv.x, glyph->uv.y + glyph->uv.height);
+        glVertex2f(x0, y1);
+        glEnd();
+
+        penX += glyph->advanceX;
+      }
+    }
+  }
+
   void drawEmptyBackdrop() {
     glDisable(GL_TEXTURE_2D);
     glColor4f(0.07f, 0.07f, 0.08f, 1.0f);
@@ -728,7 +852,8 @@ private:
   renderer::TextLayoutEngine m_textLayout;
   std::shared_ptr<renderer::FontAtlas> m_fontAtlas;
   QString m_fontAtlasStatus;
-  bool m_renderDialogue = false;
+  bool m_renderDialogue = true;
+  bool m_renderChoice = true;
 };
 
 // ============================================================================
