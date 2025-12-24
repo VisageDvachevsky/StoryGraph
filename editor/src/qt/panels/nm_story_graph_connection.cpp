@@ -63,6 +63,9 @@ void NMGraphConnectionItem::updatePath() {
   QPointF start = m_startNode->outputPortPosition();
   QPointF end = m_endNode->inputPortPosition();
 
+  // Notify Qt that geometry will change before modifying the path
+  prepareGeometryChange();
+
   // Create bezier curve
   m_path = QPainterPath();
   m_path.moveTo(start);
@@ -70,7 +73,8 @@ void NMGraphConnectionItem::updatePath() {
   qreal dx = std::abs(end.x() - start.x()) * 0.5;
   m_path.cubicTo(start + QPointF(dx, 0), end + QPointF(-dx, 0), end);
 
-  prepareGeometryChange();
+  // Request redraw
+  update();
 }
 
 QRectF NMGraphConnectionItem::boundingRect() const {
@@ -80,12 +84,18 @@ QRectF NMGraphConnectionItem::boundingRect() const {
 void NMGraphConnectionItem::paint(QPainter *painter,
                                   const QStyleOptionGraphicsItem * /*option*/,
                                   QWidget * /*widget*/) {
+  // Save painter state to prevent state leakage to other items
+  painter->save();
+
   const auto &palette = NMStyleManager::instance().palette();
 
   painter->setRenderHint(QPainter::Antialiasing);
   painter->setPen(QPen(palette.connectionLine, 2));
   painter->setBrush(Qt::NoBrush);
   painter->drawPath(m_path);
+
+  // Restore painter state
+  painter->restore();
 }
 
 // ============================================================================
