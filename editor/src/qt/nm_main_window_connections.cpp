@@ -21,6 +21,7 @@
 #include "NovelMind/editor/qt/panels/nm_script_doc_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+#include "NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_timeline_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp"
@@ -831,6 +832,54 @@ void NMMainWindow::setupConnections() {
             m_sceneViewPanel->setAnimationPreviewMode(true);
 
             setStatusMessage(tr("Editing scene: %1 (Timeline and Scene View)").arg(sceneId), 3000);
+          });
+
+  // Scene Node → Dialogue Graph Panel integration
+  connect(m_storyGraphPanel, &NMStoryGraphPanel::editDialogueFlowRequested, this,
+          [this](const QString &sceneId) {
+            if (!m_sceneDialogueGraphPanel) {
+              return;
+            }
+            qDebug() << "[MainWindow] Edit dialogue flow requested for scene:" << sceneId;
+
+            // Load dialogue graph for the scene
+            m_sceneDialogueGraphPanel->loadSceneDialogue(sceneId);
+
+            // Show and raise the dialogue graph panel
+            m_sceneDialogueGraphPanel->show();
+            m_sceneDialogueGraphPanel->raise();
+
+            setStatusMessage(tr("Editing dialogue flow: %1").arg(sceneId), 3000);
+          });
+
+  // Return to Story Graph from Dialogue Graph Panel
+  connect(m_sceneDialogueGraphPanel, &NMSceneDialogueGraphPanel::returnToStoryGraphRequested, this,
+          [this]() {
+            if (!m_storyGraphPanel) {
+              return;
+            }
+
+            // Return to Story Graph panel
+            m_storyGraphPanel->show();
+            m_storyGraphPanel->raise();
+
+            setStatusMessage(tr("Returned to Story Graph"), 2000);
+          });
+
+  // Update dialogue count badge when dialogue graph changes
+  connect(m_sceneDialogueGraphPanel, &NMSceneDialogueGraphPanel::dialogueCountChanged, this,
+          [this](const QString &sceneId, int count) {
+            qDebug() << "[MainWindow] Dialogue count changed for scene:" << sceneId << "count:" << count;
+
+            // Update the scene node in the story graph panel
+            if (m_storyGraphPanel) {
+              auto *node = m_storyGraphPanel->findNodeByIdString(sceneId);
+              if (node) {
+                node->setDialogueCount(count);
+                node->setHasEmbeddedDialogue(count > 0);
+                qDebug() << "[MainWindow] Updated dialogue count badge for scene:" << sceneId;
+              }
+            }
           });
 
   connect(m_scriptEditorPanel, &NMScriptEditorPanel::docHtmlChanged,
