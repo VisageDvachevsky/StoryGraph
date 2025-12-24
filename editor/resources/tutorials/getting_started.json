@@ -1,0 +1,121 @@
+{
+  "tutorials": [
+    {
+      "id": "getting-started",
+      "title": "Getting Started with NovelMind",
+      "description": "Learn the basics of the NovelMind editor: workspace layout, key panels, and your first scene.",
+      "category": "Basics",
+      "level": "Beginner",
+      "trigger": "FirstRun",
+      "featureVersion": "0.2.0",
+      "estimatedMinutes": 5,
+      "author": "NovelMind Team",
+      "tags": ["introduction", "basics", "first-steps"],
+      "steps": [
+        {
+          "id": "welcome",
+          "title": "Welcome to NovelMind",
+          "content": "NovelMind is a professional visual novel editor. This quick tour will introduce you to the main panels and workflows.",
+          "anchorId": "main_window.center",
+          "hintType": "Dialog",
+          "position": "Auto",
+          "showBackButton": false,
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "scene-view",
+          "title": "Scene View",
+          "content": "The Scene View is where you compose your visual novel scenes. Drag characters and backgrounds here to position them.",
+          "anchorId": "scene_view.panel",
+          "hintType": "Spotlight",
+          "position": "Right",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "story-graph",
+          "title": "Story Graph",
+          "content": "The Story Graph shows your narrative flow. Connect dialogue nodes to create branching stories.",
+          "anchorId": "story_graph.panel",
+          "hintType": "Spotlight",
+          "position": "Left",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "inspector",
+          "title": "Inspector",
+          "content": "Select any element to see its properties in the Inspector. Edit values directly here.",
+          "anchorId": "inspector.panel",
+          "hintType": "Callout",
+          "position": "Left",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "asset-browser",
+          "title": "Asset Browser",
+          "content": "Your project assets (images, audio, scripts) are organized in the Asset Browser. Drag assets to the Scene View to use them.",
+          "anchorId": "asset_browser.panel",
+          "hintType": "Callout",
+          "position": "Top",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "play-toolbar",
+          "title": "Play Your Scene",
+          "content": "Use the Play toolbar to test your scene. Click Play to see how your story looks in action.",
+          "anchorId": "play_toolbar.play_button",
+          "hintType": "Spotlight",
+          "position": "Bottom",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "complete",
+          "title": "You're Ready!",
+          "content": "That's the basics! Explore the Help Hub for more tutorials on specific features. Happy creating!",
+          "anchorId": "main_window.center",
+          "hintType": "Dialog",
+          "position": "Auto",
+          "showSkipButton": false,
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        }
+      ]
+    }
+  ],
+  "hints": [
+    {
+      "id": "empty-scene-hint",
+      "content": "Drag assets from the Asset Browser to start composing your scene.",
+      "anchorId": "scene_view.canvas",
+      "hintType": "EmptyState",
+      "position": "Auto",
+      "triggerCondition": "panel.empty",
+      "maxShowCount": 3,
+      "autoHide": true,
+      "autoHideDelaySeconds": 10
+    },
+    {
+      "id": "empty-graph-hint",
+      "content": "Right-click to add your first dialogue node.",
+      "anchorId": "story_graph.canvas",
+      "hintType": "EmptyState",
+      "position": "Auto",
+      "triggerCondition": "panel.empty",
+      "maxShowCount": 3,
+      "autoHide": true,
+      "autoHideDelaySeconds": 10
+    }
+  ]
+}

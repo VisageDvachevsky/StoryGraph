@@ -1,0 +1,95 @@
+{
+  "tutorials": [
+    {
+      "id": "timeline-basics",
+      "title": "Timeline Fundamentals",
+      "description": "Master keyframe animation in the Timeline panel. Learn to animate character movements, expressions, and transitions.",
+      "category": "Animation",
+      "level": "Intermediate",
+      "trigger": "Manual",
+      "prerequisites": ["getting-started"],
+      "estimatedMinutes": 8,
+      "author": "NovelMind Team",
+      "tags": ["animation", "timeline", "keyframes"],
+      "steps": [
+        {
+          "id": "intro",
+          "title": "The Timeline Panel",
+          "content": "The Timeline allows you to create frame-by-frame animations. You can animate position, scale, rotation, opacity, and more.",
+          "anchorId": "timeline.panel",
+          "hintType": "Spotlight",
+          "position": "Top",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "tracks",
+          "title": "Animation Tracks",
+          "content": "Each property you animate gets its own track. Common tracks include Position, Rotation, Scale, and Alpha.",
+          "anchorId": "timeline.track_list",
+          "hintType": "Callout",
+          "position": "Right",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "add-keyframe",
+          "title": "Adding Keyframes",
+          "content": "Double-click on a track at the desired time to add a keyframe. The keyframe stores the property value at that moment.",
+          "anchorId": "timeline.track_area",
+          "hintType": "Callout",
+          "position": "Top",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "scrubbing",
+          "title": "Playhead Scrubbing",
+          "content": "Drag the playhead to preview your animation at any point. The Scene View updates in real-time.",
+          "anchorId": "timeline.playhead",
+          "hintType": "Spotlight",
+          "position": "Bottom",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "easing",
+          "title": "Easing Curves",
+          "content": "Select a keyframe and open the Curve Editor to adjust how the animation accelerates and decelerates.",
+          "anchorId": "timeline.keyframe_selected",
+          "hintType": "Callout",
+          "position": "Top",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "preview",
+          "title": "Preview Animation",
+          "content": "Click Play in the timeline controls to preview your animation. Use the loop button for continuous playback.",
+          "anchorId": "timeline.play_button",
+          "hintType": "Spotlight",
+          "position": "Bottom",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        }
+      ]
+    }
+  ],
+  "hints": [
+    {
+      "id": "empty-timeline-hint",
+      "content": "Select an object in the Scene View to see its animation tracks.",
+      "anchorId": "timeline.track_list",
+      "hintType": "EmptyState",
+      "position": "Auto",
+      "triggerCondition": "panel.empty",
+      "maxShowCount": 2
+    }
+  ]
+}

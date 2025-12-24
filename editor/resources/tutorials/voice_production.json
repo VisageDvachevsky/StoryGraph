@@ -1,0 +1,151 @@
+{
+  "tutorials": [
+    {
+      "id": "voice-production",
+      "title": "Voice Production Workflow",
+      "description": "Learn to manage voice recordings, assign audio to dialogue lines, and configure voice localization.",
+      "category": "Audio/Voice",
+      "level": "Intermediate",
+      "trigger": "Manual",
+      "prerequisites": ["getting-started"],
+      "estimatedMinutes": 10,
+      "author": "NovelMind Team",
+      "tags": ["voice", "audio", "localization", "recording"],
+      "steps": [
+        {
+          "id": "intro",
+          "title": "Voice Manager",
+          "content": "The Voice Manager maps audio files to dialogue lines. It organizes recordings by character and language.",
+          "anchorId": "voice_manager.panel",
+          "hintType": "Spotlight",
+          "position": "Left",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "add-locale",
+          "title": "Adding Languages",
+          "content": "First, add the languages you need. Click 'Add Locale' and select your target languages.",
+          "anchorId": "voice_manager.add_locale_button",
+          "hintType": "Callout",
+          "position": "Bottom",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "voice-tree",
+          "title": "Voice File Tree",
+          "content": "The tree shows all dialogue lines organized by character. Click on a line to assign or preview its voice file.",
+          "anchorId": "voice_manager.tree",
+          "hintType": "Callout",
+          "position": "Right",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "assign-audio",
+          "title": "Assigning Audio",
+          "content": "Drag an audio file from the Asset Browser onto a dialogue line, or click 'Browse' to select a file.",
+          "anchorId": "voice_manager.assignment_area",
+          "hintType": "Callout",
+          "position": "Top",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "preview",
+          "title": "Preview Playback",
+          "content": "Click the play button next to any line to preview its voice recording.",
+          "anchorId": "voice_manager.preview_button",
+          "hintType": "Spotlight",
+          "position": "Left",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "export",
+          "title": "Export for Voice Actors",
+          "content": "Export a CSV with all unrecorded lines for your voice actors. They can record and return the files.",
+          "anchorId": "voice_manager.export_button",
+          "hintType": "Callout",
+          "position": "Bottom",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        }
+      ]
+    },
+    {
+      "id": "audio-mixer-intro",
+      "title": "Audio Mixer Basics",
+      "description": "Balance your game's audio with the mixer panel. Control music, voice, and sound effects levels.",
+      "category": "Audio/Voice",
+      "level": "Beginner",
+      "trigger": "Contextual",
+      "triggerPanelId": "audio_mixer",
+      "estimatedMinutes": 3,
+      "author": "NovelMind Team",
+      "tags": ["audio", "mixer", "sound"],
+      "steps": [
+        {
+          "id": "intro",
+          "title": "Audio Mixer",
+          "content": "The Audio Mixer lets you balance different audio channels: Music, Voice, SFX, Ambient, UI, and Dialogue.",
+          "anchorId": "audio_mixer.panel",
+          "hintType": "Callout",
+          "position": "Left",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "channels",
+          "title": "Audio Channels",
+          "content": "Each channel has its own volume slider. The Master slider affects all channels at once.",
+          "anchorId": "audio_mixer.master_fader",
+          "hintType": "Spotlight",
+          "position": "Right",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "ducking",
+          "title": "Auto-Ducking",
+          "content": "Enable ducking to automatically lower music volume when dialogue plays. Great for voice clarity.",
+          "anchorId": "audio_mixer.ducking_toggle",
+          "hintType": "Callout",
+          "position": "Bottom",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        }
+      ]
+    }
+  ],
+  "hints": [
+    {
+      "id": "voice-no-locale-hint",
+      "content": "Add a locale to enable voice production for that language.",
+      "anchorId": "voice_manager.add_locale_button",
+      "hintType": "Tooltip",
+      "position": "Bottom",
+      "triggerCondition": "voice_manager.no_locales",
+      "maxShowCount": 2
+    },
+    {
+      "id": "voice-unassigned-hint",
+      "content": "Drag audio files here to assign voice recordings to dialogue lines.",
+      "anchorId": "voice_manager.tree",
+      "hintType": "EmptyState",
+      "position": "Auto",
+      "triggerCondition": "voice_manager.has_unassigned",
+      "maxShowCount": 1
+    }
+  ]
+}

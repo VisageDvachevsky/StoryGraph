@@ -1,0 +1,106 @@
+{
+  "tutorials": [
+    {
+      "id": "localization-workflow",
+      "title": "Localization Workflow",
+      "description": "Translate your visual novel into multiple languages. Export, translate, and import text efficiently.",
+      "category": "Localization",
+      "level": "Intermediate",
+      "trigger": "Manual",
+      "prerequisites": ["getting-started"],
+      "estimatedMinutes": 7,
+      "author": "NovelMind Team",
+      "tags": ["localization", "translation", "i18n", "languages"],
+      "steps": [
+        {
+          "id": "intro",
+          "title": "Localization Panel",
+          "content": "The Localization panel manages all translatable text in your project. Add languages and manage translations here.",
+          "anchorId": "localization.panel",
+          "hintType": "Spotlight",
+          "position": "Left",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "add-language",
+          "title": "Add Languages",
+          "content": "Click 'Add Language' to add a new translation target. Each language maintains its own set of translations.",
+          "anchorId": "localization.add_language_button",
+          "hintType": "Callout",
+          "position": "Bottom",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "string-table",
+          "title": "String Table",
+          "content": "The table shows all strings with their translations. Empty cells indicate missing translations.",
+          "anchorId": "localization.string_table",
+          "hintType": "Callout",
+          "position": "Top",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "edit-translation",
+          "title": "Editing Translations",
+          "content": "Double-click any cell to edit the translation directly. Changes are saved automatically.",
+          "anchorId": "localization.string_table",
+          "hintType": "Callout",
+          "position": "Right",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "export",
+          "title": "Export for Translators",
+          "content": "Export to CSV, PO, or XLIFF formats for professional translators. They can work in their preferred tools.",
+          "anchorId": "localization.export_button",
+          "hintType": "Callout",
+          "position": "Bottom",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "import",
+          "title": "Import Translations",
+          "content": "Import completed translation files. The system matches strings by ID and updates translations.",
+          "anchorId": "localization.import_button",
+          "hintType": "Callout",
+          "position": "Bottom",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "preview",
+          "title": "Preview Languages",
+          "content": "Switch the preview language in Play-In-Editor to test how your game looks in each language.",
+          "anchorId": "localization.preview_language",
+          "hintType": "Spotlight",
+          "position": "Left",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        }
+      ]
+    }
+  ],
+  "hints": [
+    {
+      "id": "localization-missing-hint",
+      "content": "Some strings are missing translations. Export to send to translators.",
+      "anchorId": "localization.diagnostics",
+      "hintType": "Inline",
+      "position": "Auto",
+      "triggerCondition": "localization.has_missing",
+      "maxShowCount": 1
+    }
+  ]
+}

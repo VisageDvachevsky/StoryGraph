@@ -1,0 +1,95 @@
+{
+  "tutorials": [
+    {
+      "id": "build-export",
+      "title": "Building and Exporting",
+      "description": "Configure build settings and export your visual novel for different platforms.",
+      "category": "Build",
+      "level": "Intermediate",
+      "trigger": "Manual",
+      "prerequisites": ["getting-started"],
+      "estimatedMinutes": 6,
+      "author": "NovelMind Team",
+      "tags": ["build", "export", "publishing", "platforms"],
+      "steps": [
+        {
+          "id": "intro",
+          "title": "Build Settings",
+          "content": "The Build Settings panel configures how your project is exported. Set target platforms and optimization options here.",
+          "anchorId": "build_settings.panel",
+          "hintType": "Spotlight",
+          "position": "Left",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "platforms",
+          "title": "Target Platforms",
+          "content": "Select which platforms to build for: Windows, macOS, Linux, or Web. Each has specific settings.",
+          "anchorId": "build_settings.platform_list",
+          "hintType": "Callout",
+          "position": "Right",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "quality",
+          "title": "Quality Settings",
+          "content": "Adjust texture quality, audio compression, and other settings to balance file size and quality.",
+          "anchorId": "build_settings.quality_section",
+          "hintType": "Callout",
+          "position": "Top",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "languages",
+          "title": "Included Languages",
+          "content": "Choose which languages to include in the build. You can create separate builds for different regions.",
+          "anchorId": "build_settings.languages_section",
+          "hintType": "Callout",
+          "position": "Top",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "build",
+          "title": "Start Build",
+          "content": "Click Build to start the export process. Progress is shown in the Console panel.",
+          "anchorId": "build_settings.build_button",
+          "hintType": "Spotlight",
+          "position": "Bottom",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        },
+        {
+          "id": "diagnostics",
+          "title": "Build Diagnostics",
+          "content": "If there are warnings or errors, they appear in the Diagnostics panel. Resolve them before shipping.",
+          "anchorId": "diagnostics.panel",
+          "hintType": "Callout",
+          "position": "Left",
+          "advanceCondition": {
+            "type": "UserAcknowledge"
+          }
+        }
+      ]
+    }
+  ],
+  "hints": [
+    {
+      "id": "build-warnings-hint",
+      "content": "Resolve these warnings before building for release.",
+      "anchorId": "diagnostics.warnings",
+      "hintType": "Inline",
+      "position": "Auto",
+      "triggerCondition": "build.has_warnings",
+      "maxShowCount": 2
+    }
+  ]
+}
