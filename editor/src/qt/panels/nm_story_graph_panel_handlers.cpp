@@ -189,9 +189,8 @@ void NMStoryGraphPanel::onNodeClicked(uint64_t nodeId) {
 
   emit nodeSelected(node->nodeIdString());
 
-  if (!node->scriptPath().isEmpty()) {
-    emit scriptNodeRequested(node->scriptPath());
-  }
+  // Single click should only select the node, not open Script Editor
+  // Script Editor should only open on double-click (handled in onNodeDoubleClicked)
 }
 
 void NMStoryGraphPanel::onNodeDoubleClicked(uint64_t nodeId) {
@@ -219,6 +218,11 @@ void NMStoryGraphPanel::onNodeDoubleClicked(uint64_t nodeId) {
     qDebug() << "[StoryGraph] Scene node double-clicked, emitting sceneNodeDoubleClicked:"
              << sceneId;
     emit sceneNodeDoubleClicked(sceneId);
+  } else {
+    // For non-Scene nodes, double-click should open Script Editor
+    if (!node->scriptPath().isEmpty()) {
+      emit scriptNodeRequested(node->scriptPath());
+    }
   }
 }
 
@@ -244,9 +248,8 @@ void NMStoryGraphPanel::onNodeAdded(uint64_t nodeId,
   }
   emit nodeSelected(node->nodeIdString());
 
-  if (!node->scriptPath().isEmpty()) {
-    emit scriptNodeRequested(node->scriptPath());
-  }
+  // Creating a node should keep focus in Story Graph panel
+  // Script Editor should only open on explicit double-click
 
   LayoutNode layout = detail::buildLayoutFromNode(node);
   if ((nodeType.contains("Dialogue", Qt::CaseInsensitive) ||
