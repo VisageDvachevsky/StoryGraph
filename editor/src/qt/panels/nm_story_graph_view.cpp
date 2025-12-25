@@ -289,10 +289,10 @@ NMNodePalette::NMNodePalette(QWidget *parent) : QWidget(parent) {
   layout->addWidget(separator);
 
   // Node type buttons - Core nodes
-  createNodeButton("Entry", "▶");
-  createNodeButton("Dialogue", "💬");
-  createNodeButton("Choice", "⚑");
-  createNodeButton("Scene", "🎬");
+  createNodeButton("Entry", "node-start");
+  createNodeButton("Dialogue", "node-dialogue");
+  createNodeButton("Choice", "node-choice");
+  createNodeButton("Scene", "panel-scene");
 
   // Separator for flow control nodes
   auto *separator2 = new QFrame(this);
@@ -302,11 +302,11 @@ NMNodePalette::NMNodePalette(QWidget *parent) : QWidget(parent) {
   layout->addWidget(separator2);
 
   // Flow control nodes
-  createNodeButton("Jump", "↗");
-  createNodeButton("Label", "🏷");
-  createNodeButton("Condition", "❓");
-  createNodeButton("Random", "🎲");
-  createNodeButton("End", "⏹");
+  createNodeButton("Jump", "node-jump");
+  createNodeButton("Label", "property-link");
+  createNodeButton("Condition", "node-condition");
+  createNodeButton("Random", "node-random");
+  createNodeButton("End", "node-end");
 
   // Separator for advanced nodes
   auto *separator3 = new QFrame(this);
@@ -316,9 +316,9 @@ NMNodePalette::NMNodePalette(QWidget *parent) : QWidget(parent) {
   layout->addWidget(separator3);
 
   // Advanced nodes
-  createNodeButton("Script", "⚙");
-  createNodeButton("Variable", "📝");
-  createNodeButton("Event", "⚡");
+  createNodeButton("Script", "settings");
+  createNodeButton("Variable", "node-variable");
+  createNodeButton("Event", "node-event");
 
   layout->addStretch();
 
@@ -332,12 +332,14 @@ NMNodePalette::NMNodePalette(QWidget *parent) : QWidget(parent) {
 }
 
 void NMNodePalette::createNodeButton(const QString &nodeType,
-                                     const QString &icon) {
+                                     const QString &iconName) {
   auto *layout = qobject_cast<QVBoxLayout *>(this->layout());
   if (!layout)
     return;
 
-  auto *button = new QPushButton(QString("%1 %2").arg(icon, nodeType), this);
+  auto &iconMgr = NMIconManager::instance();
+  auto *button = new QPushButton(nodeType, this);
+  button->setIcon(iconMgr.getIcon(iconName, 16));
   button->setMinimumHeight(32);
 
   const auto &palette = NMStyleManager::instance().palette();

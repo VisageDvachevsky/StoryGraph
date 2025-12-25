@@ -17,6 +17,7 @@
 #include "NovelMind/audio/voice_manifest.hpp"
 #include "NovelMind/core/logger.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 
 #include <QApplication>
 #include <QAudioDevice>
@@ -972,12 +973,15 @@ void NMVoiceStudioPanel::onPlayClicked() {
   if (!m_clip || !m_mediaPlayer)
     return;
 
+  auto &iconMgr = NMIconManager::instance();
   if (m_isPlaying) {
     // Pause
     m_mediaPlayer->pause();
     m_isPlaying = false;
-    if (m_playBtn)
-      m_playBtn->setText(tr("▶ Play"));
+    if (m_playBtn) {
+      m_playBtn->setIcon(iconMgr.getIcon("play", 16));
+      m_playBtn->setText(tr("Play"));
+    }
   } else {
     // Render processed audio to temp file and play
     auto processed = renderProcessedAudio();
@@ -992,8 +996,10 @@ void NMVoiceStudioPanel::onPlayClicked() {
     m_mediaPlayer->setSource(QUrl::fromLocalFile(m_currentFilePath));
     m_mediaPlayer->play();
     m_isPlaying = true;
-    if (m_playBtn)
-      m_playBtn->setText(tr("⏸ Pause"));
+    if (m_playBtn) {
+      m_playBtn->setIcon(iconMgr.getIcon("pause", 16));
+      m_playBtn->setText(tr("Pause"));
+    }
   }
 
   updatePlaybackState();
@@ -1004,8 +1010,11 @@ void NMVoiceStudioPanel::onStopClicked() {
     m_mediaPlayer->stop();
   }
   m_isPlaying = false;
-  if (m_playBtn)
-    m_playBtn->setText(tr("▶ Play"));
+  if (m_playBtn) {
+    auto &iconMgr = NMIconManager::instance();
+    m_playBtn->setIcon(iconMgr.getIcon("play", 16));
+    m_playBtn->setText(tr("Play"));
+  }
   if (m_waveformWidget) {
     m_waveformWidget->setPlayheadPosition(0.0);
   }
@@ -1356,7 +1365,14 @@ void NMVoiceStudioPanel::onPlaybackStateChanged() {
   m_isPlaying = (state == QMediaPlayer::PlayingState);
 
   if (m_playBtn) {
-    m_playBtn->setText(m_isPlaying ? tr("⏸ Pause") : tr("▶ Play"));
+    auto &iconMgr = NMIconManager::instance();
+    if (m_isPlaying) {
+      m_playBtn->setIcon(iconMgr.getIcon("pause", 16));
+      m_playBtn->setText(tr("Pause"));
+    } else {
+      m_playBtn->setIcon(iconMgr.getIcon("play", 16));
+      m_playBtn->setText(tr("Play"));
+    }
   }
 
   updatePlaybackState();
@@ -1453,7 +1469,10 @@ void NMVoiceStudioPanel::setupUI() {
   auto *recordLayout = new QVBoxLayout(recordGroup);
 
   auto *recordBtnLayout = new QHBoxLayout();
-  m_recordBtn = new QPushButton(tr("⏺ Record"), recordGroup);
+  auto &iconMgr = NMIconManager::instance();
+
+  m_recordBtn = new QPushButton(tr("Record"), recordGroup);
+  m_recordBtn->setIcon(iconMgr.getIcon("record", 16));
   m_recordBtn->setStyleSheet("QPushButton { background-color: #c44; color: "
                              "white; font-weight: bold; }");
   m_recordBtn->setToolTip(tr("Start recording (R)"));
@@ -1461,13 +1480,15 @@ void NMVoiceStudioPanel::setupUI() {
           &NMVoiceStudioPanel::onRecordClicked);
   recordBtnLayout->addWidget(m_recordBtn);
 
-  m_stopRecordBtn = new QPushButton(tr("⏹ Stop"), recordGroup);
+  m_stopRecordBtn = new QPushButton(tr("Stop"), recordGroup);
+  m_stopRecordBtn->setIcon(iconMgr.getIcon("stop", 16));
   m_stopRecordBtn->setEnabled(false);
   connect(m_stopRecordBtn, &QPushButton::clicked, this,
           &NMVoiceStudioPanel::onStopRecordClicked);
   recordBtnLayout->addWidget(m_stopRecordBtn);
 
-  m_cancelRecordBtn = new QPushButton(tr("✕ Cancel"), recordGroup);
+  m_cancelRecordBtn = new QPushButton(tr("Cancel"), recordGroup);
+  m_cancelRecordBtn->setIcon(iconMgr.getIcon("file-close", 16));
   m_cancelRecordBtn->setEnabled(false);
   connect(m_cancelRecordBtn, &QPushButton::clicked, this,
           &NMVoiceStudioPanel::onCancelRecordClicked);
@@ -1523,35 +1544,36 @@ void NMVoiceStudioPanel::setupUI() {
 void NMVoiceStudioPanel::setupToolbar() {
   m_toolbar = new QToolBar(m_contentWidget);
   m_toolbar->setIconSize(QSize(16, 16));
+  auto &iconMgr = NMIconManager::instance();
 
-  auto *openAction = m_toolbar->addAction(tr("📂 Open"));
+  auto *openAction = m_toolbar->addAction(iconMgr.getIcon("file-open", 16), tr("Open"));
   openAction->setToolTip(tr("Open audio file (Ctrl+O)"));
   connect(openAction, &QAction::triggered, this,
           &NMVoiceStudioPanel::onOpenClicked);
 
-  auto *saveAction = m_toolbar->addAction(tr("💾 Save"));
+  auto *saveAction = m_toolbar->addAction(iconMgr.getIcon("file-save", 16), tr("Save"));
   saveAction->setToolTip(tr("Save (Ctrl+S)"));
   connect(saveAction, &QAction::triggered, this,
           &NMVoiceStudioPanel::onSaveClicked);
 
-  auto *saveAsAction = m_toolbar->addAction(tr("💾 Save As"));
+  auto *saveAsAction = m_toolbar->addAction(iconMgr.getIcon("file-save", 16), tr("Save As"));
   saveAsAction->setToolTip(tr("Save As"));
   connect(saveAsAction, &QAction::triggered, this,
           &NMVoiceStudioPanel::onSaveAsClicked);
 
-  auto *exportAction = m_toolbar->addAction(tr("📤 Export"));
+  auto *exportAction = m_toolbar->addAction(iconMgr.getIcon("export", 16), tr("Export"));
   exportAction->setToolTip(tr("Export processed audio (Ctrl+E)"));
   connect(exportAction, &QAction::triggered, this,
           &NMVoiceStudioPanel::onExportClicked);
 
   m_toolbar->addSeparator();
 
-  auto *undoAction = m_toolbar->addAction(tr("↶ Undo"));
+  auto *undoAction = m_toolbar->addAction(iconMgr.getIcon("edit-undo", 16), tr("Undo"));
   undoAction->setToolTip(tr("Undo (Ctrl+Z)"));
   connect(undoAction, &QAction::triggered, this,
           &NMVoiceStudioPanel::onUndoClicked);
 
-  auto *redoAction = m_toolbar->addAction(tr("↷ Redo"));
+  auto *redoAction = m_toolbar->addAction(iconMgr.getIcon("edit-redo", 16), tr("Redo"));
   redoAction->setToolTip(tr("Redo (Ctrl+Y)"));
   connect(redoAction, &QAction::triggered, this,
           &NMVoiceStudioPanel::onRedoClicked);
@@ -1596,20 +1618,24 @@ void NMVoiceStudioPanel::setupDeviceSection() {
 void NMVoiceStudioPanel::setupTransportSection() {
   m_transportGroup = new QGroupBox(tr("Transport"), m_contentWidget);
   auto *layout = new QHBoxLayout(m_transportGroup);
+  auto &iconMgr = NMIconManager::instance();
 
-  m_playBtn = new QPushButton(tr("▶ Play"), m_transportGroup);
+  m_playBtn = new QPushButton(tr("Play"), m_transportGroup);
+  m_playBtn->setIcon(iconMgr.getIcon("play", 16));
   m_playBtn->setToolTip(tr("Play/Pause (Space)"));
   connect(m_playBtn, &QPushButton::clicked, this,
           &NMVoiceStudioPanel::onPlayClicked);
   layout->addWidget(m_playBtn);
 
-  m_stopBtn = new QPushButton(tr("⏹ Stop"), m_transportGroup);
+  m_stopBtn = new QPushButton(tr("Stop"), m_transportGroup);
+  m_stopBtn->setIcon(iconMgr.getIcon("stop", 16));
   m_stopBtn->setToolTip(tr("Stop playback"));
   connect(m_stopBtn, &QPushButton::clicked, this,
           &NMVoiceStudioPanel::onStopClicked);
   layout->addWidget(m_stopBtn);
 
-  m_loopBtn = new QPushButton(tr("🔁 Loop"), m_transportGroup);
+  m_loopBtn = new QPushButton(tr("Loop"), m_transportGroup);
+  m_loopBtn->setIcon(iconMgr.getIcon("loop", 16));
   m_loopBtn->setCheckable(true);
   m_loopBtn->setToolTip(tr("Toggle loop (L)"));
   connect(m_loopBtn, &QPushButton::toggled, this,
@@ -1681,23 +1707,26 @@ void NMVoiceStudioPanel::setupWaveformSection() {
 }
 
 void NMVoiceStudioPanel::setupEditSection() {
-  m_editGroup = new QGroupBox(tr("▼ Edit"), m_contentWidget);
+  m_editGroup = new QGroupBox(tr("Edit"), m_contentWidget);
   m_editGroup->setCheckable(true);
   m_editGroup->setChecked(true);
   auto *layout = new QGridLayout(m_editGroup);
+  auto &iconMgr = NMIconManager::instance();
 
   // Trim controls
   layout->addWidget(new QLabel(tr("Trim:"), m_editGroup), 0, 0);
 
   m_trimToSelectionBtn =
-      new QPushButton(tr("✂ Trim to Selection"), m_editGroup);
+      new QPushButton(tr("Trim to Selection"), m_editGroup);
+  m_trimToSelectionBtn->setIcon(iconMgr.getIcon("edit-cut", 16));
   m_trimToSelectionBtn->setToolTip(
       tr("Remove audio outside selection (Ctrl+T)"));
   connect(m_trimToSelectionBtn, &QPushButton::clicked, this,
           &NMVoiceStudioPanel::onTrimToSelection);
   layout->addWidget(m_trimToSelectionBtn, 0, 1);
 
-  m_resetTrimBtn = new QPushButton(tr("↩ Reset Trim"), m_editGroup);
+  m_resetTrimBtn = new QPushButton(tr("Reset Trim"), m_editGroup);
+  m_resetTrimBtn->setIcon(iconMgr.getIcon("property-reset", 16));
   m_resetTrimBtn->setToolTip(tr("Reset trim markers"));
   connect(m_resetTrimBtn, &QPushButton::clicked, this,
           &NMVoiceStudioPanel::onResetTrim);
@@ -1755,7 +1784,7 @@ void NMVoiceStudioPanel::setupEditSection() {
 }
 
 void NMVoiceStudioPanel::setupFilterSection() {
-  m_filterGroup = new QGroupBox(tr("▼ Filters"), m_contentWidget);
+  m_filterGroup = new QGroupBox(tr("Filters"), m_contentWidget);
   m_filterGroup->setCheckable(true);
   m_filterGroup->setChecked(true);
   auto *layout = new QGridLayout(m_filterGroup);
@@ -1854,6 +1883,7 @@ void NMVoiceStudioPanel::setupFilterSection() {
 void NMVoiceStudioPanel::setupPresetSection() {
   auto *presetGroup = new QGroupBox(tr("Presets"), m_contentWidget);
   auto *layout = new QVBoxLayout(presetGroup);
+  auto &iconMgr = NMIconManager::instance();
 
   m_presetCombo = new QComboBox(presetGroup);
   m_presetCombo->setToolTip(tr("Select a processing preset"));
@@ -1861,7 +1891,8 @@ void NMVoiceStudioPanel::setupPresetSection() {
           this, &NMVoiceStudioPanel::onPresetSelected);
   layout->addWidget(m_presetCombo);
 
-  m_savePresetBtn = new QPushButton(tr("💾 Save Preset"), presetGroup);
+  m_savePresetBtn = new QPushButton(tr("Save Preset"), presetGroup);
+  m_savePresetBtn->setIcon(iconMgr.getIcon("file-save", 16));
   m_savePresetBtn->setToolTip(tr("Save current settings as a preset"));
   connect(m_savePresetBtn, &QPushButton::clicked, this,
           &NMVoiceStudioPanel::onSavePresetClicked);

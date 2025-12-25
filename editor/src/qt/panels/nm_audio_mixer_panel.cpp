@@ -13,6 +13,7 @@
 #include "NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp"
 #include "NovelMind/core/logger.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 
 #include <QCheckBox>
 #include <QDoubleSpinBox>
@@ -449,20 +450,24 @@ void NMAudioMixerPanel::setupMusicPreviewControls(QWidget *parent) {
 
   // Transport controls row
   auto *transportLayout = new QHBoxLayout();
+  auto &iconMgr = NMIconManager::instance();
 
-  m_playBtn = new QPushButton(tr("▶ Play"), m_previewGroup);
+  m_playBtn = new QPushButton(tr("Play"), m_previewGroup);
+  m_playBtn->setIcon(iconMgr.getIcon("play", 16));
   m_playBtn->setToolTip(tr("Start playback (Space)"));
   connect(m_playBtn, &QPushButton::clicked, this,
           &NMAudioMixerPanel::onPlayClicked);
   transportLayout->addWidget(m_playBtn);
 
-  m_pauseBtn = new QPushButton(tr("⏸ Pause"), m_previewGroup);
+  m_pauseBtn = new QPushButton(tr("Pause"), m_previewGroup);
+  m_pauseBtn->setIcon(iconMgr.getIcon("pause", 16));
   m_pauseBtn->setToolTip(tr("Pause playback (Space)"));
   connect(m_pauseBtn, &QPushButton::clicked, this,
           &NMAudioMixerPanel::onPauseClicked);
   transportLayout->addWidget(m_pauseBtn);
 
-  m_stopBtn = new QPushButton(tr("⏹ Stop"), m_previewGroup);
+  m_stopBtn = new QPushButton(tr("Stop"), m_previewGroup);
+  m_stopBtn->setIcon(iconMgr.getIcon("stop", 16));
   m_stopBtn->setToolTip(tr("Stop playback (Escape)"));
   connect(m_stopBtn, &QPushButton::clicked, this,
           &NMAudioMixerPanel::onStopClicked);
@@ -470,7 +475,7 @@ void NMAudioMixerPanel::setupMusicPreviewControls(QWidget *parent) {
 
   transportLayout->addStretch();
 
-  m_loopCheckBox = new QCheckBox(tr("🔁 Loop"), m_previewGroup);
+  m_loopCheckBox = new QCheckBox(tr("Loop"), m_previewGroup);
   m_loopCheckBox->setToolTip(tr("Loop playback (L)"));
   connect(m_loopCheckBox, &QCheckBox::toggled, this,
           &NMAudioMixerPanel::onLoopToggled);
@@ -504,7 +509,8 @@ void NMAudioMixerPanel::setupMusicPreviewControls(QWidget *parent) {
   layout->addLayout(posLayout);
 
   // Browse button
-  m_browseBtn = new QPushButton(tr("📂 Browse Audio..."), m_previewGroup);
+  m_browseBtn = new QPushButton(tr("Browse Audio..."), m_previewGroup);
+  m_browseBtn->setIcon(iconMgr.getIcon("folder-open", 16));
   m_browseBtn->setToolTip(tr("Select an audio file to preview"));
   connect(m_browseBtn, &QPushButton::clicked, this,
           &NMAudioMixerPanel::onBrowseAudioClicked);
@@ -621,7 +627,7 @@ void NMAudioMixerPanel::setupMixerControls(QWidget *parent) {
 }
 
 void NMAudioMixerPanel::setupCrossfadeControls(QWidget *parent) {
-  m_crossfadeGroup = new QGroupBox(tr("▼ Crossfade"), parent);
+  m_crossfadeGroup = new QGroupBox(tr("Crossfade"), parent);
   m_crossfadeGroup->setCheckable(true);
   m_crossfadeGroup->setChecked(false);
   auto *layout = new QHBoxLayout(m_crossfadeGroup);
@@ -640,7 +646,8 @@ void NMAudioMixerPanel::setupCrossfadeControls(QWidget *parent) {
 
   layout->addStretch();
 
-  m_crossfadeBtn = new QPushButton(tr("⟳ Crossfade To..."), m_crossfadeGroup);
+  m_crossfadeBtn = new QPushButton(tr("Crossfade To..."), m_crossfadeGroup);
+  m_crossfadeBtn->setIcon(iconMgr.getIcon("refresh", 16));
   m_crossfadeBtn->setToolTip(tr("Start crossfade to another track"));
   connect(m_crossfadeBtn, &QPushButton::clicked, this,
           &NMAudioMixerPanel::onCrossfadeToClicked);
@@ -652,7 +659,7 @@ void NMAudioMixerPanel::setupCrossfadeControls(QWidget *parent) {
 }
 
 void NMAudioMixerPanel::setupDuckingControls(QWidget *parent) {
-  m_duckingGroup = new QGroupBox(tr("▼ Auto-Ducking"), parent);
+  m_duckingGroup = new QGroupBox(tr("Auto-Ducking"), parent);
   m_duckingGroup->setCheckable(true);
   m_duckingGroup->setChecked(false);
   auto *layout = new QVBoxLayout(m_duckingGroup);

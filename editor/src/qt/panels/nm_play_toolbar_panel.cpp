@@ -301,7 +301,7 @@ void NMPlayToolbarPanel::onCurrentNodeChanged(const QString &nodeId) {
 
 void NMPlayToolbarPanel::onBreakpointHit(const QString &nodeId) {
   // Visual feedback for breakpoint hit
-  m_statusLabel->setText(QString("⏸️ Breakpoint at %1").arg(nodeId));
+  m_statusLabel->setText(QString("Breakpoint at %1").arg(nodeId));
   m_statusLabel->setStyleSheet(
       "QLabel { color: #f44336; background-color: #2b1d1d; border: 1px solid "
       "#5a2b2b; border-radius: 10px; padding: 3px 8px; font-weight: 600; }");
