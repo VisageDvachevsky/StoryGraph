@@ -57,9 +57,13 @@ void NMGraphNodeItem::setNodeType(const QString &type) {
 }
 
 void NMGraphNodeItem::setSelected(bool selected) {
-  m_isSelected = selected;
-  QGraphicsItem::setSelected(selected);
-  update();
+  if (m_isSelected != selected) {
+    // Notify Qt that geometry will change (boundingRect depends on selection state)
+    prepareGeometryChange();
+    m_isSelected = selected;
+    QGraphicsItem::setSelected(selected);
+    update();
+  }
 }
 
 void NMGraphNodeItem::setBreakpoint(bool hasBreakpoint) {
@@ -72,11 +76,15 @@ void NMGraphNodeItem::setBreakpoint(bool hasBreakpoint) {
 }
 
 void NMGraphNodeItem::setCurrentlyExecuting(bool isExecuting) {
-  m_isCurrentlyExecuting = isExecuting;
-  // Only update if we're in a valid scene with views
-  // The signal connection is queued, so this is safe
-  if (scene() && !scene()->views().isEmpty()) {
-    update();
+  if (m_isCurrentlyExecuting != isExecuting) {
+    // Notify Qt that geometry will change (boundingRect depends on executing state)
+    prepareGeometryChange();
+    m_isCurrentlyExecuting = isExecuting;
+    // Only update if we're in a valid scene with views
+    // The signal connection is queued, so this is safe
+    if (scene() && !scene()->views().isEmpty()) {
+      update();
+    }
   }
 }
 
@@ -127,18 +135,30 @@ bool NMGraphNodeItem::hitTestOutputPort(const QPointF &scenePos) const {
 
 QRectF NMGraphNodeItem::boundingRect() const {
   const qreal height = isSceneNode() ? SCENE_NODE_HEIGHT : NODE_HEIGHT;
-  return QRectF(0, 0, NODE_WIDTH, height);
+
+  // Add margin to include selection highlight, executing glow, and other effects
+  // that draw outside the base node rectangle
+  const qreal margin = m_isCurrentlyExecuting ? 10.0 : (m_isSelected ? 4.0 : 2.0);
+
+  return QRectF(0, 0, NODE_WIDTH, height).adjusted(-margin, -margin, margin, margin);
 }
 
 void NMGraphNodeItem::paint(QPainter *painter,
                             const QStyleOptionGraphicsItem * /*option*/,
                             QWidget * /*widget*/) {
+  // Save painter state to prevent state leakage to other items
+  painter->save();
+
   const auto &palette = NMStyleManager::instance().palette();
 
   painter->setRenderHint(QPainter::Antialiasing);
 
   const bool isScene = isSceneNode();
   const qreal nodeHeight = isScene ? SCENE_NODE_HEIGHT : NODE_HEIGHT;
+
+  // Calculate margin offset to position node correctly within boundingRect
+  const qreal margin = m_isCurrentlyExecuting ? 10.0 : (m_isSelected ? 4.0 : 2.0);
+  painter->translate(margin, margin);
 
   // Node background - Scene nodes get a distinct gradient
   QColor bgColor = m_isSelected ? palette.nodeSelected : palette.nodeDefault;
@@ -436,6 +456,9 @@ void NMGraphNodeItem::paint(QPainter *painter,
     painter->setPen(QPen(QColor(40, 180, 90), 2));
     painter->drawPath(arrowPath);
   }
+
+  // Restore painter state
+  painter->restore();
 }
 
 QVariant NMGraphNodeItem::itemChange(GraphicsItemChange change,
@@ -452,7 +475,12 @@ QVariant NMGraphNodeItem::itemChange(GraphicsItemChange change,
       }
     }
   } else if (change == ItemSelectedHasChanged) {
-    m_isSelected = value.toBool();
+    // Geometry changes when selection changes (boundingRect includes selection highlight)
+    if (m_isSelected != value.toBool()) {
+      prepareGeometryChange();
+      m_isSelected = value.toBool();
+      update();
+    }
   }
   return QGraphicsItem::itemChange(change, value);
 }

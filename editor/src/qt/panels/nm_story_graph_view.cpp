@@ -43,9 +43,19 @@ namespace NovelMind::editor::qt {
 // ============================================================================
 
 NMStoryGraphView::NMStoryGraphView(QWidget *parent) : QGraphicsView(parent) {
+  // Enable antialiasing for smooth rendering
   setRenderHint(QPainter::Antialiasing);
+  setRenderHint(QPainter::TextAntialiasing);
   setRenderHint(QPainter::SmoothPixmapTransform);
-  setViewportUpdateMode(FullViewportUpdate);
+
+  // Use SmartViewportUpdate for better balance between performance and quality
+  // This avoids artifacts while being faster than FullViewportUpdate
+  setViewportUpdateMode(SmartViewportUpdate);
+
+  // Optimization flags
+  setCacheMode(CacheBackground);
+  setOptimizationFlag(DontSavePainterState, true);
+
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setTransformationAnchor(AnchorUnderMouse);

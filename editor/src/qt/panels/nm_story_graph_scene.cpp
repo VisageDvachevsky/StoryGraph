@@ -149,6 +149,9 @@ void NMStoryGraphScene::removeNode(NMGraphNodeItem *node) {
   if (!node)
     return;
 
+  // Get bounding rect before removal for proper update
+  QRectF nodeRect = node->sceneBoundingRect();
+
   // Remove all connections attached to this node
   auto connections = findConnectionsForNode(node);
   for (auto *conn : connections) {
@@ -161,11 +164,17 @@ void NMStoryGraphScene::removeNode(NMGraphNodeItem *node) {
   removeItem(node);
   emit nodeDeleted(node ? node->nodeId() : 0);
   delete node;
+
+  // Force update of the area where the node was to clear artifacts
+  update(nodeRect);
 }
 
 void NMStoryGraphScene::removeConnection(NMGraphConnectionItem *connection) {
   if (!connection)
     return;
+
+  // Get bounding rect before removal for proper update
+  QRectF connRect = connection->sceneBoundingRect();
 
   m_connections.removeAll(connection);
   removeItem(connection);
@@ -174,6 +183,9 @@ void NMStoryGraphScene::removeConnection(NMGraphConnectionItem *connection) {
                            connection->endNode()->nodeId());
   }
   delete connection;
+
+  // Force update of the area where the connection was to clear artifacts
+  update(connRect);
 }
 
 bool NMStoryGraphScene::removeConnection(uint64_t fromNodeId,
