@@ -1,40 +1,39 @@
-#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+#include "NovelMind/editor/project_manager.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
-#include "NovelMind/editor/project_manager.hpp"
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
 
 #include <QAction>
 #include <QApplication>
-#include <QFrame>
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
-#include <QDir>
+#include <QFrame>
 #include <QGraphicsSceneContextMenuEvent>
 #include <QGraphicsSceneMouseEvent>
 #include <QHBoxLayout>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineF>
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QRegularExpression>
 #include <QPushButton>
+#include <QRegularExpression>
 #include <QScrollBar>
+#include <QSet>
 #include <QTextStream>
 #include <QTimer>
 #include <QToolBar>
 #include <QVBoxLayout>
 #include <QWheelEvent>
 #include <algorithm>
-#include <QSet>
 #include <filesystem>
-
 
 namespace NovelMind::editor::qt {
 
@@ -130,10 +129,9 @@ void NMStoryGraphView::mousePressEvent(QMouseEvent *event) {
     QPointF scenePos = mapToScene(event->pos());
     auto *item = scene()->itemAt(scenePos, transform());
     if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
-      const bool wantsConnection =
-          m_connectionModeEnabled ||
-          (event->modifiers() & Qt::ControlModifier) ||
-          node->hitTestOutputPort(scenePos);
+      const bool wantsConnection = m_connectionModeEnabled ||
+                                   (event->modifiers() & Qt::ControlModifier) ||
+                                   node->hitTestOutputPort(scenePos);
       if (wantsConnection) {
         m_isDrawingConnection = true;
         m_connectionStartNode = node;
@@ -190,7 +188,8 @@ void NMStoryGraphView::mouseMoveEvent(QMouseEvent *event) {
 
   // Track if user is dragging (moved beyond Qt's drag threshold)
   if (m_possibleDrag) {
-    if ((event->pos() - m_dragStartPos).manhattanLength() >= QApplication::startDragDistance()) {
+    if ((event->pos() - m_dragStartPos).manhattanLength() >=
+        QApplication::startDragDistance()) {
       m_isDragging = true;
       m_possibleDrag = false;
     }

@@ -4,8 +4,8 @@
  */
 
 #include "NovelMind/editor/qt/panels/nm_animation_adapter.hpp"
-#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/core/logger.hpp"
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 
 namespace NovelMind::editor::qt {
 
@@ -15,9 +15,7 @@ NMAnimationAdapter::NMAnimationAdapter(scene::SceneManager *sceneManager,
   NOVELMIND_LOG_INFO("[AnimationAdapter] Created");
 }
 
-NMAnimationAdapter::~NMAnimationAdapter() {
-  cleanupAnimations();
-}
+NMAnimationAdapter::~NMAnimationAdapter() { cleanupAnimations(); }
 
 void NMAnimationAdapter::connectTimeline(NMTimelinePanel *timeline) {
   if (!timeline) {
@@ -38,7 +36,9 @@ void NMAnimationAdapter::connectTimeline(NMTimelinePanel *timeline) {
   // Sync FPS
   m_fps = m_timeline->getFPS();
 
-  NOVELMIND_LOG_INFO(std::string("[AnimationAdapter] Connected to Timeline (FPS: ") + std::to_string(m_fps) + ")");
+  NOVELMIND_LOG_INFO(
+      std::string("[AnimationAdapter] Connected to Timeline (FPS: ") +
+      std::to_string(m_fps) + ")");
 }
 
 void NMAnimationAdapter::connectSceneView(NMSceneViewPanel *sceneView) {
@@ -64,7 +64,8 @@ bool NMAnimationAdapter::createBinding(const QString &trackId,
                                        const QString &objectId,
                                        AnimatedProperty property) {
   if (trackId.isEmpty() || objectId.isEmpty()) {
-    NOVELMIND_LOG_WARN("[AnimationAdapter] Cannot create binding with empty IDs");
+    NOVELMIND_LOG_WARN(
+        "[AnimationAdapter] Cannot create binding with empty IDs");
     return false;
   }
 
@@ -75,8 +76,10 @@ bool NMAnimationAdapter::createBinding(const QString &trackId,
 
   m_bindings[trackId] = binding;
 
-  NOVELMIND_LOG_INFO(std::string("[AnimationAdapter] Created binding: track '") + trackId.toStdString() +
-                     "' -> object '" + objectId.toStdString() + "' property " + std::to_string(static_cast<int>(property)));
+  NOVELMIND_LOG_INFO(
+      std::string("[AnimationAdapter] Created binding: track '") +
+      trackId.toStdString() + "' -> object '" + objectId.toStdString() +
+      "' property " + std::to_string(static_cast<int>(property)));
 
   return true;
 }
@@ -85,7 +88,9 @@ void NMAnimationAdapter::removeBinding(const QString &trackId) {
   auto it = m_bindings.find(trackId);
   if (it != m_bindings.end()) {
     m_bindings.erase(it);
-    NOVELMIND_LOG_INFO(std::string("[AnimationAdapter] Removed binding for track '") + trackId.toStdString() + "'");
+    NOVELMIND_LOG_INFO(
+        std::string("[AnimationAdapter] Removed binding for track '") +
+        trackId.toStdString() + "'");
   }
 }
 
@@ -180,9 +185,11 @@ void NMAnimationAdapter::onTimelinePlaybackStateChanged(bool playing) {
   }
 }
 
-void NMAnimationAdapter::onKeyframeModified(const QString &trackName, int frame) {
-  NOVELMIND_LOG_DEBUG(std::string("[AnimationAdapter] Keyframe modified: track '") +
-                      trackName.toStdString() + "' frame " + std::to_string(frame));
+void NMAnimationAdapter::onKeyframeModified(const QString &trackName,
+                                            int frame) {
+  NOVELMIND_LOG_DEBUG(
+      std::string("[AnimationAdapter] Keyframe modified: track '") +
+      trackName.toStdString() + "' frame " + std::to_string(frame));
 
   // Rebuild animations for this track
   // Update the animation at the modified frame position
@@ -193,7 +200,8 @@ void NMAnimationAdapter::onKeyframeModified(const QString &trackName, int frame)
 
 void NMAnimationAdapter::rebuildAnimations() {
   if (!m_timeline) {
-    NOVELMIND_LOG_WARN("[AnimationAdapter] Cannot rebuild animations without timeline");
+    NOVELMIND_LOG_WARN(
+        "[AnimationAdapter] Cannot rebuild animations without timeline");
     return;
   }
 
@@ -229,14 +237,16 @@ void NMAnimationAdapter::rebuildAnimations() {
 
       m_animationStates[trackName] = std::move(state);
 
-      NOVELMIND_LOG_INFO(std::string("[AnimationAdapter] Built animation for track '") + trackName.toStdString() + "'");
+      NOVELMIND_LOG_INFO(
+          std::string("[AnimationAdapter] Built animation for track '") +
+          trackName.toStdString() + "'");
     }
   }
 }
 
 std::unique_ptr<scene::AnimationTimeline>
-NMAnimationAdapter::buildAnimationFromTrack(TimelineTrack *track,
-                                            [[maybe_unused]] const AnimationBinding &binding) {
+NMAnimationAdapter::buildAnimationFromTrack(
+    TimelineTrack *track, [[maybe_unused]] const AnimationBinding &binding) {
   if (!track || track->keyframes.isEmpty()) {
     return nullptr;
   }
@@ -247,11 +257,10 @@ NMAnimationAdapter::buildAnimationFromTrack(TimelineTrack *track,
   return nullptr;
 }
 
-std::unique_ptr<scene::Tween>
-NMAnimationAdapter::createTweenForProperty([[maybe_unused]] const AnimationBinding &binding,
-                                          [[maybe_unused]] const Keyframe &kf1,
-                                          [[maybe_unused]] const Keyframe &kf2,
-                                          [[maybe_unused]] f32 duration) {
+std::unique_ptr<scene::Tween> NMAnimationAdapter::createTweenForProperty(
+    [[maybe_unused]] const AnimationBinding &binding,
+    [[maybe_unused]] const Keyframe &kf1, [[maybe_unused]] const Keyframe &kf2,
+    [[maybe_unused]] f32 duration) {
   // Simplified: we handle tweening directly in interpolation
   return nullptr;
 }
@@ -287,14 +296,14 @@ void NMAnimationAdapter::applyAnimationToScene(const AnimationBinding &binding,
   switch (binding.property) {
   case AnimatedProperty::PositionX: {
     QPointF currentPos = obj->pos();
-    applied = m_sceneView->moveObject(binding.objectId,
-                                      QPointF(value.toDouble(), currentPos.y()));
+    applied = m_sceneView->moveObject(
+        binding.objectId, QPointF(value.toDouble(), currentPos.y()));
     break;
   }
   case AnimatedProperty::PositionY: {
     QPointF currentPos = obj->pos();
-    applied = m_sceneView->moveObject(binding.objectId,
-                                      QPointF(currentPos.x(), value.toDouble()));
+    applied = m_sceneView->moveObject(
+        binding.objectId, QPointF(currentPos.x(), value.toDouble()));
     break;
   }
   case AnimatedProperty::Position: {
@@ -304,20 +313,22 @@ void NMAnimationAdapter::applyAnimationToScene(const AnimationBinding &binding,
     } else if (value.canConvert<QVariantList>()) {
       QVariantList list = value.toList();
       if (list.size() >= 2) {
-        applied = m_sceneView->moveObject(binding.objectId,
-                                          QPointF(list[0].toDouble(), list[1].toDouble()));
+        applied = m_sceneView->moveObject(
+            binding.objectId, QPointF(list[0].toDouble(), list[1].toDouble()));
       }
     }
     break;
   }
   case AnimatedProperty::ScaleX: {
     qreal currentScaleY = obj->scaleY();
-    applied = m_sceneView->scaleObject(binding.objectId, value.toDouble(), currentScaleY);
+    applied = m_sceneView->scaleObject(binding.objectId, value.toDouble(),
+                                       currentScaleY);
     break;
   }
   case AnimatedProperty::ScaleY: {
     qreal currentScaleX = obj->scaleX();
-    applied = m_sceneView->scaleObject(binding.objectId, currentScaleX, value.toDouble());
+    applied = m_sceneView->scaleObject(binding.objectId, currentScaleX,
+                                       value.toDouble());
     break;
   }
   case AnimatedProperty::Scale: {
@@ -341,15 +352,17 @@ void NMAnimationAdapter::applyAnimationToScene(const AnimationBinding &binding,
   case AnimatedProperty::Color:
   case AnimatedProperty::Custom:
     // Custom properties not yet supported
-    NOVELMIND_LOG_DEBUG("[AnimationAdapter] Custom/Color properties not yet implemented");
+    NOVELMIND_LOG_DEBUG(
+        "[AnimationAdapter] Custom/Color properties not yet implemented");
     break;
   }
 
   if (applied) {
-    NOVELMIND_LOG_DEBUG(std::string("[AnimationAdapter] Applied animation: object '") +
-                        binding.objectId.toStdString() + "' property " +
-                        std::to_string(static_cast<int>(binding.property)) + " = " +
-                        value.toString().toStdString());
+    NOVELMIND_LOG_DEBUG(
+        std::string("[AnimationAdapter] Applied animation: object '") +
+        binding.objectId.toStdString() + "' property " +
+        std::to_string(static_cast<int>(binding.property)) + " = " +
+        value.toString().toStdString());
   }
 }
 

@@ -128,15 +128,14 @@ enum class VoiceBindingStatus : u8 {
  * @brief Voice clip data for dialogue nodes
  */
 struct VoiceClipData {
-  std::string voiceFilePath;           // Path to voice audio file
-  std::string localizationKey;         // Localization key for auto-detection
-  VoiceBindingStatus bindingStatus;    // Status of voice binding
-  f32 voiceDuration;                   // Cached duration in seconds
-  bool autoDetected;                   // Whether this was auto-detected
+  std::string voiceFilePath;        // Path to voice audio file
+  std::string localizationKey;      // Localization key for auto-detection
+  VoiceBindingStatus bindingStatus; // Status of voice binding
+  f32 voiceDuration;                // Cached duration in seconds
+  bool autoDetected;                // Whether this was auto-detected
 
   VoiceClipData()
-      : bindingStatus(VoiceBindingStatus::Unbound),
-        voiceDuration(0.0f),
+      : bindingStatus(VoiceBindingStatus::Unbound), voiceDuration(0.0f),
         autoDetected(false) {}
 };
 
@@ -144,11 +143,11 @@ struct VoiceClipData {
  * @brief Translation status for localized dialogue
  */
 enum class TranslationStatus : u8 {
-  NotLocalizable,   // Text is not meant to be localized (e.g., system text)
-  Untranslated,     // No translation exists for the current locale
-  Translated,       // Translation exists and is complete
-  NeedsReview,      // Translation exists but may be outdated
-  Missing           // Key exists but translation is empty
+  NotLocalizable, // Text is not meant to be localized (e.g., system text)
+  Untranslated,   // No translation exists for the current locale
+  Translated,     // Translation exists and is complete
+  NeedsReview,    // Translation exists but may be outdated
+  Missing         // Key exists but translation is empty
 };
 
 /**
@@ -158,23 +157,21 @@ enum class TranslationStatus : u8 {
  * Keys follow the format: scene.{sceneId}.dialogue.{nodeId}
  */
 struct DialogueLocalizationData {
-  std::string localizationKey;       // Auto-generated or custom key
-  std::string customKeyOverride;     // Optional manual key override
-  TranslationStatus status;          // Current translation status
-  bool useCustomKey;                 // Whether to use custom key instead of auto-generated
+  std::string localizationKey;   // Auto-generated or custom key
+  std::string customKeyOverride; // Optional manual key override
+  TranslationStatus status;      // Current translation status
+  bool useCustomKey; // Whether to use custom key instead of auto-generated
 
   DialogueLocalizationData()
-      : status(TranslationStatus::Untranslated),
-        useCustomKey(false) {}
+      : status(TranslationStatus::Untranslated), useCustomKey(false) {}
 
   /**
    * @brief Get the effective localization key
    * @return Custom key if set, otherwise the auto-generated key
    */
-  [[nodiscard]] const std::string& getEffectiveKey() const {
-    return useCustomKey && !customKeyOverride.empty()
-           ? customKeyOverride
-           : localizationKey;
+  [[nodiscard]] const std::string &getEffectiveKey() const {
+    return useCustomKey && !customKeyOverride.empty() ? customKeyOverride
+                                                      : localizationKey;
   }
 
   /**
@@ -183,7 +180,7 @@ struct DialogueLocalizationData {
    * @param nodeId The node identifier
    * @return Generated key in format scene.{sceneId}.dialogue.{nodeId}
    */
-  static std::string generateKey(const std::string& sceneId, NodeId nodeId) {
+  static std::string generateKey(const std::string &sceneId, NodeId nodeId) {
     return "scene." + sceneId + ".dialogue." + std::to_string(nodeId);
   }
 
@@ -192,13 +189,13 @@ struct DialogueLocalizationData {
    * @param sceneId The scene identifier
    * @param nodeId The choice node identifier
    * @param optionIndex The option index (0-based)
-   * @return Generated key in format scene.{sceneId}.choice.{nodeId}.{optionIndex}
+   * @return Generated key in format
+   * scene.{sceneId}.choice.{nodeId}.{optionIndex}
    */
-  static std::string generateChoiceKey(const std::string& sceneId,
-                                        NodeId nodeId,
-                                        size_t optionIndex) {
-    return "scene." + sceneId + ".choice." + std::to_string(nodeId) +
-           "." + std::to_string(optionIndex);
+  static std::string generateChoiceKey(const std::string &sceneId,
+                                       NodeId nodeId, size_t optionIndex) {
+    return "scene." + sceneId + ".choice." + std::to_string(nodeId) + "." +
+           std::to_string(optionIndex);
   }
 };
 
@@ -208,22 +205,23 @@ struct DialogueLocalizationData {
  * Represents a complete scene with visual layout and embedded dialogue.
  */
 struct SceneNodeData {
-  std::string sceneId;            // Unique identifier for the scene
-  std::string displayName;        // User-friendly name
-  std::string scriptPath;         // Path to .nms file (Code-First workflow)
-  bool hasEmbeddedDialogue;       // Uses embedded dialogue graph (Visual-First)
-  std::vector<NodeId> embeddedDialogueNodes; // Node IDs of embedded dialogue graph
-  std::string thumbnailPath;      // Optional scene preview thumbnail
-  u32 dialogueCount;              // Number of dialogue nodes in scene
+  std::string sceneId;      // Unique identifier for the scene
+  std::string displayName;  // User-friendly name
+  std::string scriptPath;   // Path to .nms file (Code-First workflow)
+  bool hasEmbeddedDialogue; // Uses embedded dialogue graph (Visual-First)
+  std::vector<NodeId>
+      embeddedDialogueNodes; // Node IDs of embedded dialogue graph
+  std::string thumbnailPath; // Optional scene preview thumbnail
+  u32 dialogueCount;         // Number of dialogue nodes in scene
 
   // Animation data integration
-  std::string animationDataPath;  // Path to animation timeline data file
-  bool hasAnimationData;          // Whether scene has associated animations
-  u32 animationTrackCount;        // Number of animation tracks in scene
+  std::string animationDataPath; // Path to animation timeline data file
+  bool hasAnimationData;         // Whether scene has associated animations
+  u32 animationTrackCount;       // Number of animation tracks in scene
 
   SceneNodeData()
-      : hasEmbeddedDialogue(false), dialogueCount(0),
-        hasAnimationData(false), animationTrackCount(0) {}
+      : hasEmbeddedDialogue(false), dialogueCount(0), hasAnimationData(false),
+        animationTrackCount(0) {}
 };
 
 /**
@@ -776,12 +774,12 @@ private:
  * @brief Dialogue localization entry for export/import
  */
 struct DialogueLocalizationEntry {
-  std::string key;           // Localization key
-  std::string sourceText;    // Original dialogue text (default locale)
-  std::string speaker;       // Speaker/character name
-  NodeId nodeId;             // Node ID for reference
-  std::string sceneId;       // Parent scene ID
-  TranslationStatus status;  // Translation status
+  std::string key;          // Localization key
+  std::string sourceText;   // Original dialogue text (default locale)
+  std::string speaker;      // Speaker/character name
+  NodeId nodeId;            // Node ID for reference
+  std::string sceneId;      // Parent scene ID
+  TranslationStatus status; // Translation status
 
   DialogueLocalizationEntry()
       : nodeId(0), status(TranslationStatus::Untranslated) {}
@@ -808,7 +806,8 @@ public:
    * @return Vector of dialogue localization entries
    */
   [[nodiscard]] std::vector<DialogueLocalizationEntry>
-  collectDialogueEntries(const IRGraph& graph, const std::string& sceneId) const;
+  collectDialogueEntries(const IRGraph &graph,
+                         const std::string &sceneId) const;
 
   /**
    * @brief Collect all choice option entries from a scene
@@ -817,7 +816,7 @@ public:
    * @return Vector of dialogue localization entries for choice options
    */
   [[nodiscard]] std::vector<DialogueLocalizationEntry>
-  collectChoiceEntries(const IRGraph& graph, const std::string& sceneId) const;
+  collectChoiceEntries(const IRGraph &graph, const std::string &sceneId) const;
 
   /**
    * @brief Generate localization keys for all dialogue nodes in a graph
@@ -825,28 +824,28 @@ public:
    * @param sceneId The scene identifier for key generation
    * @return Number of keys generated
    */
-  size_t generateLocalizationKeys(IRGraph& graph, const std::string& sceneId);
+  size_t generateLocalizationKeys(IRGraph &graph, const std::string &sceneId);
 
   /**
    * @brief Check if a dialogue node has a localization key
    * @param node The dialogue node to check
    * @return True if the node has a localization key property
    */
-  [[nodiscard]] bool hasLocalizationKey(const IRNode& node) const;
+  [[nodiscard]] bool hasLocalizationKey(const IRNode &node) const;
 
   /**
    * @brief Get the localization key for a dialogue node
    * @param node The dialogue node
    * @return The localization key, or empty string if not set
    */
-  [[nodiscard]] std::string getLocalizationKey(const IRNode& node) const;
+  [[nodiscard]] std::string getLocalizationKey(const IRNode &node) const;
 
   /**
    * @brief Set the localization key for a dialogue node
    * @param node The dialogue node
    * @param key The localization key to set
    */
-  void setLocalizationKey(IRNode& node, const std::string& key);
+  void setLocalizationKey(IRNode &node, const std::string &key);
 
   /**
    * @brief Get all nodes that need localization (dialogues and choices)
@@ -854,21 +853,22 @@ public:
    * @return Vector of node IDs that require localization
    */
   [[nodiscard]] std::vector<NodeId>
-  getLocalizableNodes(const IRGraph& graph) const;
+  getLocalizableNodes(const IRGraph &graph) const;
 
   /**
    * @brief Find dialogue nodes missing localization keys
    * @param graph The IR graph to scan
    * @return Vector of node IDs without localization keys
    */
-  [[nodiscard]] std::vector<NodeId>
-  findMissingKeys(const IRGraph& graph) const;
+  [[nodiscard]] std::vector<NodeId> findMissingKeys(const IRGraph &graph) const;
 
   // Property name constants for dialogue localization
-  static constexpr const char* PROP_LOCALIZATION_KEY = "localization_key";
-  static constexpr const char* PROP_LOCALIZATION_KEY_CUSTOM = "localization_key_custom";
-  static constexpr const char* PROP_USE_CUSTOM_KEY = "use_custom_localization_key";
-  static constexpr const char* PROP_TRANSLATION_STATUS = "translation_status";
+  static constexpr const char *PROP_LOCALIZATION_KEY = "localization_key";
+  static constexpr const char *PROP_LOCALIZATION_KEY_CUSTOM =
+      "localization_key_custom";
+  static constexpr const char *PROP_USE_CUSTOM_KEY =
+      "use_custom_localization_key";
+  static constexpr const char *PROP_TRANSLATION_STATUS = "translation_status";
 };
 
 } // namespace NovelMind::scripting

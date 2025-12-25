@@ -116,8 +116,8 @@ void NMScenePalettePanel::setupContent() {
 
   makeButton(tr("Background"), "object-background",
              NMSceneObjectType::Background, 0, 0);
-  makeButton(tr("Character"), "object-character",
-             NMSceneObjectType::Character, 0, 1);
+  makeButton(tr("Character"), "object-character", NMSceneObjectType::Character,
+             0, 1);
   makeButton(tr("UI"), "object-ui", NMSceneObjectType::UI, 1, 0);
   makeButton(tr("Effect"), "object-effect", NMSceneObjectType::Effect, 1, 1);
 

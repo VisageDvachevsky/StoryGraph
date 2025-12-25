@@ -13,8 +13,8 @@
 #include <QSplitter>
 #include <QSyntaxHighlighter>
 #include <QTabWidget>
-#include <QToolBar>
 #include <QTimer>
+#include <QToolBar>
 #include <QTreeWidget>
 
 class QCompleter;
@@ -43,7 +43,6 @@ private:
   QRegularExpression m_commentStart;
   QRegularExpression m_commentEnd;
 };
-
 
 class NMScriptEditor final : public QPlainTextEdit {
   Q_OBJECT

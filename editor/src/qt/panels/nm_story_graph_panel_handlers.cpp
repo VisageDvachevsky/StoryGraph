@@ -1,9 +1,9 @@
-#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+#include "NovelMind/editor/error_reporter.hpp"
+#include "NovelMind/editor/project_manager.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
-#include "NovelMind/editor/project_manager.hpp"
-#include "NovelMind/editor/error_reporter.hpp"
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
 
 #include <QDebug>
 #include <QFile>
@@ -55,10 +55,10 @@ void NMStoryGraphPanel::onAutoLayout() {
   // Ask for confirmation before rearranging
   auto result = NMMessageDialog::showQuestion(
       this, tr("Auto Layout"),
-      tr("This will automatically arrange all nodes in a hierarchical layout.\n\n"
+      tr("This will automatically arrange all nodes in a hierarchical "
+         "layout.\n\n"
          "Current manual positioning will be lost. Do you want to continue?"),
-      {NMDialogButton::Yes, NMDialogButton::No},
-      NMDialogButton::No);
+      {NMDialogButton::Yes, NMDialogButton::No}, NMDialogButton::No);
 
   if (result != NMDialogButton::Yes) {
     return;
@@ -151,7 +151,8 @@ void NMStoryGraphPanel::onAutoLayout() {
   for (int layer : layerNodes.keys()) {
     const auto &nodesInLayer = layerNodes[layer];
     qreal y = startY + layer * verticalSpacing;
-    qreal totalWidth = static_cast<qreal>(nodesInLayer.size() - 1) * horizontalSpacing;
+    qreal totalWidth =
+        static_cast<qreal>(nodesInLayer.size() - 1) * horizontalSpacing;
     qreal x = startX - totalWidth / 2.0;
 
     for (int i = 0; i < nodesInLayer.size(); ++i) {
@@ -190,7 +191,8 @@ void NMStoryGraphPanel::onNodeClicked(uint64_t nodeId) {
   emit nodeSelected(node->nodeIdString());
 
   // Single click should only select the node, not open Script Editor
-  // Script Editor should only open on double-click (handled in onNodeDoubleClicked)
+  // Script Editor should only open on double-click (handled in
+  // onNodeDoubleClicked)
 }
 
 void NMStoryGraphPanel::onNodeDoubleClicked(uint64_t nodeId) {
@@ -212,10 +214,10 @@ void NMStoryGraphPanel::onNodeDoubleClicked(uint64_t nodeId) {
 
   // Scene Node specific: emit signal to open Scene View
   if (node->isSceneNode()) {
-    const QString sceneId = node->sceneId().isEmpty()
-                                ? node->nodeIdString()
-                                : node->sceneId();
-    qDebug() << "[StoryGraph] Scene node double-clicked, emitting sceneNodeDoubleClicked:"
+    const QString sceneId =
+        node->sceneId().isEmpty() ? node->nodeIdString() : node->sceneId();
+    qDebug() << "[StoryGraph] Scene node double-clicked, emitting "
+                "sceneNodeDoubleClicked:"
              << sceneId;
     emit sceneNodeDoubleClicked(sceneId);
   } else {
@@ -404,7 +406,8 @@ void NMStoryGraphPanel::updateCurrentNode(const QString &nodeId) {
                    << "found but no longer valid in scene!";
       }
     } else {
-      qDebug() << "[StoryGraph] Warning: Previous node" << m_currentExecutingNode
+      qDebug() << "[StoryGraph] Warning: Previous node"
+               << m_currentExecutingNode
                << "not found in graph (may have been deleted)";
     }
   }
@@ -475,17 +478,18 @@ void NMStoryGraphPanel::onRequestConnection(uint64_t fromNodeId,
     auto *fromNode = findNodeById(fromNodeId);
     auto *toNode = findNodeById(toNodeId);
 
-    QString fromName = fromNode ? fromNode->title() : QString::number(fromNodeId);
+    QString fromName =
+        fromNode ? fromNode->title() : QString::number(fromNodeId);
     QString toName = toNode ? toNode->title() : QString::number(toNodeId);
 
-    QString message = tr("Cannot create connection: Adding connection from '%1' to '%2' would create a cycle in the graph.")
-                        .arg(fromName, toName);
+    QString message = tr("Cannot create connection: Adding connection from "
+                         "'%1' to '%2' would create a cycle in the graph.")
+                          .arg(fromName, toName);
 
     // Report to diagnostics system
     ErrorReporter::instance().reportGraphError(
-      message.toStdString(),
-      QString("Connection: %1 -> %2").arg(fromName, toName).toStdString()
-    );
+        message.toStdString(),
+        QString("Connection: %1 -> %2").arg(fromName, toName).toStdString());
 
     // Show user feedback
     NMMessageDialog::showWarning(this, tr("Cycle Detected"), message);
@@ -665,9 +669,9 @@ void NMStoryGraphPanel::onExportDialogueClicked() {
       if (node->isDialogueNode() && !node->localizationKey().isEmpty()) {
         // Format: key,speaker,text
         QString line = QString("\"%1\",\"%2\",\"%3\"")
-            .arg(node->localizationKey())
-            .arg(node->dialogueSpeaker())
-            .arg(node->dialogueText().replace("\"", "\"\""));
+                           .arg(node->localizationKey())
+                           .arg(node->dialogueSpeaker())
+                           .arg(node->dialogueText().replace("\"", "\"\""));
         dialogueEntries.append(line);
       }
     }
@@ -681,7 +685,8 @@ void NMStoryGraphPanel::onExportDialogueClicked() {
   // Emit signal for the localization panel to handle the actual export
   emit dialogueExportRequested(m_layoutEntryScene);
 
-  qDebug() << "[StoryGraph] Exported" << dialogueEntries.size() << "dialogue entries";
+  qDebug() << "[StoryGraph] Exported" << dialogueEntries.size()
+           << "dialogue entries";
 }
 
 void NMStoryGraphPanel::onGenerateLocalizationKeysClicked() {
@@ -696,30 +701,28 @@ void NMStoryGraphPanel::onGenerateLocalizationKeysClicked() {
       // Generate keys for dialogue nodes that don't have one
       if (node->isDialogueNode() && node->localizationKey().isEmpty()) {
         // Generate key in format: scene.{sceneId}.dialogue.{nodeId}
-        QString sceneId = node->sceneId().isEmpty()
-            ? node->nodeIdString()
-            : node->sceneId();
-        QString key = QString("scene.%1.dialogue.%2")
-            .arg(sceneId)
-            .arg(node->nodeId());
+        QString sceneId =
+            node->sceneId().isEmpty() ? node->nodeIdString() : node->sceneId();
+        QString key =
+            QString("scene.%1.dialogue.%2").arg(sceneId).arg(node->nodeId());
         node->setLocalizationKey(key);
         ++keysGenerated;
       }
 
       // Generate keys for choice nodes
       if (node->nodeType().compare("Choice", Qt::CaseInsensitive) == 0) {
-        QString sceneId = node->sceneId().isEmpty()
-            ? node->nodeIdString()
-            : node->sceneId();
+        QString sceneId =
+            node->sceneId().isEmpty() ? node->nodeIdString() : node->sceneId();
         const QStringList &options = node->choiceOptions();
         for (int i = 0; i < options.size(); ++i) {
           // Each choice option gets its own key
           // Keys are stored as a property on the node
           QString key = QString("scene.%1.choice.%2.%3")
-              .arg(sceneId)
-              .arg(node->nodeId())
-              .arg(i);
-          // Store choice keys - would need to extend node to store multiple keys
+                            .arg(sceneId)
+                            .arg(node->nodeId())
+                            .arg(i);
+          // Store choice keys - would need to extend node to store multiple
+          // keys
           ++keysGenerated;
         }
       }

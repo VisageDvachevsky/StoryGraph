@@ -11,10 +11,10 @@
  * - Visual feedback for interaction states
  */
 
-#include <QGraphicsObject>
-#include <QGraphicsEllipseItem>
-#include <QPen>
 #include <QBrush>
+#include <QGraphicsEllipseItem>
+#include <QGraphicsObject>
+#include <QPen>
 #include <functional>
 
 namespace NovelMind::editor::qt {
@@ -168,8 +168,10 @@ private:
 // std::hash specialization for KeyframeId
 namespace std {
 template <> struct hash<NovelMind::editor::qt::KeyframeId> {
-  std::size_t operator()(const NovelMind::editor::qt::KeyframeId &key) const noexcept {
-    return std::hash<int>{}(key.trackIndex) ^ (std::hash<int>{}(key.frame) << 1);
+  std::size_t
+  operator()(const NovelMind::editor::qt::KeyframeId &key) const noexcept {
+    return std::hash<int>{}(key.trackIndex) ^
+           (std::hash<int>{}(key.frame) << 1);
   }
 };
 } // namespace std

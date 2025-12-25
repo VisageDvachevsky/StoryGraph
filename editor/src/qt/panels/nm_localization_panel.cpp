@@ -1588,7 +1588,8 @@ int NMLocalizationPanel::importDialogueEntries(
     // Add to localization manager
     NovelMind::localization::LocaleId locale;
     locale.language = m_defaultLocale.toStdString();
-    m_localization.setString(locale, key.toStdString(), sourceText.toStdString());
+    m_localization.setString(locale, key.toStdString(),
+                             sourceText.toStdString());
 
     ++imported;
   }

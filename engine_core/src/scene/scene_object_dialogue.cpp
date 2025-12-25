@@ -88,8 +88,8 @@ void DialogueUIObject::render(renderer::IRenderer &renderer) {
       detail::parseFloat(getProperty("width"), detail::kDefaultDialogueWidth);
   const float height =
       detail::parseFloat(getProperty("height"), detail::kDefaultDialogueHeight);
-  const float padding =
-      detail::parseFloat(getProperty("padding"), detail::kDefaultDialoguePadding);
+  const float padding = detail::parseFloat(getProperty("padding"),
+                                           detail::kDefaultDialoguePadding);
 
   renderer::Rect rect{m_transform.x - width * m_anchorX,
                       m_transform.y - height * m_anchorY, width, height};
@@ -101,10 +101,8 @@ void DialogueUIObject::render(renderer::IRenderer &renderer) {
       renderer::Transform2D transform{};
       transform.x = rect.x;
       transform.y = rect.y;
-      transform.scaleX =
-          rect.width / static_cast<f32>(texture.getWidth());
-      transform.scaleY =
-          rect.height / static_cast<f32>(texture.getHeight());
+      transform.scaleX = rect.width / static_cast<f32>(texture.getWidth());
+      transform.scaleY = rect.height / static_cast<f32>(texture.getHeight());
       transform.anchorX = 0.0f;
       transform.anchorY = 0.0f;
       renderer::Color tint = renderer::Color::White;
@@ -143,9 +141,8 @@ void DialogueUIObject::render(renderer::IRenderer &renderer) {
 
         std::string visible = m_text;
         if (m_typewriterEnabled) {
-          size_t count =
-              static_cast<size_t>(std::min(m_typewriterProgress,
-                                           static_cast<f32>(m_text.size())));
+          size_t count = static_cast<size_t>(
+              std::min(m_typewriterProgress, static_cast<f32>(m_text.size())));
           visible = m_text.substr(0, count);
         }
 
@@ -189,9 +186,8 @@ void DialogueUIObject::render(renderer::IRenderer &renderer) {
   if (!m_speaker.empty()) {
     std::string speakerFontId =
         detail::getTextProperty(*this, "speakerFontId", fontId);
-    i32 speakerFontSize = static_cast<i32>(
-        detail::parseFloat(getProperty("speakerFontSize"),
-                           static_cast<float>(fontSize + 2)));
+    i32 speakerFontSize = static_cast<i32>(detail::parseFloat(
+        getProperty("speakerFontSize"), static_cast<float>(fontSize + 2)));
     if (!speakerFontId.empty()) {
       auto fontResult = m_resources->loadFont(speakerFontId, speakerFontSize);
       if (fontResult.isOk()) {
@@ -205,9 +201,8 @@ void DialogueUIObject::render(renderer::IRenderer &renderer) {
           f32 speakerWidth = speakerLayout.measureText(m_speaker).first;
           speakerX = rect.x + rect.width - padding - speakerWidth;
         }
-        renderer.drawText(*fontResult.value(), m_speaker,
-                          speakerX, rect.y + padding,
-                          m_speakerColor);
+        renderer.drawText(*fontResult.value(), m_speaker, speakerX,
+                          rect.y + padding, m_speakerColor);
       }
     }
   }

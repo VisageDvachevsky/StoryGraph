@@ -1414,35 +1414,35 @@ QFrame#DropIndicator {
 }
 
 )")
-      .arg(colorToStyleString(p.textPrimary))    // %1
-      .arg(colorToStyleString(p.bgDark))         // %2
-      .arg(colorToStyleString(p.accentPrimary))  // %3
-      .arg(colorToStyleString(p.bgDarkest))      // %4
-      .arg(colorToStyleString(p.borderDefault))  // %5
-      .arg(colorToStyleString(p.bgLight))        // %6
-      .arg(colorToStyleString(p.textDisabled))   // %7
-      .arg(colorToStyleString(p.accentActive))   // %8
-      .arg(colorToStyleString(p.bgMedium))       // %9
-      .arg(colorToStyleString(p.textSecondary))  // %10
-      .arg(colorToStyleString(p.accentHover))    // %11
-      .arg(colorToStyleString(p.textSecondary))  // %12
-      .arg(colorToStyleString(p.warning))        // %13
-      .arg(colorToStyleString(p.success))        // %14
+      .arg(colorToStyleString(p.textPrimary))   // %1
+      .arg(colorToStyleString(p.bgDark))        // %2
+      .arg(colorToStyleString(p.accentPrimary)) // %3
+      .arg(colorToStyleString(p.bgDarkest))     // %4
+      .arg(colorToStyleString(p.borderDefault)) // %5
+      .arg(colorToStyleString(p.bgLight))       // %6
+      .arg(colorToStyleString(p.textDisabled))  // %7
+      .arg(colorToStyleString(p.accentActive))  // %8
+      .arg(colorToStyleString(p.bgMedium))      // %9
+      .arg(colorToStyleString(p.textSecondary)) // %10
+      .arg(colorToStyleString(p.accentHover))   // %11
+      .arg(colorToStyleString(p.textSecondary)) // %12
+      .arg(colorToStyleString(p.warning))       // %13
+      .arg(colorToStyleString(p.success))       // %14
       // Panel accent colors
-      .arg(colorToStyleString(pa.sceneView))     // %15
-      .arg(colorToStyleString(pa.storyGraph))    // %16
-      .arg(colorToStyleString(pa.inspector))     // %17
-      .arg(colorToStyleString(pa.assetBrowser))  // %18
-      .arg(colorToStyleString(pa.scriptEditor))  // %19
-      .arg(colorToStyleString(pa.console))       // %20
-      .arg(colorToStyleString(pa.timeline))      // %21
-      .arg(colorToStyleString(pa.curveEditor))   // %22
-      .arg(colorToStyleString(pa.voiceManager))  // %23
-      .arg(colorToStyleString(pa.localization))  // %24
-      .arg(colorToStyleString(pa.diagnostics))   // %25
-      .arg(colorToStyleString(pa.hierarchy))     // %26
-      .arg(colorToStyleString(pa.scenePalette))  // %27
-      .arg(colorToStyleString(pa.playToolbar));  // %28
+      .arg(colorToStyleString(pa.sceneView))    // %15
+      .arg(colorToStyleString(pa.storyGraph))   // %16
+      .arg(colorToStyleString(pa.inspector))    // %17
+      .arg(colorToStyleString(pa.assetBrowser)) // %18
+      .arg(colorToStyleString(pa.scriptEditor)) // %19
+      .arg(colorToStyleString(pa.console))      // %20
+      .arg(colorToStyleString(pa.timeline))     // %21
+      .arg(colorToStyleString(pa.curveEditor))  // %22
+      .arg(colorToStyleString(pa.voiceManager)) // %23
+      .arg(colorToStyleString(pa.localization)) // %24
+      .arg(colorToStyleString(pa.diagnostics))  // %25
+      .arg(colorToStyleString(pa.hierarchy))    // %26
+      .arg(colorToStyleString(pa.scenePalette)) // %27
+      .arg(colorToStyleString(pa.playToolbar)); // %28
 }
 
 } // namespace NovelMind::editor::qt

@@ -4,7 +4,6 @@
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
 #include <utility>
 
-
 namespace NovelMind::editor::qt {
 
 // =============================================================================
@@ -141,9 +140,8 @@ PropertyChangeCommand::PropertyChangeCommand(const QString &objectName,
                                              const PropertyValue &newValue,
                                              ApplyFn apply,
                                              QUndoCommand *parent)
-    : QUndoCommand(parent), m_apply(std::move(apply)),
-      m_objectName(objectName), m_propertyName(propertyName),
-      m_oldValue(oldValue), m_newValue(newValue) {
+    : QUndoCommand(parent), m_apply(std::move(apply)), m_objectName(objectName),
+      m_propertyName(propertyName), m_oldValue(oldValue), m_newValue(newValue) {
   setText(QString("Change %1.%2").arg(objectName, propertyName));
 }
 
@@ -227,8 +225,7 @@ void AddObjectCommand::redo() {
 DeleteObjectCommand::DeleteObjectCommand(NMSceneViewPanel *panel,
                                          SceneObjectSnapshot snapshot,
                                          QUndoCommand *parent)
-    : QUndoCommand(parent), m_panel(panel),
-      m_snapshot(std::move(snapshot)) {
+    : QUndoCommand(parent), m_panel(panel), m_snapshot(std::move(snapshot)) {
   setText(QString("Delete %1").arg(m_snapshot.name));
 }
 
@@ -244,8 +241,7 @@ void DeleteObjectCommand::undo() {
     return;
   }
 
-  panel->createObject(m_snapshot.id, m_snapshot.type, m_snapshot.position,
-                      1.0);
+  panel->createObject(m_snapshot.id, m_snapshot.type, m_snapshot.position, 1.0);
   if (auto *obj = scene->findSceneObject(m_snapshot.id)) {
     obj->setName(m_snapshot.name);
     obj->setRotation(m_snapshot.rotation);
@@ -272,17 +268,11 @@ void DeleteObjectCommand::redo() {
 // TransformObjectCommand Implementation
 // =============================================================================
 
-TransformObjectCommand::TransformObjectCommand(NMSceneViewPanel *panel,
-                                               const QString &objectId,
-                                               const QPointF &oldPosition,
-                                               const QPointF &newPosition,
-                                               qreal oldRotation,
-                                               qreal newRotation,
-                                               qreal oldScaleX,
-                                               qreal newScaleX,
-                                               qreal oldScaleY,
-                                               qreal newScaleY,
-                                               QUndoCommand *parent)
+TransformObjectCommand::TransformObjectCommand(
+    NMSceneViewPanel *panel, const QString &objectId,
+    const QPointF &oldPosition, const QPointF &newPosition, qreal oldRotation,
+    qreal newRotation, qreal oldScaleX, qreal newScaleX, qreal oldScaleY,
+    qreal newScaleY, QUndoCommand *parent)
     : QUndoCommand(parent), m_panel(panel), m_objectId(objectId),
       m_oldPosition(oldPosition), m_newPosition(newPosition),
       m_oldRotation(oldRotation), m_newRotation(newRotation),
@@ -357,9 +347,11 @@ void ToggleObjectVisibilityCommand::redo() {
 // ToggleObjectLockedCommand Implementation
 // =============================================================================
 
-ToggleObjectLockedCommand::ToggleObjectLockedCommand(
-    NMSceneViewPanel *panel, const QString &objectId, bool oldLocked,
-    bool newLocked, QUndoCommand *parent)
+ToggleObjectLockedCommand::ToggleObjectLockedCommand(NMSceneViewPanel *panel,
+                                                     const QString &objectId,
+                                                     bool oldLocked,
+                                                     bool newLocked,
+                                                     QUndoCommand *parent)
     : QUndoCommand(parent), m_panel(panel), m_objectId(objectId),
       m_oldLocked(oldLocked), m_newLocked(newLocked) {
   setText(QString("Toggle Locked: %1").arg(objectId));
@@ -463,9 +455,9 @@ void CreateGraphNodeCommand::redo() {
     return;
   }
 
-  auto *node = m_scene->addNode(m_snapshot.title, m_snapshot.type,
-                                m_snapshot.position, m_snapshot.id,
-                                m_snapshot.idString);
+  auto *node =
+      m_scene->addNode(m_snapshot.title, m_snapshot.type, m_snapshot.position,
+                       m_snapshot.id, m_snapshot.idString);
   if (node) {
     if (m_snapshot.id == 0) {
       m_snapshot.id = node->nodeId();
@@ -562,9 +554,7 @@ ConnectGraphNodesCommand::ConnectGraphNodesCommand(NMStoryGraphScene *scene,
     : QUndoCommand(parent), m_scene(scene) {
   m_connection.fromId = sourceNodeId;
   m_connection.toId = targetNodeId;
-  setText(QString("Connect %1 -> %2")
-              .arg(sourceNodeId)
-              .arg(targetNodeId));
+  setText(QString("Connect %1 -> %2").arg(sourceNodeId).arg(targetNodeId));
 }
 
 void ConnectGraphNodesCommand::undo() {
@@ -595,9 +585,7 @@ DisconnectGraphNodesCommand::DisconnectGraphNodesCommand(
     : QUndoCommand(parent), m_scene(scene) {
   m_connection.fromId = sourceNodeId;
   m_connection.toId = targetNodeId;
-  setText(QString("Disconnect %1 -> %2")
-              .arg(sourceNodeId)
-              .arg(targetNodeId));
+  setText(QString("Disconnect %1 -> %2").arg(sourceNodeId).arg(targetNodeId));
 }
 
 void DisconnectGraphNodesCommand::undo() {
@@ -622,9 +610,9 @@ void DisconnectGraphNodesCommand::redo() {
 // MoveGraphNodesCommand Implementation
 // =============================================================================
 
-MoveGraphNodesCommand::MoveGraphNodesCommand(NMStoryGraphScene *scene,
-                                             const QVector<GraphNodeMove> &moves,
-                                             QUndoCommand *parent)
+MoveGraphNodesCommand::MoveGraphNodesCommand(
+    NMStoryGraphScene *scene, const QVector<GraphNodeMove> &moves,
+    QUndoCommand *parent)
     : QUndoCommand(parent), m_scene(scene), m_moves(moves) {
   setText("Move Graph Nodes");
 }
@@ -885,7 +873,9 @@ void DeleteLocalizationKeyCommand::undo() {
     return;
   }
   // Restore the key with all its translations
-  m_panel->addKey(m_key, m_translations.value(m_panel->property("defaultLocale").toString(), ""));
+  m_panel->addKey(
+      m_key,
+      m_translations.value(m_panel->property("defaultLocale").toString(), ""));
   // TODO: Restore all translations - requires panel API enhancement
 }
 
@@ -986,9 +976,10 @@ void DeleteCurvePointCommand::redo() {
 }
 
 MoveCurvePointCommand::MoveCurvePointCommand(NMCurveEditorPanel *panel,
-                                             CurvePointId pointId, qreal oldTime,
-                                             qreal oldValue, qreal newTime,
-                                             qreal newValue, QUndoCommand *parent)
+                                             CurvePointId pointId,
+                                             qreal oldTime, qreal oldValue,
+                                             qreal newTime, qreal newValue,
+                                             QUndoCommand *parent)
     : QUndoCommand(parent), m_panel(panel), m_pointId(pointId),
       m_oldTime(oldTime), m_oldValue(oldValue), m_newTime(newTime),
       m_newValue(newValue) {
@@ -1049,7 +1040,8 @@ void CurveEditCommand::redo() {
   }
   // Apply new values
   for (const auto &change : m_changes) {
-    m_panel->curveData().updatePoint(change.id, change.newTime, change.newValue);
+    m_panel->curveData().updatePoint(change.id, change.newTime,
+                                     change.newValue);
   }
   emit m_panel->curveChanged(m_panel->curveId());
 }

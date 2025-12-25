@@ -21,8 +21,8 @@
 
 // Include event_bus.hpp BEFORE Qt headers to avoid Qt's 'emit' macro
 // interfering with EventBus::emit template method
-#include "NovelMind/editor/event_bus.hpp"
 #include "NovelMind/core/result.hpp"
+#include "NovelMind/editor/event_bus.hpp"
 #include <QObject>
 #include <memory>
 #include <string>
@@ -43,7 +43,7 @@ class NMHelpOverlay;
 struct TutorialSubsystemConfig {
   // Paths
   std::string tutorialDefinitionsPath = "tutorials";
-  std::string userProgressPath;       // Set to empty for default location
+  std::string userProgressPath; // Set to empty for default location
 
   // Default settings
   bool enabledByDefault = true;
@@ -68,7 +68,7 @@ public:
   /**
    * @brief Get the singleton instance
    */
-  static NMTutorialSubsystem& instance();
+  static NMTutorialSubsystem &instance();
 
   /**
    * @brief Check if instance exists
@@ -80,8 +80,8 @@ public:
    * @param parentWidget The main window (for overlay attachment)
    * @param config Configuration options
    */
-  Result<void> initialize(QWidget* parentWidget,
-                          const TutorialSubsystemConfig& config = {});
+  Result<void> initialize(QWidget *parentWidget,
+                          const TutorialSubsystemConfig &config = {});
 
   /**
    * @brief Shutdown the subsystem
@@ -100,17 +100,17 @@ public:
   /**
    * @brief Get the tutorial manager
    */
-  [[nodiscard]] NMTutorialManager& tutorialManager();
+  [[nodiscard]] NMTutorialManager &tutorialManager();
 
   /**
    * @brief Get the anchor registry
    */
-  [[nodiscard]] NMAnchorRegistry& anchorRegistry();
+  [[nodiscard]] NMAnchorRegistry &anchorRegistry();
 
   /**
    * @brief Get the help overlay
    */
-  [[nodiscard]] NMHelpOverlay* helpOverlay();
+  [[nodiscard]] NMHelpOverlay *helpOverlay();
 
   // ========================================================================
   // Quick Access Methods (convenience wrappers)
@@ -119,12 +119,12 @@ public:
   /**
    * @brief Start a tutorial by ID
    */
-  bool startTutorial(const std::string& tutorialId);
+  bool startTutorial(const std::string &tutorialId);
 
   /**
    * @brief Show a contextual hint
    */
-  bool showHint(const std::string& hintId);
+  bool showHint(const std::string &hintId);
 
   /**
    * @brief Hide all active tutorials/hints
@@ -188,18 +188,18 @@ private:
   NMTutorialSubsystem();
 
   // Non-copyable
-  NMTutorialSubsystem(const NMTutorialSubsystem&) = delete;
-  NMTutorialSubsystem& operator=(const NMTutorialSubsystem&) = delete;
+  NMTutorialSubsystem(const NMTutorialSubsystem &) = delete;
+  NMTutorialSubsystem &operator=(const NMTutorialSubsystem &) = delete;
 
   // Event bus integration
   void connectToEventBus();
   void disconnectFromEventBus();
 
   // Event handlers
-  void onPanelFocusChanged(const PanelFocusChangedEvent& event);
-  void onProjectOpened(const ProjectEvent& event);
-  void onProjectClosed(const ProjectEvent& event);
-  void onErrorOccurred(const ErrorEvent& event);
+  void onPanelFocusChanged(const PanelFocusChangedEvent &event);
+  void onProjectOpened(const ProjectEvent &event);
+  void onProjectClosed(const ProjectEvent &event);
+  void onErrorOccurred(const ErrorEvent &event);
 
   // Components (owned by subsystem)
   std::unique_ptr<NMHelpOverlay> m_overlay;

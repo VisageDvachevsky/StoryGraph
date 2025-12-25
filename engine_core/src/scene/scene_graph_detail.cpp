@@ -51,10 +51,9 @@ parseColor(const std::optional<std::string> &value,
   char comma = ',';
   if (ss >> r >> comma >> g >> comma >> b) {
     if (ss >> comma >> a) {
-      return NovelMind::renderer::Color(static_cast<NovelMind::u8>(r),
-                                        static_cast<NovelMind::u8>(g),
-                                        static_cast<NovelMind::u8>(b),
-                                        static_cast<NovelMind::u8>(a));
+      return NovelMind::renderer::Color(
+          static_cast<NovelMind::u8>(r), static_cast<NovelMind::u8>(g),
+          static_cast<NovelMind::u8>(b), static_cast<NovelMind::u8>(a));
     }
     return NovelMind::renderer::Color(static_cast<NovelMind::u8>(r),
                                       static_cast<NovelMind::u8>(g),
@@ -64,8 +63,7 @@ parseColor(const std::optional<std::string> &value,
   return fallback;
 }
 
-std::string getTextProperty(const SceneObjectBase &obj,
-                            const std::string &key,
+std::string getTextProperty(const SceneObjectBase &obj, const std::string &key,
                             const std::string &fallback) {
   auto value = obj.getProperty(key);
   if (value.has_value() && !value->empty()) {

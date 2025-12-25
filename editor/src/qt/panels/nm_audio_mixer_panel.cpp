@@ -11,8 +11,8 @@
  */
 
 #include "NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp"
-#include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/core/logger.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
 
 #include <QCheckBox>
 #include <QDoubleSpinBox>
@@ -33,37 +33,30 @@ namespace NovelMind::editor::qt {
 namespace {
 // Channel color mapping based on UX spec
 const QColor CHANNEL_COLORS[] = {
-    QColor(255, 215, 0),   // Master - Gold
-    QColor(156, 39, 176),  // Music - Purple
-    QColor(33, 150, 243),  // Sound - Blue
-    QColor(76, 175, 80),   // Voice - Green
-    QColor(0, 150, 136),   // Ambient - Teal
-    QColor(255, 152, 0),   // UI - Orange
-    QColor(158, 158, 158)  // Reserved - Gray
+    QColor(255, 215, 0),  // Master - Gold
+    QColor(156, 39, 176), // Music - Purple
+    QColor(33, 150, 243), // Sound - Blue
+    QColor(76, 175, 80),  // Voice - Green
+    QColor(0, 150, 136),  // Ambient - Teal
+    QColor(255, 152, 0),  // UI - Orange
+    QColor(158, 158, 158) // Reserved - Gray
 };
 
-const char* CHANNEL_NAMES[] = {
-    "MASTER",
-    "Music",
-    "Sound",
-    "Voice",
-    "Ambient",
-    "UI",
-    "Reserved"
-};
+const char *CHANNEL_NAMES[] = {"MASTER",  "Music", "Sound",   "Voice",
+                               "Ambient", "UI",    "Reserved"};
 
 // Default volumes per channel
 const int DEFAULT_VOLUMES[] = {
-    100,  // Master
-    80,   // Music
-    100,  // Sound
-    100,  // Voice
-    70,   // Ambient
-    100,  // UI
-    100   // Reserved
+    100, // Master
+    80,  // Music
+    100, // Sound
+    100, // Voice
+    70,  // Ambient
+    100, // UI
+    100  // Reserved
 };
 
-constexpr int NUM_CHANNELS = 6;  // Excluding Master
+constexpr int NUM_CHANNELS = 6; // Excluding Master
 } // namespace
 
 // ============================================================================
@@ -75,9 +68,7 @@ NMAudioMixerPanel::NMAudioMixerPanel(QWidget *parent)
   setupUI();
 }
 
-NMAudioMixerPanel::~NMAudioMixerPanel() {
-  onShutdown();
-}
+NMAudioMixerPanel::~NMAudioMixerPanel() { onShutdown(); }
 
 void NMAudioMixerPanel::onInitialize() {
   NOVELMIND_LOG_INFO("Audio Mixer Panel initialized");
@@ -93,7 +84,7 @@ void NMAudioMixerPanel::onInitialize() {
   m_positionTimer = new QTimer(this);
   connect(m_positionTimer, &QTimer::timeout, this,
           &NMAudioMixerPanel::onUpdatePosition);
-  m_positionTimer->start(100);  // Update every 100ms
+  m_positionTimer->start(100); // Update every 100ms
 
   // Apply default channel volumes
   applyChannelVolumes();
@@ -139,7 +130,8 @@ void NMAudioMixerPanel::setSelectedAudioAsset(const QString &assetPath) {
 
 void NMAudioMixerPanel::onPlayClicked() {
   if (m_currentAudioAsset.isEmpty()) {
-    setPlaybackError(tr("No audio file selected. Use Browse to select a file."));
+    setPlaybackError(
+        tr("No audio file selected. Use Browse to select a file."));
     return;
   }
 
@@ -155,8 +147,8 @@ void NMAudioMixerPanel::onPlayClicked() {
     config.loop = m_loopCheckBox->isChecked();
     config.fadeInDuration = 0.0f;
 
-    m_currentMusicHandle =
-        m_previewAudioManager->playMusic(m_currentAudioAsset.toStdString(), config);
+    m_currentMusicHandle = m_previewAudioManager->playMusic(
+        m_currentAudioAsset.toStdString(), config);
 
     if (!m_currentMusicHandle.isValid()) {
       setPlaybackError(tr("Failed to play audio file."));
@@ -166,14 +158,14 @@ void NMAudioMixerPanel::onPlayClicked() {
     m_isPlaying = true;
     m_isPaused = false;
 
-    // Duration tracking not available via AudioManager API, so use a placeholder
-    // In practice, position updates will handle the seek bar
+    // Duration tracking not available via AudioManager API, so use a
+    // placeholder In practice, position updates will handle the seek bar
     m_currentDuration = 0.0f;
     if (m_durationLabel) {
       m_durationLabel->setText(formatTime(m_currentDuration));
     }
     if (m_seekSlider) {
-      m_seekSlider->setEnabled(false);  // Seek not fully supported
+      m_seekSlider->setEnabled(false); // Seek not fully supported
     }
   }
 
@@ -250,9 +242,9 @@ void NMAudioMixerPanel::onCrossfadeToClicked() {
     config.crossfadeDuration = m_crossfadeDuration / 1000.0f;
 
     // Use crossfadeMusic API which handles fading between tracks
-    m_currentMusicHandle =
-        m_previewAudioManager->crossfadeMusic(m_nextCrossfadeAsset.toStdString(),
-                                              m_crossfadeDuration / 1000.0f, config);
+    m_currentMusicHandle = m_previewAudioManager->crossfadeMusic(
+        m_nextCrossfadeAsset.toStdString(), m_crossfadeDuration / 1000.0f,
+        config);
     m_currentAudioAsset = m_nextCrossfadeAsset;
     m_nextCrossfadeAsset.clear();
 
@@ -315,7 +307,8 @@ void NMAudioMixerPanel::onMasterVolumeChanged(int value) {
 void NMAudioMixerPanel::onChannelVolumeChanged(int value) {
   // Find which slider sent this signal
   auto *slider = qobject_cast<QSlider *>(sender());
-  if (!slider) return;
+  if (!slider)
+    return;
 
   for (size_t i = 0; i < m_channelControls.size(); ++i) {
     if (m_channelControls[i].volumeSlider == slider) {
@@ -333,7 +326,8 @@ void NMAudioMixerPanel::onChannelVolumeChanged(int value) {
 
 void NMAudioMixerPanel::onChannelMuteToggled(bool checked) {
   auto *button = qobject_cast<QPushButton *>(sender());
-  if (!button) return;
+  if (!button)
+    return;
 
   for (size_t i = 0; i < m_channelControls.size(); ++i) {
     if (m_channelControls[i].muteButton == button) {
@@ -343,8 +337,8 @@ void NMAudioMixerPanel::onChannelMuteToggled(bool checked) {
       }
       // Update button style
       if (checked) {
-        button->setStyleSheet(
-            "QPushButton { background-color: #F44336; color: white; font-weight: bold; }");
+        button->setStyleSheet("QPushButton { background-color: #F44336; color: "
+                              "white; font-weight: bold; }");
       } else {
         button->setStyleSheet("");
       }
@@ -355,7 +349,8 @@ void NMAudioMixerPanel::onChannelMuteToggled(bool checked) {
 
 void NMAudioMixerPanel::onChannelSoloToggled(bool checked) {
   auto *button = qobject_cast<QPushButton *>(sender());
-  if (!button) return;
+  if (!button)
+    return;
 
   int clickedIndex = -1;
   for (size_t i = 0; i < m_channelControls.size(); ++i) {
@@ -365,7 +360,8 @@ void NMAudioMixerPanel::onChannelSoloToggled(bool checked) {
     }
   }
 
-  if (clickedIndex < 0) return;
+  if (clickedIndex < 0)
+    return;
 
   if (checked) {
     m_soloChannelIndex = clickedIndex;
@@ -571,8 +567,8 @@ void NMAudioMixerPanel::setupMixerControls(QWidget *parent) {
     // Channel label
     ctrl.nameLabel = new QLabel(CHANNEL_NAMES[i + 1], channelWidget);
     ctrl.nameLabel->setAlignment(Qt::AlignCenter);
-    ctrl.nameLabel->setStyleSheet(
-        QString("font-weight: bold; color: %1;").arg(CHANNEL_COLORS[i + 1].name()));
+    ctrl.nameLabel->setStyleSheet(QString("font-weight: bold; color: %1;")
+                                      .arg(CHANNEL_COLORS[i + 1].name()));
     channelLayout->addWidget(ctrl.nameLabel);
 
     // Volume slider
@@ -580,14 +576,15 @@ void NMAudioMixerPanel::setupMixerControls(QWidget *parent) {
     ctrl.volumeSlider->setRange(0, 100);
     ctrl.volumeSlider->setValue(DEFAULT_VOLUMES[i + 1]);
     ctrl.volumeSlider->setMinimumHeight(120);
-    ctrl.volumeSlider->setToolTip(tr("%1 channel volume").arg(CHANNEL_NAMES[i + 1]));
+    ctrl.volumeSlider->setToolTip(
+        tr("%1 channel volume").arg(CHANNEL_NAMES[i + 1]));
     connect(ctrl.volumeSlider, &QSlider::valueChanged, this,
             &NMAudioMixerPanel::onChannelVolumeChanged);
     channelLayout->addWidget(ctrl.volumeSlider, 1, Qt::AlignHCenter);
 
     // Volume label
-    ctrl.volumeLabel = new QLabel(QString("%1%").arg(DEFAULT_VOLUMES[i + 1]),
-                                  channelWidget);
+    ctrl.volumeLabel =
+        new QLabel(QString("%1%").arg(DEFAULT_VOLUMES[i + 1]), channelWidget);
     ctrl.volumeLabel->setAlignment(Qt::AlignCenter);
     channelLayout->addWidget(ctrl.volumeLabel);
 
@@ -597,7 +594,8 @@ void NMAudioMixerPanel::setupMixerControls(QWidget *parent) {
     ctrl.muteButton = new QPushButton("M", channelWidget);
     ctrl.muteButton->setCheckable(true);
     ctrl.muteButton->setFixedSize(24, 24);
-    ctrl.muteButton->setToolTip(tr("Mute %1 channel").arg(CHANNEL_NAMES[i + 1]));
+    ctrl.muteButton->setToolTip(
+        tr("Mute %1 channel").arg(CHANNEL_NAMES[i + 1]));
     connect(ctrl.muteButton, &QPushButton::toggled, this,
             &NMAudioMixerPanel::onChannelMuteToggled);
     btnLayout->addWidget(ctrl.muteButton);
@@ -605,7 +603,8 @@ void NMAudioMixerPanel::setupMixerControls(QWidget *parent) {
     ctrl.soloButton = new QPushButton("S", channelWidget);
     ctrl.soloButton->setCheckable(true);
     ctrl.soloButton->setFixedSize(24, 24);
-    ctrl.soloButton->setToolTip(tr("Solo %1 channel").arg(CHANNEL_NAMES[i + 1]));
+    ctrl.soloButton->setToolTip(
+        tr("Solo %1 channel").arg(CHANNEL_NAMES[i + 1]));
     connect(ctrl.soloButton, &QPushButton::toggled, this,
             &NMAudioMixerPanel::onChannelSoloToggled);
     btnLayout->addWidget(ctrl.soloButton);
@@ -634,8 +633,9 @@ void NMAudioMixerPanel::setupCrossfadeControls(QWidget *parent) {
   m_crossfadeDurationSpin->setValue(1000.0);
   m_crossfadeDurationSpin->setSuffix(" ms");
   m_crossfadeDurationSpin->setToolTip(tr("Crossfade duration in milliseconds"));
-  connect(m_crossfadeDurationSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-          this, &NMAudioMixerPanel::onCrossfadeDurationChanged);
+  connect(m_crossfadeDurationSpin,
+          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &NMAudioMixerPanel::onCrossfadeDurationChanged);
   layout->addWidget(m_crossfadeDurationSpin);
 
   layout->addStretch();
@@ -675,9 +675,11 @@ void NMAudioMixerPanel::setupDuckingControls(QWidget *parent) {
   m_duckAmountSpin->setRange(0.0, 100.0);
   m_duckAmountSpin->setValue(30.0);
   m_duckAmountSpin->setSuffix(" %");
-  m_duckAmountSpin->setToolTip(tr("How much to reduce music volume when voice plays"));
-  connect(m_duckAmountSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-          this, &NMAudioMixerPanel::onDuckAmountChanged);
+  m_duckAmountSpin->setToolTip(
+      tr("How much to reduce music volume when voice plays"));
+  connect(m_duckAmountSpin,
+          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &NMAudioMixerPanel::onDuckAmountChanged);
   paramsLayout->addWidget(m_duckAmountSpin);
 
   paramsLayout->addWidget(new QLabel(tr("Attack:"), m_duckingGroup));
@@ -685,9 +687,11 @@ void NMAudioMixerPanel::setupDuckingControls(QWidget *parent) {
   m_duckAttackSpin->setRange(0.0, 1000.0);
   m_duckAttackSpin->setValue(200.0);
   m_duckAttackSpin->setSuffix(" ms");
-  m_duckAttackSpin->setToolTip(tr("How quickly music fades down when voice starts"));
-  connect(m_duckAttackSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-          this, &NMAudioMixerPanel::onDuckAttackChanged);
+  m_duckAttackSpin->setToolTip(
+      tr("How quickly music fades down when voice starts"));
+  connect(m_duckAttackSpin,
+          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &NMAudioMixerPanel::onDuckAttackChanged);
   paramsLayout->addWidget(m_duckAttackSpin);
 
   paramsLayout->addWidget(new QLabel(tr("Release:"), m_duckingGroup));
@@ -695,9 +699,11 @@ void NMAudioMixerPanel::setupDuckingControls(QWidget *parent) {
   m_duckReleaseSpin->setRange(0.0, 2000.0);
   m_duckReleaseSpin->setValue(200.0);
   m_duckReleaseSpin->setSuffix(" ms");
-  m_duckReleaseSpin->setToolTip(tr("How quickly music returns when voice stops"));
-  connect(m_duckReleaseSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-          this, &NMAudioMixerPanel::onDuckReleaseChanged);
+  m_duckReleaseSpin->setToolTip(
+      tr("How quickly music returns when voice stops"));
+  connect(m_duckReleaseSpin,
+          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &NMAudioMixerPanel::onDuckReleaseChanged);
   paramsLayout->addWidget(m_duckReleaseSpin);
 
   layout->addLayout(paramsLayout);
@@ -775,7 +781,8 @@ QString NMAudioMixerPanel::formatTime(f32 seconds) const {
 }
 
 void NMAudioMixerPanel::applyChannelVolumes() {
-  if (!m_previewAudioManager) return;
+  if (!m_previewAudioManager)
+    return;
 
   // Apply master volume
   if (m_masterVolumeSlider) {
@@ -793,7 +800,8 @@ void NMAudioMixerPanel::applyChannelVolumes() {
 }
 
 void NMAudioMixerPanel::updateSoloState() {
-  if (!m_previewAudioManager) return;
+  if (!m_previewAudioManager)
+    return;
 
   // If no solo is active, unmute all channels
   if (m_soloChannelIndex < 0) {
@@ -814,7 +822,8 @@ void NMAudioMixerPanel::updateSoloState() {
       if (isSoloed) {
         m_previewAudioManager->setChannelMuted(ctrl.channel, false);
         ctrl.soloButton->setStyleSheet(
-            "QPushButton { background-color: #FFC107; color: black; font-weight: bold; }");
+            "QPushButton { background-color: #FFC107; color: black; "
+            "font-weight: bold; }");
       } else {
         m_previewAudioManager->setChannelMuted(ctrl.channel, true);
         ctrl.soloButton->setChecked(false);

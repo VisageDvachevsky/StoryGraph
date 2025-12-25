@@ -1,6 +1,6 @@
-#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 
 #include <QDateTime>
 #include <QFileInfo>
@@ -119,9 +119,8 @@ bool NMSceneViewPanel::reparentObject(const QString &id,
 }
 
 bool NMSceneViewPanel::applyObjectTransform(const QString &id,
-                                            const QPointF &pos,
-                                            qreal rotation, qreal scaleX,
-                                            qreal scaleY) {
+                                            const QPointF &pos, qreal rotation,
+                                            qreal scaleX, qreal scaleY) {
   if (!m_scene || id.isEmpty()) {
     return false;
   }
@@ -238,8 +237,7 @@ bool NMSceneViewPanel::addObjectFromAsset(const QString &assetPath,
   snapshot.zValue = 0.0;
   snapshot.assetPath = normalized;
 
-  NMUndoManager::instance().pushCommand(
-      new AddObjectCommand(this, snapshot));
+  NMUndoManager::instance().pushCommand(new AddObjectCommand(this, snapshot));
   return true;
 }
 
@@ -306,9 +304,8 @@ bool NMSceneViewPanel::pasteClipboardObject() {
 
   SceneObjectSnapshot snapshot = m_sceneClipboard;
   snapshot.id = generateObjectId(snapshot.type);
-  snapshot.name = snapshot.name.isEmpty()
-                      ? tr("Copy")
-                      : tr("%1 Copy").arg(snapshot.name);
+  snapshot.name =
+      snapshot.name.isEmpty() ? tr("Copy") : tr("%1 Copy").arg(snapshot.name);
 
   QPointF basePos = snapshot.position;
   if (m_view && m_view->viewport()) {
@@ -333,9 +330,8 @@ bool NMSceneViewPanel::duplicateSelectedObject() {
 
   SceneObjectSnapshot snapshot = snapshotFromObject(obj);
   snapshot.id = generateObjectId(snapshot.type);
-  snapshot.name = snapshot.name.isEmpty()
-                      ? tr("Copy")
-                      : tr("%1 Copy").arg(snapshot.name);
+  snapshot.name =
+      snapshot.name.isEmpty() ? tr("Copy") : tr("%1 Copy").arg(snapshot.name);
   snapshot.position = obj->pos() + QPointF(32.0, 32.0);
 
   NMUndoManager::instance().pushCommand(new AddObjectCommand(this, snapshot));
@@ -364,8 +360,8 @@ void NMSceneViewPanel::renameSelectedObject() {
   bool ok = false;
   const QString current = obj->name().isEmpty() ? obj->id() : obj->name();
   const QString name =
-      NMInputDialog::getText(this, tr("Rename Object"),
-                             tr("Name:"), QLineEdit::Normal, current, &ok)
+      NMInputDialog::getText(this, tr("Rename Object"), tr("Name:"),
+                             QLineEdit::Normal, current, &ok)
           .trimmed();
   if (ok && !name.isEmpty() && name != obj->name()) {
     renameObject(obj->id(), name);
@@ -389,6 +385,5 @@ void NMSceneViewPanel::toggleSelectedLocked() {
     setObjectLocked(obj->id(), !obj->isLocked());
   }
 }
-
 
 } // namespace NovelMind::editor::qt

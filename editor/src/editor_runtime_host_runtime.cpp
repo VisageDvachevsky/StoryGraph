@@ -366,7 +366,8 @@ void EditorRuntimeHost::applySceneDocument(const std::string &sceneId) {
       if (it != state.properties.end() && !it->second.empty()) {
         characterId = it->second;
       }
-      auto obj = std::make_unique<scene::CharacterObject>(state.id, characterId);
+      auto obj =
+          std::make_unique<scene::CharacterObject>(state.id, characterId);
       obj->loadState(state);
       m_sceneGraph->addToLayer(scene::LayerType::Characters, std::move(obj));
     } else if (type == "Effect") {
@@ -379,6 +380,5 @@ void EditorRuntimeHost::applySceneDocument(const std::string &sceneId) {
     }
   }
 }
-
 
 } // namespace NovelMind::editor

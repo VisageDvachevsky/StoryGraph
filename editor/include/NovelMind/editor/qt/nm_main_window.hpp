@@ -237,7 +237,8 @@ public:
   /**
    * @brief D2: Layout presets for different workflows
    *
-   * These presets are designed for common use cases in visual novel development:
+   * These presets are designed for common use cases in visual novel
+   * development:
    * - Default: Balanced layout for general editing
    * - StoryScript: Story graph and script editing focused
    * - SceneAnimation: Scene view with timeline/curve editors
@@ -288,7 +289,6 @@ public:
   QStringList availableWorkspacePresets() const;
 
 private:
-
   void setupMenuBar();
   void setupToolBar();
   void setupStatusBar();

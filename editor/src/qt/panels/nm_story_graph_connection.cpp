@@ -1,39 +1,38 @@
-#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+#include "NovelMind/editor/project_manager.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
-#include "NovelMind/editor/project_manager.hpp"
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
 
 #include <QAction>
-#include <QFrame>
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
-#include <QDir>
+#include <QFrame>
 #include <QGraphicsSceneContextMenuEvent>
 #include <QGraphicsSceneMouseEvent>
 #include <QHBoxLayout>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineF>
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QRegularExpression>
 #include <QPushButton>
+#include <QRegularExpression>
 #include <QScrollBar>
+#include <QSet>
 #include <QTextStream>
 #include <QTimer>
 #include <QToolBar>
 #include <QVBoxLayout>
 #include <QWheelEvent>
 #include <algorithm>
-#include <QSet>
 #include <filesystem>
-
 
 namespace NovelMind::editor::qt {
 

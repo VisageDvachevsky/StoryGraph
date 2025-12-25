@@ -1,5 +1,5 @@
-#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 
 #include <QGraphicsSceneMouseEvent>
 #include <QKeyEvent>
@@ -253,8 +253,7 @@ bool NMSceneGraphicsScene::reparentObject(const QString &objectId,
   return true;
 }
 
-QPointF NMSceneGraphicsScene::getObjectScale(
-    const QString &objectId) const {
+QPointF NMSceneGraphicsScene::getObjectScale(const QString &objectId) const {
   if (auto *obj = findSceneObject(objectId)) {
     return {obj->scaleX(), obj->scaleY()};
   }
@@ -337,8 +336,8 @@ void NMSceneGraphicsScene::drawBackground(QPainter *painter,
       painter->setPen(centerPen);
       painter->drawLine(QLineF(stage.center().x(), stage.top(),
                                stage.center().x(), stage.bottom()));
-      painter->drawLine(QLineF(stage.left(), stage.center().y(),
-                               stage.right(), stage.center().y()));
+      painter->drawLine(QLineF(stage.left(), stage.center().y(), stage.right(),
+                               stage.center().y()));
     }
 
     if (m_safeFrameVisible) {
@@ -355,8 +354,8 @@ void NMSceneGraphicsScene::drawBackground(QPainter *painter,
       QPen basePen(palette.accentPrimary);
       basePen.setStyle(Qt::DotLine);
       painter->setPen(basePen);
-      painter->drawLine(QLineF(stage.left(), baseline,
-                               stage.right(), baseline));
+      painter->drawLine(
+          QLineF(stage.left(), baseline, stage.right(), baseline));
     }
   }
 
@@ -604,6 +603,5 @@ void NMSceneInfoOverlay::updateDisplay() {
     m_objectLabel->setVisible(false);
   }
 }
-
 
 } // namespace NovelMind::editor::qt

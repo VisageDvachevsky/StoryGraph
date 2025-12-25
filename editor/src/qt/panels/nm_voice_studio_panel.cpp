@@ -13,10 +13,10 @@
  */
 
 #include "NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp"
-#include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/audio/audio_recorder.hpp"
 #include "NovelMind/audio/voice_manifest.hpp"
 #include "NovelMind/core/logger.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
 
 #include <QApplication>
 #include <QAudioDevice>
@@ -55,15 +55,15 @@ namespace NovelMind::editor::qt {
 // ============================================================================
 
 namespace {
-const QColor WAVEFORM_COLOR(0, 188, 212);         // Cyan
-const QColor SELECTION_COLOR(33, 150, 243, 77);   // Blue 30%
-const QColor PLAYHEAD_COLOR(76, 175, 80);         // Green
-const QColor TRIM_MARKER_COLOR(255, 152, 0);      // Orange
-const QColor CLIPPING_COLOR(244, 67, 54);         // Red
-const QColor VU_SAFE_COLOR(76, 175, 80);          // Green
-const QColor VU_CAUTION_COLOR(255, 193, 7);       // Yellow
-const QColor VU_DANGER_COLOR(244, 67, 54);        // Red
-const QColor BACKGROUND_COLOR(30, 30, 30);        // Dark gray
+const QColor WAVEFORM_COLOR(0, 188, 212);       // Cyan
+const QColor SELECTION_COLOR(33, 150, 243, 77); // Blue 30%
+const QColor PLAYHEAD_COLOR(76, 175, 80);       // Green
+const QColor TRIM_MARKER_COLOR(255, 152, 0);    // Orange
+const QColor CLIPPING_COLOR(244, 67, 54);       // Red
+const QColor VU_SAFE_COLOR(76, 175, 80);        // Green
+const QColor VU_CAUTION_COLOR(255, 193, 7);     // Yellow
+const QColor VU_DANGER_COLOR(244, 67, 54);      // Red
+const QColor BACKGROUND_COLOR(30, 30, 30);      // Dark gray
 
 constexpr float MIN_DB = -60.0f;
 constexpr float MAX_DB = 0.0f;
@@ -77,7 +77,8 @@ class EditParamCommand : public QUndoCommand {
 public:
   EditParamCommand(VoiceClipEdit *edit, VoiceClipEdit oldEdit,
                    VoiceClipEdit newEdit, const QString &text)
-      : QUndoCommand(text), m_edit(edit), m_oldEdit(oldEdit), m_newEdit(newEdit) {}
+      : QUndoCommand(text), m_edit(edit), m_oldEdit(oldEdit),
+        m_newEdit(newEdit) {}
 
   void undo() override { *m_edit = m_oldEdit; }
   void redo() override { *m_edit = m_newEdit; }
@@ -131,13 +132,9 @@ void WaveformWidget::setZoom(double samplesPerPixel) {
   update();
 }
 
-void WaveformWidget::zoomIn() {
-  setZoom(m_samplesPerPixel * 0.5);
-}
+void WaveformWidget::zoomIn() { setZoom(m_samplesPerPixel * 0.5); }
 
-void WaveformWidget::zoomOut() {
-  setZoom(m_samplesPerPixel * 2.0);
-}
+void WaveformWidget::zoomOut() { setZoom(m_samplesPerPixel * 2.0); }
 
 void WaveformWidget::zoomToFit() {
   if (!m_clip || m_clip->samples.empty()) {
@@ -184,7 +181,8 @@ void WaveformWidget::paintEvent(QPaintEvent *) {
   if (m_selectionStart != m_selectionEnd) {
     int startX = static_cast<int>(timeToX(m_selectionStart));
     int endX = static_cast<int>(timeToX(m_selectionEnd));
-    if (startX > endX) std::swap(startX, endX);
+    if (startX > endX)
+      std::swap(startX, endX);
     painter.fillRect(startX, 0, endX - startX, h, SELECTION_COLOR);
   }
 
@@ -196,19 +194,26 @@ void WaveformWidget::paintEvent(QPaintEvent *) {
   const double scrollSamples = m_scrollPos * sampleRate;
 
   for (int x = 0; x < w; ++x) {
-    int64_t startSample = static_cast<int64_t>(scrollSamples + x * m_samplesPerPixel);
-    int64_t endSample = static_cast<int64_t>(scrollSamples + (x + 1) * m_samplesPerPixel);
+    int64_t startSample =
+        static_cast<int64_t>(scrollSamples + x * m_samplesPerPixel);
+    int64_t endSample =
+        static_cast<int64_t>(scrollSamples + (x + 1) * m_samplesPerPixel);
 
-    if (startSample < 0) startSample = 0;
-    if (endSample > static_cast<int64_t>(numSamples)) endSample = static_cast<int64_t>(numSamples);
-    if (startSample >= static_cast<int64_t>(numSamples)) continue;
+    if (startSample < 0)
+      startSample = 0;
+    if (endSample > static_cast<int64_t>(numSamples))
+      endSample = static_cast<int64_t>(numSamples);
+    if (startSample >= static_cast<int64_t>(numSamples))
+      continue;
 
     // Find min/max in this range
     float minVal = 0.0f, maxVal = 0.0f;
     for (int64_t i = startSample; i < endSample; ++i) {
       float sample = m_clip->samples[static_cast<size_t>(i)];
-      if (sample < minVal) minVal = sample;
-      if (sample > maxVal) maxVal = sample;
+      if (sample < minVal)
+        minVal = sample;
+      if (sample > maxVal)
+        maxVal = sample;
     }
 
     // Map to screen coordinates
@@ -220,7 +225,8 @@ void WaveformWidget::paintEvent(QPaintEvent *) {
 
   // Draw trim markers (if trimming is active)
   if (m_clip->edit.trimStartSamples > 0) {
-    double trimStartSec = static_cast<double>(m_clip->edit.trimStartSamples) / sampleRate;
+    double trimStartSec =
+        static_cast<double>(m_clip->edit.trimStartSamples) / sampleRate;
     int x = static_cast<int>(timeToX(trimStartSec));
     painter.setPen(QPen(TRIM_MARKER_COLOR, 2));
     painter.drawLine(x, 0, x, h);
@@ -234,8 +240,9 @@ void WaveformWidget::paintEvent(QPaintEvent *) {
 
   if (m_clip->edit.trimEndSamples > 0) {
     double clipDuration = m_clip->getDurationSeconds();
-    double trimEndSec = clipDuration -
-                        static_cast<double>(m_clip->edit.trimEndSamples) / sampleRate;
+    double trimEndSec =
+        clipDuration -
+        static_cast<double>(m_clip->edit.trimEndSamples) / sampleRate;
     int x = static_cast<int>(timeToX(trimEndSec));
     painter.setPen(QPen(TRIM_MARKER_COLOR, 2));
     painter.drawLine(x, 0, x, h);
@@ -267,7 +274,8 @@ void WaveformWidget::paintEvent(QPaintEvent *) {
 }
 
 void WaveformWidget::mousePressEvent(QMouseEvent *event) {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
 
   double clickTime = xToTime(event->position().x());
 
@@ -296,7 +304,8 @@ void WaveformWidget::mousePressEvent(QMouseEvent *event) {
 }
 
 void WaveformWidget::mouseMoveEvent(QMouseEvent *event) {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
 
   double time = xToTime(event->position().x());
 
@@ -337,18 +346,18 @@ void WaveformWidget::wheelEvent(QWheelEvent *event) {
   event->accept();
 }
 
-void WaveformWidget::resizeEvent(QResizeEvent *) {
-  updatePeakCache();
-}
+void WaveformWidget::resizeEvent(QResizeEvent *) { updatePeakCache(); }
 
 double WaveformWidget::timeToX(double seconds) const {
-  if (!m_clip || m_clip->format.sampleRate == 0) return 0.0;
+  if (!m_clip || m_clip->format.sampleRate == 0)
+    return 0.0;
   double sampleOffset = (seconds - m_scrollPos) * m_clip->format.sampleRate;
   return sampleOffset / m_samplesPerPixel;
 }
 
 double WaveformWidget::xToTime(double x) const {
-  if (!m_clip || m_clip->format.sampleRate == 0) return 0.0;
+  if (!m_clip || m_clip->format.sampleRate == 0)
+    return 0.0;
   double sampleOffset = x * m_samplesPerPixel;
   return m_scrollPos + sampleOffset / m_clip->format.sampleRate;
 }
@@ -361,24 +370,30 @@ void WaveformWidget::updatePeakCache() {
 
   // Calculate peaks for display at current zoom level
   int w = width();
-  m_displayPeaks.resize(static_cast<size_t>(w * 2));  // min/max pairs
+  m_displayPeaks.resize(static_cast<size_t>(w * 2)); // min/max pairs
 
   const size_t numSamples = m_clip->samples.size();
   const uint32_t sampleRate = m_clip->format.sampleRate;
   const double scrollSamples = m_scrollPos * sampleRate;
 
   for (int x = 0; x < w; ++x) {
-    int64_t startSample = static_cast<int64_t>(scrollSamples + x * m_samplesPerPixel);
-    int64_t endSample = static_cast<int64_t>(scrollSamples + (x + 1) * m_samplesPerPixel);
+    int64_t startSample =
+        static_cast<int64_t>(scrollSamples + x * m_samplesPerPixel);
+    int64_t endSample =
+        static_cast<int64_t>(scrollSamples + (x + 1) * m_samplesPerPixel);
 
-    if (startSample < 0) startSample = 0;
-    if (endSample > static_cast<int64_t>(numSamples)) endSample = static_cast<int64_t>(numSamples);
+    if (startSample < 0)
+      startSample = 0;
+    if (endSample > static_cast<int64_t>(numSamples))
+      endSample = static_cast<int64_t>(numSamples);
 
     float minVal = 0.0f, maxVal = 0.0f;
     for (int64_t i = startSample; i < endSample; ++i) {
       float sample = m_clip->samples[static_cast<size_t>(i)];
-      if (sample < minVal) minVal = sample;
-      if (sample > maxVal) maxVal = sample;
+      if (sample < minVal)
+        minVal = sample;
+      if (sample > maxVal)
+        maxVal = sample;
     }
 
     m_displayPeaks[static_cast<size_t>(x * 2)] = minVal;
@@ -473,7 +488,8 @@ void StudioVUMeterWidget::paintEvent(QPaintEvent *) {
 std::vector<float> AudioProcessor::process(const std::vector<float> &source,
                                            const VoiceClipEdit &edit,
                                            const AudioFormat &format) {
-  if (source.empty()) return {};
+  if (source.empty())
+    return {};
 
   // Apply trim first
   auto result = applyTrim(source, edit.trimStartSamples, edit.trimEndSamples);
@@ -520,26 +536,30 @@ std::vector<float> AudioProcessor::process(const std::vector<float> &source,
 }
 
 std::vector<float> AudioProcessor::applyTrim(const std::vector<float> &samples,
-                                              int64_t trimStart, int64_t trimEnd) {
-  if (samples.empty()) return {};
+                                             int64_t trimStart,
+                                             int64_t trimEnd) {
+  if (samples.empty())
+    return {};
 
   int64_t totalSamples = static_cast<int64_t>(samples.size());
   int64_t start = std::clamp(trimStart, int64_t(0), totalSamples);
   int64_t end = totalSamples - std::clamp(trimEnd, int64_t(0), totalSamples);
 
-  if (end <= start) return {};
+  if (end <= start)
+    return {};
 
   return std::vector<float>(samples.begin() + start, samples.begin() + end);
 }
 
-void AudioProcessor::applyFades(std::vector<float> &samples,
-                                float fadeInMs, float fadeOutMs,
-                                uint32_t sampleRate) {
-  if (samples.empty()) return;
+void AudioProcessor::applyFades(std::vector<float> &samples, float fadeInMs,
+                                float fadeOutMs, uint32_t sampleRate) {
+  if (samples.empty())
+    return;
 
   // Fade in
   if (fadeInMs > 0) {
-    int fadeInSamples = static_cast<int>(fadeInMs * static_cast<float>(sampleRate) / 1000.0f);
+    int fadeInSamples =
+        static_cast<int>(fadeInMs * static_cast<float>(sampleRate) / 1000.0f);
     fadeInSamples = std::min(fadeInSamples, static_cast<int>(samples.size()));
 
     for (int i = 0; i < fadeInSamples; ++i) {
@@ -551,19 +571,22 @@ void AudioProcessor::applyFades(std::vector<float> &samples,
 
   // Fade out
   if (fadeOutMs > 0) {
-    int fadeOutSamples = static_cast<int>(fadeOutMs * static_cast<float>(sampleRate) / 1000.0f);
+    int fadeOutSamples =
+        static_cast<int>(fadeOutMs * static_cast<float>(sampleRate) / 1000.0f);
     fadeOutSamples = std::min(fadeOutSamples, static_cast<int>(samples.size()));
 
     int startIdx = static_cast<int>(samples.size()) - fadeOutSamples;
     for (int i = 0; i < fadeOutSamples; ++i) {
       float t = static_cast<float>(i) / static_cast<float>(fadeOutSamples);
-      samples[static_cast<size_t>(startIdx + i)] *= std::cos(t * 3.14159f / 2.0f);
+      samples[static_cast<size_t>(startIdx + i)] *=
+          std::cos(t * 3.14159f / 2.0f);
     }
   }
 }
 
 void AudioProcessor::applyGain(std::vector<float> &samples, float gainDb) {
-  if (samples.empty() || gainDb == 0.0f) return;
+  if (samples.empty() || gainDb == 0.0f)
+    return;
 
   float gainLinear = std::pow(10.0f, gainDb / 20.0f);
 
@@ -574,17 +597,21 @@ void AudioProcessor::applyGain(std::vector<float> &samples, float gainDb) {
   }
 }
 
-void AudioProcessor::applyNormalize(std::vector<float> &samples, float targetDbFS) {
-  if (samples.empty()) return;
+void AudioProcessor::applyNormalize(std::vector<float> &samples,
+                                    float targetDbFS) {
+  if (samples.empty())
+    return;
 
   // Find current peak
   float currentPeak = 0.0f;
   for (const auto &sample : samples) {
     float absVal = std::abs(sample);
-    if (absVal > currentPeak) currentPeak = absVal;
+    if (absVal > currentPeak)
+      currentPeak = absVal;
   }
 
-  if (currentPeak < 0.0001f) return;  // Too quiet, skip
+  if (currentPeak < 0.0001f)
+    return; // Too quiet, skip
 
   // Calculate required gain
   float targetLinear = std::pow(10.0f, targetDbFS / 20.0f);
@@ -595,9 +622,10 @@ void AudioProcessor::applyNormalize(std::vector<float> &samples, float targetDbF
   }
 }
 
-void AudioProcessor::applyHighPass(std::vector<float> &samples,
-                                   float cutoffHz, uint32_t sampleRate) {
-  if (samples.empty() || cutoffHz <= 0 || sampleRate == 0) return;
+void AudioProcessor::applyHighPass(std::vector<float> &samples, float cutoffHz,
+                                   uint32_t sampleRate) {
+  if (samples.empty() || cutoffHz <= 0 || sampleRate == 0)
+    return;
 
   // Simple 1-pole high-pass filter
   float rc = 1.0f / (2.0f * 3.14159f * cutoffHz);
@@ -615,9 +643,10 @@ void AudioProcessor::applyHighPass(std::vector<float> &samples,
   }
 }
 
-void AudioProcessor::applyLowPass(std::vector<float> &samples,
-                                  float cutoffHz, uint32_t sampleRate) {
-  if (samples.empty() || cutoffHz <= 0 || sampleRate == 0) return;
+void AudioProcessor::applyLowPass(std::vector<float> &samples, float cutoffHz,
+                                  uint32_t sampleRate) {
+  if (samples.empty() || cutoffHz <= 0 || sampleRate == 0)
+    return;
 
   // Simple 1-pole low-pass filter
   float rc = 1.0f / (2.0f * 3.14159f * cutoffHz);
@@ -633,10 +662,11 @@ void AudioProcessor::applyLowPass(std::vector<float> &samples,
   }
 }
 
-void AudioProcessor::applyEQ(std::vector<float> &samples,
-                             float lowGainDb, float midGainDb, float highGainDb,
-                             float lowFreq, float highFreq, uint32_t sampleRate) {
-  if (samples.empty() || sampleRate == 0) return;
+void AudioProcessor::applyEQ(std::vector<float> &samples, float lowGainDb,
+                             float midGainDb, float highGainDb, float lowFreq,
+                             float highFreq, uint32_t sampleRate) {
+  if (samples.empty() || sampleRate == 0)
+    return;
 
   // Simple 3-band EQ using crossover filters
   // This is a simplified implementation
@@ -680,13 +710,16 @@ void AudioProcessor::applyNoiseGate(std::vector<float> &samples,
                                     float thresholdDb, float reductionDb,
                                     float attackMs, float releaseMs,
                                     uint32_t sampleRate) {
-  if (samples.empty() || sampleRate == 0) return;
+  if (samples.empty() || sampleRate == 0)
+    return;
 
   float threshold = std::pow(10.0f, thresholdDb / 20.0f);
   float reduction = std::pow(10.0f, reductionDb / 20.0f);
 
-  int attackSamples = static_cast<int>(attackMs * static_cast<float>(sampleRate) / 1000.0f);
-  int releaseSamples = static_cast<int>(releaseMs * static_cast<float>(sampleRate) / 1000.0f);
+  int attackSamples =
+      static_cast<int>(attackMs * static_cast<float>(sampleRate) / 1000.0f);
+  int releaseSamples =
+      static_cast<int>(releaseMs * static_cast<float>(sampleRate) / 1000.0f);
 
   float envelope = 0.0f;
   float gateGain = reduction;
@@ -696,21 +729,25 @@ void AudioProcessor::applyNoiseGate(std::vector<float> &samples,
 
     // Update envelope
     if (absVal > envelope) {
-      envelope += (absVal - envelope) / static_cast<float>(std::max(1, attackSamples));
+      envelope +=
+          (absVal - envelope) / static_cast<float>(std::max(1, attackSamples));
     } else {
-      envelope -= (envelope - absVal) / static_cast<float>(std::max(1, releaseSamples));
+      envelope -=
+          (envelope - absVal) / static_cast<float>(std::max(1, releaseSamples));
     }
 
     // Gate logic
     if (envelope > threshold) {
       // Open gate
       if (gateGain < 1.0f) {
-        gateGain += (1.0f - gateGain) / static_cast<float>(std::max(1, attackSamples));
+        gateGain +=
+            (1.0f - gateGain) / static_cast<float>(std::max(1, attackSamples));
       }
     } else {
       // Close gate
       if (gateGain > reduction) {
-        gateGain -= (gateGain - reduction) / static_cast<float>(std::max(1, releaseSamples));
+        gateGain -= (gateGain - reduction) /
+                    static_cast<float>(std::max(1, releaseSamples));
       }
     }
 
@@ -719,20 +756,24 @@ void AudioProcessor::applyNoiseGate(std::vector<float> &samples,
 }
 
 float AudioProcessor::calculatePeakDb(const std::vector<float> &samples) {
-  if (samples.empty()) return MIN_DB;
+  if (samples.empty())
+    return MIN_DB;
 
   float peak = 0.0f;
   for (const auto &sample : samples) {
     float absVal = std::abs(sample);
-    if (absVal > peak) peak = absVal;
+    if (absVal > peak)
+      peak = absVal;
   }
 
-  if (peak < 0.0001f) return MIN_DB;
+  if (peak < 0.0001f)
+    return MIN_DB;
   return 20.0f * std::log10(peak);
 }
 
 float AudioProcessor::calculateRmsDb(const std::vector<float> &samples) {
-  if (samples.empty()) return MIN_DB;
+  if (samples.empty())
+    return MIN_DB;
 
   float sum = 0.0f;
   for (const auto &sample : samples) {
@@ -740,7 +781,8 @@ float AudioProcessor::calculateRmsDb(const std::vector<float> &samples) {
   }
   float rms = std::sqrt(sum / static_cast<float>(samples.size()));
 
-  if (rms < 0.0001f) return MIN_DB;
+  if (rms < 0.0001f)
+    return MIN_DB;
   return 20.0f * std::log10(rms);
 }
 
@@ -754,9 +796,7 @@ NMVoiceStudioPanel::NMVoiceStudioPanel(QWidget *parent)
   setupUI();
 }
 
-NMVoiceStudioPanel::~NMVoiceStudioPanel() {
-  onShutdown();
-}
+NMVoiceStudioPanel::~NMVoiceStudioPanel() { onShutdown(); }
 
 void NMVoiceStudioPanel::onInitialize() {
   NOVELMIND_LOG_INFO("Voice Studio Panel initialized");
@@ -765,7 +805,7 @@ void NMVoiceStudioPanel::onInitialize() {
   m_updateTimer = new QTimer(this);
   connect(m_updateTimer, &QTimer::timeout, this,
           &NMVoiceStudioPanel::onUpdateTimer);
-  m_updateTimer->start(50);  // 20 Hz update rate
+  m_updateTimer->start(50); // 20 Hz update rate
 
   // Load default presets - fields must be in declaration order
   VoiceClipEdit voiceCleanup;
@@ -831,8 +871,8 @@ void NMVoiceStudioPanel::setManifest(audio::VoiceManifest *manifest) {
 
 bool NMVoiceStudioPanel::loadFile(const QString &filePath) {
   if (!loadWavFile(filePath)) {
-    NMMessageDialog::showWarning(this, tr("Error"),
-                                 tr("Could not load audio file: %1").arg(filePath));
+    NMMessageDialog::showWarning(
+        this, tr("Error"), tr("Could not load audio file: %1").arg(filePath));
     return false;
   }
 
@@ -852,14 +892,16 @@ bool NMVoiceStudioPanel::loadFile(const QString &filePath) {
 }
 
 bool NMVoiceStudioPanel::loadFromLineId(const QString &lineId,
-                                         const QString &locale) {
-  if (!m_manifest) return false;
+                                        const QString &locale) {
+  if (!m_manifest)
+    return false;
 
   m_currentLineId = lineId;
   m_currentLocale = locale;
 
   auto *line = m_manifest->getLine(lineId.toStdString());
-  if (!line) return false;
+  if (!line)
+    return false;
 
   // Get the file for this locale
   auto *localeFile = line->getFile(locale.toStdString());
@@ -871,7 +913,8 @@ bool NMVoiceStudioPanel::loadFromLineId(const QString &lineId,
 }
 
 bool NMVoiceStudioPanel::hasUnsavedChanges() const {
-  if (!m_clip) return false;
+  if (!m_clip)
+    return false;
 
   // Compare current edit with last saved
   return m_clip->edit.hasEdits() &&
@@ -893,39 +936,53 @@ void NMVoiceStudioPanel::onInputDeviceChanged(int index) {
 
 void NMVoiceStudioPanel::onRecordClicked() {
   m_isRecording = true;
-  if (m_recordBtn) m_recordBtn->setEnabled(false);
-  if (m_stopRecordBtn) m_stopRecordBtn->setEnabled(true);
-  if (m_cancelRecordBtn) m_cancelRecordBtn->setEnabled(true);
-  if (m_recordingTimeLabel) m_recordingTimeLabel->setText("00:00.000");
+  if (m_recordBtn)
+    m_recordBtn->setEnabled(false);
+  if (m_stopRecordBtn)
+    m_stopRecordBtn->setEnabled(true);
+  if (m_cancelRecordBtn)
+    m_cancelRecordBtn->setEnabled(true);
+  if (m_recordingTimeLabel)
+    m_recordingTimeLabel->setText("00:00.000");
 }
 
 void NMVoiceStudioPanel::onStopRecordClicked() {
   m_isRecording = false;
-  if (m_recordBtn) m_recordBtn->setEnabled(true);
-  if (m_stopRecordBtn) m_stopRecordBtn->setEnabled(false);
-  if (m_cancelRecordBtn) m_cancelRecordBtn->setEnabled(false);
+  if (m_recordBtn)
+    m_recordBtn->setEnabled(true);
+  if (m_stopRecordBtn)
+    m_stopRecordBtn->setEnabled(false);
+  if (m_cancelRecordBtn)
+    m_cancelRecordBtn->setEnabled(false);
 }
 
 void NMVoiceStudioPanel::onCancelRecordClicked() {
   m_isRecording = false;
-  if (m_recordBtn) m_recordBtn->setEnabled(true);
-  if (m_stopRecordBtn) m_stopRecordBtn->setEnabled(false);
-  if (m_cancelRecordBtn) m_cancelRecordBtn->setEnabled(false);
-  if (m_recordingTimeLabel) m_recordingTimeLabel->setText("00:00.000");
+  if (m_recordBtn)
+    m_recordBtn->setEnabled(true);
+  if (m_stopRecordBtn)
+    m_stopRecordBtn->setEnabled(false);
+  if (m_cancelRecordBtn)
+    m_cancelRecordBtn->setEnabled(false);
+  if (m_recordingTimeLabel)
+    m_recordingTimeLabel->setText("00:00.000");
 }
 
 void NMVoiceStudioPanel::onPlayClicked() {
-  if (!m_clip || !m_mediaPlayer) return;
+  if (!m_clip || !m_mediaPlayer)
+    return;
 
   if (m_isPlaying) {
     // Pause
     m_mediaPlayer->pause();
     m_isPlaying = false;
-    if (m_playBtn) m_playBtn->setText(tr("▶ Play"));
+    if (m_playBtn)
+      m_playBtn->setText(tr("▶ Play"));
   } else {
     // Render processed audio to temp file and play
     auto processed = renderProcessedAudio();
-    if (processed.empty()) return;
+    if (processed.empty())
+      return;
 
     // Create temp WAV file
     QString tempPath = QDir::tempPath() + "/novelmind_preview.wav";
@@ -935,7 +992,8 @@ void NMVoiceStudioPanel::onPlayClicked() {
     m_mediaPlayer->setSource(QUrl::fromLocalFile(m_currentFilePath));
     m_mediaPlayer->play();
     m_isPlaying = true;
-    if (m_playBtn) m_playBtn->setText(tr("⏸ Pause"));
+    if (m_playBtn)
+      m_playBtn->setText(tr("⏸ Pause"));
   }
 
   updatePlaybackState();
@@ -946,7 +1004,8 @@ void NMVoiceStudioPanel::onStopClicked() {
     m_mediaPlayer->stop();
   }
   m_isPlaying = false;
-  if (m_playBtn) m_playBtn->setText(tr("▶ Play"));
+  if (m_playBtn)
+    m_playBtn->setText(tr("▶ Play"));
   if (m_waveformWidget) {
     m_waveformWidget->setPlayheadPosition(0.0);
   }
@@ -961,7 +1020,8 @@ void NMVoiceStudioPanel::onLoopClicked(bool checked) {
 }
 
 void NMVoiceStudioPanel::onTrimToSelection() {
-  if (!m_clip || !m_waveformWidget) return;
+  if (!m_clip || !m_waveformWidget)
+    return;
 
   double selStart = m_waveformWidget->getSelectionStart();
   double selEnd = m_waveformWidget->getSelectionEnd();
@@ -976,9 +1036,11 @@ void NMVoiceStudioPanel::onTrimToSelection() {
   VoiceClipEdit newEdit = m_clip->edit;
 
   uint32_t sampleRate = m_clip->format.sampleRate;
-  newEdit.trimStartSamples = static_cast<int64_t>(selStart * static_cast<double>(sampleRate));
-  newEdit.trimEndSamples = static_cast<int64_t>(
-      (m_clip->getDurationSeconds() - selEnd) * static_cast<double>(sampleRate));
+  newEdit.trimStartSamples =
+      static_cast<int64_t>(selStart * static_cast<double>(sampleRate));
+  newEdit.trimEndSamples =
+      static_cast<int64_t>((m_clip->getDurationSeconds() - selEnd) *
+                           static_cast<double>(sampleRate));
 
   auto *cmd = new EditParamCommand(&m_clip->edit, oldEdit, newEdit,
                                    tr("Trim to Selection"));
@@ -990,15 +1052,16 @@ void NMVoiceStudioPanel::onTrimToSelection() {
 }
 
 void NMVoiceStudioPanel::onResetTrim() {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
 
   VoiceClipEdit oldEdit = m_clip->edit;
   VoiceClipEdit newEdit = m_clip->edit;
   newEdit.trimStartSamples = 0;
   newEdit.trimEndSamples = 0;
 
-  auto *cmd = new EditParamCommand(&m_clip->edit, oldEdit, newEdit,
-                                   tr("Reset Trim"));
+  auto *cmd =
+      new EditParamCommand(&m_clip->edit, oldEdit, newEdit, tr("Reset Trim"));
   m_undoStack->push(cmd);
 
   if (m_waveformWidget) {
@@ -1008,22 +1071,26 @@ void NMVoiceStudioPanel::onResetTrim() {
 }
 
 void NMVoiceStudioPanel::onFadeInChanged(double value) {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
   m_clip->edit.fadeInMs = static_cast<float>(value);
 }
 
 void NMVoiceStudioPanel::onFadeOutChanged(double value) {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
   m_clip->edit.fadeOutMs = static_cast<float>(value);
 }
 
 void NMVoiceStudioPanel::onPreGainChanged(double value) {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
   m_clip->edit.preGainDb = static_cast<float>(value);
 }
 
 void NMVoiceStudioPanel::onNormalizeToggled(bool checked) {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
   m_clip->edit.normalizeEnabled = checked;
   if (m_normalizeTargetSpin) {
     m_normalizeTargetSpin->setEnabled(checked);
@@ -1031,12 +1098,14 @@ void NMVoiceStudioPanel::onNormalizeToggled(bool checked) {
 }
 
 void NMVoiceStudioPanel::onNormalizeTargetChanged(double value) {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
   m_clip->edit.normalizeTargetDbFS = static_cast<float>(value);
 }
 
 void NMVoiceStudioPanel::onHighPassToggled(bool checked) {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
   m_clip->edit.highPassEnabled = checked;
   if (m_highPassFreqSpin) {
     m_highPassFreqSpin->setEnabled(checked);
@@ -1044,12 +1113,14 @@ void NMVoiceStudioPanel::onHighPassToggled(bool checked) {
 }
 
 void NMVoiceStudioPanel::onHighPassFreqChanged(double value) {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
   m_clip->edit.highPassFreqHz = static_cast<float>(value);
 }
 
 void NMVoiceStudioPanel::onLowPassToggled(bool checked) {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
   m_clip->edit.lowPassEnabled = checked;
   if (m_lowPassFreqSpin) {
     m_lowPassFreqSpin->setEnabled(checked);
@@ -1057,35 +1128,44 @@ void NMVoiceStudioPanel::onLowPassToggled(bool checked) {
 }
 
 void NMVoiceStudioPanel::onLowPassFreqChanged(double value) {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
   m_clip->edit.lowPassFreqHz = static_cast<float>(value);
 }
 
 void NMVoiceStudioPanel::onEQToggled(bool checked) {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
   m_clip->edit.eqEnabled = checked;
-  if (m_eqLowSpin) m_eqLowSpin->setEnabled(checked);
-  if (m_eqMidSpin) m_eqMidSpin->setEnabled(checked);
-  if (m_eqHighSpin) m_eqHighSpin->setEnabled(checked);
+  if (m_eqLowSpin)
+    m_eqLowSpin->setEnabled(checked);
+  if (m_eqMidSpin)
+    m_eqMidSpin->setEnabled(checked);
+  if (m_eqHighSpin)
+    m_eqHighSpin->setEnabled(checked);
 }
 
 void NMVoiceStudioPanel::onEQLowChanged(double value) {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
   m_clip->edit.eqLowGainDb = static_cast<float>(value);
 }
 
 void NMVoiceStudioPanel::onEQMidChanged(double value) {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
   m_clip->edit.eqMidGainDb = static_cast<float>(value);
 }
 
 void NMVoiceStudioPanel::onEQHighChanged(double value) {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
   m_clip->edit.eqHighGainDb = static_cast<float>(value);
 }
 
 void NMVoiceStudioPanel::onNoiseGateToggled(bool checked) {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
   m_clip->edit.noiseGateEnabled = checked;
   if (m_noiseGateThresholdSpin) {
     m_noiseGateThresholdSpin->setEnabled(checked);
@@ -1093,23 +1173,27 @@ void NMVoiceStudioPanel::onNoiseGateToggled(bool checked) {
 }
 
 void NMVoiceStudioPanel::onNoiseGateThresholdChanged(double value) {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
   m_clip->edit.noiseGateThresholdDb = static_cast<float>(value);
 }
 
 void NMVoiceStudioPanel::onPresetSelected(int index) {
-  if (index < 0 || index >= static_cast<int>(m_presets.size())) return;
+  if (index < 0 || index >= static_cast<int>(m_presets.size()))
+    return;
   applyPreset(m_presets[static_cast<size_t>(index)].name);
 }
 
 void NMVoiceStudioPanel::onSavePresetClicked() {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
 
   bool ok;
-  QString name = NMInputDialog::getText(this, tr("Save Preset"),
-                                        tr("Preset name:"), QLineEdit::Normal,
-                                        QString(), &ok);
-  if (!ok || name.isEmpty()) return;
+  QString name =
+      NMInputDialog::getText(this, tr("Save Preset"), tr("Preset name:"),
+                             QLineEdit::Normal, QString(), &ok);
+  if (!ok || name.isEmpty())
+    return;
 
   // Add or update preset
   bool found = false;
@@ -1143,11 +1227,12 @@ void NMVoiceStudioPanel::onSaveClicked() {
 }
 
 void NMVoiceStudioPanel::onSaveAsClicked() {
-  QString filePath = NMFileDialog::getSaveFileName(
-      this, tr("Save Audio File"), QString(),
-      tr("WAV Files (*.wav);;All Files (*)"));
+  QString filePath =
+      NMFileDialog::getSaveFileName(this, tr("Save Audio File"), QString(),
+                                    tr("WAV Files (*.wav);;All Files (*)"));
 
-  if (filePath.isEmpty()) return;
+  if (filePath.isEmpty())
+    return;
 
   if (!filePath.endsWith(".wav", Qt::CaseInsensitive)) {
     filePath += ".wav";
@@ -1162,13 +1247,15 @@ void NMVoiceStudioPanel::onSaveAsClicked() {
 }
 
 void NMVoiceStudioPanel::onExportClicked() {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
 
   QString filePath = NMFileDialog::getSaveFileName(
       this, tr("Export Processed Audio"), QString(),
       tr("WAV Files (*.wav);;All Files (*)"));
 
-  if (filePath.isEmpty()) return;
+  if (filePath.isEmpty())
+    return;
 
   if (!filePath.endsWith(".wav", Qt::CaseInsensitive)) {
     filePath += ".wav";
@@ -1262,7 +1349,8 @@ void NMVoiceStudioPanel::onPlaybackPositionChanged(qint64 position) {
 }
 
 void NMVoiceStudioPanel::onPlaybackStateChanged() {
-  if (!m_mediaPlayer) return;
+  if (!m_mediaPlayer)
+    return;
 
   auto state = m_mediaPlayer->playbackState();
   m_isPlaying = (state == QMediaPlayer::PlayingState);
@@ -1294,11 +1382,15 @@ void NMVoiceStudioPanel::onRecordingStateChanged(int state) {
   // Update recording UI based on state
 }
 
-void NMVoiceStudioPanel::onRecordingComplete(const audio::RecordingResult &result) {
+void NMVoiceStudioPanel::onRecordingComplete(
+    const audio::RecordingResult &result) {
   m_isRecording = false;
-  if (m_recordBtn) m_recordBtn->setEnabled(true);
-  if (m_stopRecordBtn) m_stopRecordBtn->setEnabled(false);
-  if (m_cancelRecordBtn) m_cancelRecordBtn->setEnabled(false);
+  if (m_recordBtn)
+    m_recordBtn->setEnabled(true);
+  if (m_stopRecordBtn)
+    m_stopRecordBtn->setEnabled(false);
+  if (m_cancelRecordBtn)
+    m_cancelRecordBtn->setEnabled(false);
 
   // Load the recorded file
   loadFile(QString::fromStdString(result.filePath));
@@ -1308,9 +1400,12 @@ void NMVoiceStudioPanel::onRecordingComplete(const audio::RecordingResult &resul
 
 void NMVoiceStudioPanel::onRecordingError(const QString &error) {
   m_isRecording = false;
-  if (m_recordBtn) m_recordBtn->setEnabled(true);
-  if (m_stopRecordBtn) m_stopRecordBtn->setEnabled(false);
-  if (m_cancelRecordBtn) m_cancelRecordBtn->setEnabled(false);
+  if (m_recordBtn)
+    m_recordBtn->setEnabled(true);
+  if (m_stopRecordBtn)
+    m_stopRecordBtn->setEnabled(false);
+  if (m_cancelRecordBtn)
+    m_cancelRecordBtn->setEnabled(false);
 
   NMMessageDialog::showWarning(this, tr("Recording Error"), error);
 }
@@ -1359,8 +1454,8 @@ void NMVoiceStudioPanel::setupUI() {
 
   auto *recordBtnLayout = new QHBoxLayout();
   m_recordBtn = new QPushButton(tr("⏺ Record"), recordGroup);
-  m_recordBtn->setStyleSheet(
-      "QPushButton { background-color: #c44; color: white; font-weight: bold; }");
+  m_recordBtn->setStyleSheet("QPushButton { background-color: #c44; color: "
+                             "white; font-weight: bold; }");
   m_recordBtn->setToolTip(tr("Start recording (R)"));
   connect(m_recordBtn, &QPushButton::clicked, this,
           &NMVoiceStudioPanel::onRecordClicked);
@@ -1381,7 +1476,8 @@ void NMVoiceStudioPanel::setupUI() {
   recordLayout->addLayout(recordBtnLayout);
 
   m_recordingTimeLabel = new QLabel("00:00.000", recordGroup);
-  m_recordingTimeLabel->setStyleSheet("font-family: monospace; font-size: 14px;");
+  m_recordingTimeLabel->setStyleSheet(
+      "font-family: monospace; font-size: 14px;");
   m_recordingTimeLabel->setAlignment(Qt::AlignCenter);
   recordLayout->addWidget(m_recordingTimeLabel);
 
@@ -1430,11 +1526,13 @@ void NMVoiceStudioPanel::setupToolbar() {
 
   auto *openAction = m_toolbar->addAction(tr("📂 Open"));
   openAction->setToolTip(tr("Open audio file (Ctrl+O)"));
-  connect(openAction, &QAction::triggered, this, &NMVoiceStudioPanel::onOpenClicked);
+  connect(openAction, &QAction::triggered, this,
+          &NMVoiceStudioPanel::onOpenClicked);
 
   auto *saveAction = m_toolbar->addAction(tr("💾 Save"));
   saveAction->setToolTip(tr("Save (Ctrl+S)"));
-  connect(saveAction, &QAction::triggered, this, &NMVoiceStudioPanel::onSaveClicked);
+  connect(saveAction, &QAction::triggered, this,
+          &NMVoiceStudioPanel::onSaveClicked);
 
   auto *saveAsAction = m_toolbar->addAction(tr("💾 Save As"));
   saveAsAction->setToolTip(tr("Save As"));
@@ -1450,11 +1548,13 @@ void NMVoiceStudioPanel::setupToolbar() {
 
   auto *undoAction = m_toolbar->addAction(tr("↶ Undo"));
   undoAction->setToolTip(tr("Undo (Ctrl+Z)"));
-  connect(undoAction, &QAction::triggered, this, &NMVoiceStudioPanel::onUndoClicked);
+  connect(undoAction, &QAction::triggered, this,
+          &NMVoiceStudioPanel::onUndoClicked);
 
   auto *redoAction = m_toolbar->addAction(tr("↷ Redo"));
   redoAction->setToolTip(tr("Redo (Ctrl+Y)"));
-  connect(redoAction, &QAction::triggered, this, &NMVoiceStudioPanel::onRedoClicked);
+  connect(redoAction, &QAction::triggered, this,
+          &NMVoiceStudioPanel::onRedoClicked);
 }
 
 void NMVoiceStudioPanel::setupDeviceSection() {
@@ -1463,8 +1563,9 @@ void NMVoiceStudioPanel::setupDeviceSection() {
 
   m_inputDeviceCombo = new QComboBox(m_deviceGroup);
   m_inputDeviceCombo->setToolTip(tr("Select microphone"));
-  connect(m_inputDeviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-          this, &NMVoiceStudioPanel::onInputDeviceChanged);
+  connect(m_inputDeviceCombo,
+          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &NMVoiceStudioPanel::onInputDeviceChanged);
   layout->addWidget(m_inputDeviceCombo);
 
   // Input gain
@@ -1498,18 +1599,21 @@ void NMVoiceStudioPanel::setupTransportSection() {
 
   m_playBtn = new QPushButton(tr("▶ Play"), m_transportGroup);
   m_playBtn->setToolTip(tr("Play/Pause (Space)"));
-  connect(m_playBtn, &QPushButton::clicked, this, &NMVoiceStudioPanel::onPlayClicked);
+  connect(m_playBtn, &QPushButton::clicked, this,
+          &NMVoiceStudioPanel::onPlayClicked);
   layout->addWidget(m_playBtn);
 
   m_stopBtn = new QPushButton(tr("⏹ Stop"), m_transportGroup);
   m_stopBtn->setToolTip(tr("Stop playback"));
-  connect(m_stopBtn, &QPushButton::clicked, this, &NMVoiceStudioPanel::onStopClicked);
+  connect(m_stopBtn, &QPushButton::clicked, this,
+          &NMVoiceStudioPanel::onStopClicked);
   layout->addWidget(m_stopBtn);
 
   m_loopBtn = new QPushButton(tr("🔁 Loop"), m_transportGroup);
   m_loopBtn->setCheckable(true);
   m_loopBtn->setToolTip(tr("Toggle loop (L)"));
-  connect(m_loopBtn, &QPushButton::toggled, this, &NMVoiceStudioPanel::onLoopClicked);
+  connect(m_loopBtn, &QPushButton::toggled, this,
+          &NMVoiceStudioPanel::onLoopClicked);
   layout->addWidget(m_loopBtn);
 
   layout->addStretch();
@@ -1533,7 +1637,8 @@ void NMVoiceStudioPanel::setupTransportSection() {
   zoomOutBtn->setFixedWidth(30);
   zoomOutBtn->setToolTip(tr("Zoom out (-)"));
   connect(zoomOutBtn, &QPushButton::clicked, this, [this]() {
-    if (m_waveformWidget) m_waveformWidget->zoomOut();
+    if (m_waveformWidget)
+      m_waveformWidget->zoomOut();
   });
   layout->addWidget(zoomOutBtn);
 
@@ -1547,14 +1652,16 @@ void NMVoiceStudioPanel::setupTransportSection() {
   zoomInBtn->setFixedWidth(30);
   zoomInBtn->setToolTip(tr("Zoom in (+)"));
   connect(zoomInBtn, &QPushButton::clicked, this, [this]() {
-    if (m_waveformWidget) m_waveformWidget->zoomIn();
+    if (m_waveformWidget)
+      m_waveformWidget->zoomIn();
   });
   layout->addWidget(zoomInBtn);
 
   auto *zoomFitBtn = new QPushButton(tr("Fit"), m_transportGroup);
   zoomFitBtn->setToolTip(tr("Zoom to fit (F)"));
   connect(zoomFitBtn, &QPushButton::clicked, this, [this]() {
-    if (m_waveformWidget) m_waveformWidget->zoomToFit();
+    if (m_waveformWidget)
+      m_waveformWidget->zoomToFit();
   });
   layout->addWidget(zoomFitBtn);
 }
@@ -1582,8 +1689,10 @@ void NMVoiceStudioPanel::setupEditSection() {
   // Trim controls
   layout->addWidget(new QLabel(tr("Trim:"), m_editGroup), 0, 0);
 
-  m_trimToSelectionBtn = new QPushButton(tr("✂ Trim to Selection"), m_editGroup);
-  m_trimToSelectionBtn->setToolTip(tr("Remove audio outside selection (Ctrl+T)"));
+  m_trimToSelectionBtn =
+      new QPushButton(tr("✂ Trim to Selection"), m_editGroup);
+  m_trimToSelectionBtn->setToolTip(
+      tr("Remove audio outside selection (Ctrl+T)"));
   connect(m_trimToSelectionBtn, &QPushButton::clicked, this,
           &NMVoiceStudioPanel::onTrimToSelection);
   layout->addWidget(m_trimToSelectionBtn, 0, 1);
@@ -1639,8 +1748,9 @@ void NMVoiceStudioPanel::setupEditSection() {
   m_normalizeTargetSpin->setSuffix(" dBFS");
   m_normalizeTargetSpin->setEnabled(false);
   m_normalizeTargetSpin->setToolTip(tr("Target peak level for normalization"));
-  connect(m_normalizeTargetSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-          this, &NMVoiceStudioPanel::onNormalizeTargetChanged);
+  connect(m_normalizeTargetSpin,
+          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &NMVoiceStudioPanel::onNormalizeTargetChanged);
   layout->addWidget(m_normalizeTargetSpin, 2, 3);
 }
 
@@ -1652,7 +1762,8 @@ void NMVoiceStudioPanel::setupFilterSection() {
 
   // High-pass
   m_highPassCheck = new QCheckBox(tr("High-Pass Filter"), m_filterGroup);
-  m_highPassCheck->setToolTip(tr("Remove low-frequency rumble below the cutoff"));
+  m_highPassCheck->setToolTip(
+      tr("Remove low-frequency rumble below the cutoff"));
   connect(m_highPassCheck, &QCheckBox::toggled, this,
           &NMVoiceStudioPanel::onHighPassToggled);
   layout->addWidget(m_highPassCheck, 0, 0);
@@ -1662,8 +1773,9 @@ void NMVoiceStudioPanel::setupFilterSection() {
   m_highPassFreqSpin->setValue(80.0);
   m_highPassFreqSpin->setSuffix(" Hz");
   m_highPassFreqSpin->setEnabled(false);
-  connect(m_highPassFreqSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-          this, &NMVoiceStudioPanel::onHighPassFreqChanged);
+  connect(m_highPassFreqSpin,
+          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &NMVoiceStudioPanel::onHighPassFreqChanged);
   layout->addWidget(m_highPassFreqSpin, 0, 1);
 
   // Low-pass
@@ -1678,14 +1790,16 @@ void NMVoiceStudioPanel::setupFilterSection() {
   m_lowPassFreqSpin->setValue(12000.0);
   m_lowPassFreqSpin->setSuffix(" Hz");
   m_lowPassFreqSpin->setEnabled(false);
-  connect(m_lowPassFreqSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-          this, &NMVoiceStudioPanel::onLowPassFreqChanged);
+  connect(m_lowPassFreqSpin,
+          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &NMVoiceStudioPanel::onLowPassFreqChanged);
   layout->addWidget(m_lowPassFreqSpin, 0, 3);
 
   // 3-Band EQ
   m_eqCheck = new QCheckBox(tr("3-Band EQ"), m_filterGroup);
   m_eqCheck->setToolTip(tr("Enable 3-band equalizer"));
-  connect(m_eqCheck, &QCheckBox::toggled, this, &NMVoiceStudioPanel::onEQToggled);
+  connect(m_eqCheck, &QCheckBox::toggled, this,
+          &NMVoiceStudioPanel::onEQToggled);
   layout->addWidget(m_eqCheck, 1, 0);
 
   layout->addWidget(new QLabel(tr("Low:"), m_filterGroup), 1, 1);
@@ -1731,8 +1845,9 @@ void NMVoiceStudioPanel::setupFilterSection() {
   m_noiseGateThresholdSpin->setValue(-40.0);
   m_noiseGateThresholdSpin->setSuffix(" dB");
   m_noiseGateThresholdSpin->setEnabled(false);
-  connect(m_noiseGateThresholdSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-          this, &NMVoiceStudioPanel::onNoiseGateThresholdChanged);
+  connect(m_noiseGateThresholdSpin,
+          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &NMVoiceStudioPanel::onNoiseGateThresholdChanged);
   layout->addWidget(m_noiseGateThresholdSpin, 3, 2);
 }
 
@@ -1796,7 +1911,8 @@ void NMVoiceStudioPanel::setupRecorder() {
 // ============================================================================
 
 void NMVoiceStudioPanel::refreshDeviceList() {
-  if (!m_inputDeviceCombo) return;
+  if (!m_inputDeviceCombo)
+    return;
 
   m_inputDeviceCombo->clear();
   m_inputDeviceCombo->addItem(tr("(Default Device)"));
@@ -1814,11 +1930,16 @@ void NMVoiceStudioPanel::refreshDeviceList() {
 void NMVoiceStudioPanel::updateUI() {
   bool hasClip = (m_clip != nullptr);
 
-  if (m_playBtn) m_playBtn->setEnabled(hasClip);
-  if (m_stopBtn) m_stopBtn->setEnabled(hasClip);
-  if (m_loopBtn) m_loopBtn->setEnabled(hasClip);
-  if (m_trimToSelectionBtn) m_trimToSelectionBtn->setEnabled(hasClip);
-  if (m_resetTrimBtn) m_resetTrimBtn->setEnabled(hasClip);
+  if (m_playBtn)
+    m_playBtn->setEnabled(hasClip);
+  if (m_stopBtn)
+    m_stopBtn->setEnabled(hasClip);
+  if (m_loopBtn)
+    m_loopBtn->setEnabled(hasClip);
+  if (m_trimToSelectionBtn)
+    m_trimToSelectionBtn->setEnabled(hasClip);
+  if (m_resetTrimBtn)
+    m_resetTrimBtn->setEnabled(hasClip);
 
   if (hasClip && m_durationLabel) {
     m_durationLabel->setText(formatTimeMs(m_clip->getDurationSeconds()));
@@ -1828,7 +1949,8 @@ void NMVoiceStudioPanel::updateUI() {
 }
 
 void NMVoiceStudioPanel::updateEditControls() {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
 
   // Update spinboxes without triggering signals
   if (m_fadeInSpin) {
@@ -1869,8 +1991,10 @@ void NMVoiceStudioPanel::updatePlaybackState() {
 
 void NMVoiceStudioPanel::updateStatusBar() {
   if (!m_clip) {
-    if (m_statusLabel) m_statusLabel->setText(tr("Ready"));
-    if (m_fileInfoLabel) m_fileInfoLabel->clear();
+    if (m_statusLabel)
+      m_statusLabel->setText(tr("Ready"));
+    if (m_fileInfoLabel)
+      m_fileInfoLabel->clear();
     return;
   }
 
@@ -1879,7 +2003,8 @@ void NMVoiceStudioPanel::updateStatusBar() {
     filename = tr("Untitled");
   } else {
     qsizetype lastSlash = filename.lastIndexOf('/');
-    if (lastSlash >= 0) filename = filename.mid(lastSlash + 1);
+    if (lastSlash >= 0)
+      filename = filename.mid(lastSlash + 1);
   }
 
   QString modified = m_clip->edit.hasEdits() ? " ●" : "";
@@ -1889,28 +2014,32 @@ void NMVoiceStudioPanel::updateStatusBar() {
   }
 
   if (m_fileInfoLabel) {
-    m_fileInfoLabel->setText(QString("%1 Hz | %2 | %3-bit")
-                                 .arg(m_clip->format.sampleRate)
-                                 .arg(m_clip->format.channels == 1 ? "Mono" : "Stereo")
-                                 .arg(m_clip->format.bitsPerSample));
+    m_fileInfoLabel->setText(
+        QString("%1 Hz | %2 | %3-bit")
+            .arg(m_clip->format.sampleRate)
+            .arg(m_clip->format.channels == 1 ? "Mono" : "Stereo")
+            .arg(m_clip->format.bitsPerSample));
   }
 }
 
 bool NMVoiceStudioPanel::loadWavFile(const QString &filePath) {
   std::ifstream file(filePath.toStdString(), std::ios::binary);
-  if (!file.is_open()) return false;
+  if (!file.is_open())
+    return false;
 
   // Read WAV header
   char riffHeader[4];
   file.read(riffHeader, 4);
-  if (std::string(riffHeader, 4) != "RIFF") return false;
+  if (std::string(riffHeader, 4) != "RIFF")
+    return false;
 
   uint32_t fileSize;
   file.read(reinterpret_cast<char *>(&fileSize), 4);
 
   char waveHeader[4];
   file.read(waveHeader, 4);
-  if (std::string(waveHeader, 4) != "WAVE") return false;
+  if (std::string(waveHeader, 4) != "WAVE")
+    return false;
 
   // Find fmt chunk
   char chunkId[4];
@@ -1947,14 +2076,16 @@ bool NMVoiceStudioPanel::loadWavFile(const QString &filePath) {
 
       if (bitsPerSample == 16) {
         std::vector<int16_t> rawSamples(numSamples * numChannels);
-        file.read(reinterpret_cast<char *>(rawSamples.data()),
-                  chunkSize);
+        file.read(reinterpret_cast<char *>(rawSamples.data()), chunkSize);
 
         // Convert to float and mono if needed
         for (size_t i = 0; i < numSamples; ++i) {
           float sample = 0.0f;
           for (int ch = 0; ch < numChannels; ++ch) {
-            sample += static_cast<float>(rawSamples[i * static_cast<size_t>(numChannels) + static_cast<size_t>(ch)]) / 32768.0f;
+            sample += static_cast<float>(
+                          rawSamples[i * static_cast<size_t>(numChannels) +
+                                     static_cast<size_t>(ch)]) /
+                      32768.0f;
           }
           m_clip->samples[i] = sample / static_cast<float>(numChannels);
         }
@@ -1965,7 +2096,9 @@ bool NMVoiceStudioPanel::loadWavFile(const QString &filePath) {
             uint8_t bytes[3];
             file.read(reinterpret_cast<char *>(bytes), 3);
             int32_t value = (bytes[2] << 16) | (bytes[1] << 8) | bytes[0];
-            if (value & 0x800000) value = static_cast<int32_t>(static_cast<uint32_t>(value) | 0xFF000000u);  // Sign extend
+            if (value & 0x800000)
+              value = static_cast<int32_t>(static_cast<uint32_t>(value) |
+                                           0xFF000000u); // Sign extend
             sample += static_cast<float>(value) / 8388608.0f;
           }
           m_clip->samples[i] = sample / static_cast<float>(numChannels);
@@ -1977,7 +2110,10 @@ bool NMVoiceStudioPanel::loadWavFile(const QString &filePath) {
         for (size_t i = 0; i < numSamples; ++i) {
           float sample = 0.0f;
           for (int ch = 0; ch < numChannels; ++ch) {
-            sample += static_cast<float>(rawSamples[i * static_cast<size_t>(numChannels) + static_cast<size_t>(ch)]) / 2147483648.0f;
+            sample += static_cast<float>(
+                          rawSamples[i * static_cast<size_t>(numChannels) +
+                                     static_cast<size_t>(ch)]) /
+                      2147483648.0f;
           }
           m_clip->samples[i] = sample / static_cast<float>(numChannels);
         }
@@ -1994,15 +2130,17 @@ bool NMVoiceStudioPanel::loadWavFile(const QString &filePath) {
 }
 
 bool NMVoiceStudioPanel::saveWavFile(const QString &filePath) {
-  if (!m_clip) return false;
+  if (!m_clip)
+    return false;
 
   std::ofstream file(filePath.toStdString(), std::ios::binary);
-  if (!file.is_open()) return false;
+  if (!file.is_open())
+    return false;
 
   const auto &samples = m_clip->samples;
   size_t numSamples = samples.size();
   uint32_t sampleRate = m_clip->format.sampleRate;
-  uint16_t numChannels = 1;  // Always mono output
+  uint16_t numChannels = 1; // Always mono output
   uint16_t bitsPerSample = 16;
   uint16_t blockAlign = numChannels * (bitsPerSample / 8);
   uint32_t byteRate = sampleRate * blockAlign;
@@ -2018,7 +2156,7 @@ bool NMVoiceStudioPanel::saveWavFile(const QString &filePath) {
   file.write("fmt ", 4);
   uint32_t fmtSize = 16;
   file.write(reinterpret_cast<char *>(&fmtSize), 4);
-  uint16_t audioFormat = 1;  // PCM
+  uint16_t audioFormat = 1; // PCM
   file.write(reinterpret_cast<char *>(&audioFormat), 2);
   file.write(reinterpret_cast<char *>(&numChannels), 2);
   file.write(reinterpret_cast<char *>(&sampleRate), 4);
@@ -2041,12 +2179,14 @@ bool NMVoiceStudioPanel::saveWavFile(const QString &filePath) {
 }
 
 std::vector<float> NMVoiceStudioPanel::renderProcessedAudio() {
-  if (!m_clip) return {};
+  if (!m_clip)
+    return {};
   return AudioProcessor::process(m_clip->samples, m_clip->edit, m_clip->format);
 }
 
 void NMVoiceStudioPanel::applyPreset(const QString &presetName) {
-  if (!m_clip) return;
+  if (!m_clip)
+    return;
 
   for (const auto &preset : m_presets) {
     if (preset.name == presetName) {

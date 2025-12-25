@@ -127,9 +127,9 @@ void ChoiceUIObject::render(renderer::IRenderer &renderer) {
     if (!choice.visible) {
       continue;
     }
-    renderer::Color color =
-        choice.enabled ? renderer::Color::White
-                       : renderer::Color(140, 140, 140, 255);
+    renderer::Color color = choice.enabled
+                                ? renderer::Color::White
+                                : renderer::Color(140, 140, 140, 255);
     if (static_cast<i32>(i) == m_selectedIndex) {
       color = renderer::Color(255, 220, 80, 255);
     }

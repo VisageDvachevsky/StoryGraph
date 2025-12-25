@@ -15,8 +15,8 @@
 
 #include "NovelMind/editor/qt/nm_dock_panel.hpp"
 
-#include <QWidget>
 #include <QHash>
+#include <QWidget>
 
 class QFormLayout;
 class QComboBox;

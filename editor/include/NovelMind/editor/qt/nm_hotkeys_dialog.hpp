@@ -13,10 +13,10 @@
  */
 
 #include <QDialog>
-#include <QList>
-#include <QString>
 #include <QHash>
 #include <QKeySequence>
+#include <QList>
+#include <QString>
 
 class QLineEdit;
 class QTreeWidget;
@@ -30,10 +30,10 @@ namespace NovelMind::editor::qt {
  * @brief Hotkey entry with editability
  */
 struct NMHotkeyEntry {
-  QString id;           // Unique action ID
-  QString section;      // Category (e.g., "File", "Edit", "View")
-  QString action;       // Action name
-  QString shortcut;     // Current shortcut
+  QString id;              // Unique action ID
+  QString section;         // Category (e.g., "File", "Edit", "View")
+  QString action;          // Action name
+  QString shortcut;        // Current shortcut
   QString defaultShortcut; // Default shortcut
   QString notes;
   bool isCustomizable = true;

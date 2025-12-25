@@ -44,7 +44,8 @@ std::string formatBytes(u64 bytes) {
   if (unitIndex == 0) {
     oss << bytes << " " << units[unitIndex];
   } else {
-    oss << std::fixed << std::setprecision(2) << size << " " << units[unitIndex];
+    oss << std::fixed << std::setprecision(2) << size << " "
+        << units[unitIndex];
   }
   return oss.str();
 }
@@ -230,7 +231,7 @@ Result<BuildSizeAnalysis> BuildSizeAnalyzer::analyze() {
       analyzeAsset(m_analysis.assets[i]);
 
       f32 progress = 0.2f + 0.3f * static_cast<f32>(i) /
-                               static_cast<f32>(m_analysis.assets.size());
+                                static_cast<f32>(m_analysis.assets.size());
       reportProgress("Analyzing: " + m_analysis.assets[i].name, progress);
     }
 
@@ -273,8 +274,8 @@ Result<BuildSizeAnalysis> BuildSizeAnalyzer::analyze() {
     return Result<BuildSizeAnalysis>::ok(m_analysis);
 
   } catch (const std::exception &e) {
-    return Result<BuildSizeAnalysis>::error(
-        std::string("Analysis failed: ") + e.what());
+    return Result<BuildSizeAnalysis>::error(std::string("Analysis failed: ") +
+                                            e.what());
   }
 }
 
@@ -334,8 +335,8 @@ Result<std::string> BuildSizeAnalyzer::exportAsJson() const {
   json << "  \"totalCompressedSize\": " << m_analysis.totalCompressedSize
        << ",\n";
   json << "  \"totalFileCount\": " << m_analysis.totalFileCount << ",\n";
-  json << "  \"overallCompressionRatio\": " << m_analysis.overallCompressionRatio
-       << ",\n";
+  json << "  \"overallCompressionRatio\": "
+       << m_analysis.overallCompressionRatio << ",\n";
   json << "  \"totalWastedSpace\": " << m_analysis.totalWastedSpace << ",\n";
   json << "  \"unusedSpace\": " << m_analysis.unusedSpace << ",\n";
   json << "  \"potentialSavings\": " << m_analysis.potentialSavings << ",\n";
@@ -349,7 +350,8 @@ Result<std::string> BuildSizeAnalyzer::exportAsJson() const {
     json << "      \"category\": " << static_cast<int>(cat.category) << ",\n";
     json << "      \"fileCount\": " << cat.fileCount << ",\n";
     json << "      \"totalOriginalSize\": " << cat.totalOriginalSize << ",\n";
-    json << "      \"totalCompressedSize\": " << cat.totalCompressedSize << ",\n";
+    json << "      \"totalCompressedSize\": " << cat.totalCompressedSize
+         << ",\n";
     json << "      \"percentageOfTotal\": " << cat.percentageOfTotal << "\n";
     json << "    }";
     if (i < m_analysis.categorySummaries.size() - 1)
@@ -372,7 +374,8 @@ Result<std::string> BuildSizeAnalyzer::exportAsJson() const {
   return Result<std::string>::ok(json.str());
 }
 
-Result<void> BuildSizeAnalyzer::exportAsHtml(const std::string &outputPath) const {
+Result<void>
+BuildSizeAnalyzer::exportAsHtml(const std::string &outputPath) const {
   std::ofstream file(outputPath);
   if (!file.is_open()) {
     return Result<void>::error("Cannot create HTML file: " + outputPath);
@@ -383,11 +386,14 @@ Result<void> BuildSizeAnalyzer::exportAsHtml(const std::string &outputPath) cons
   file << "<head>\n";
   file << "  <title>Build Size Analysis Report</title>\n";
   file << "  <style>\n";
-  file << "    body { font-family: Arial, sans-serif; margin: 20px; background: #1e1e1e; color: #d4d4d4; }\n";
+  file << "    body { font-family: Arial, sans-serif; margin: 20px; "
+          "background: #1e1e1e; color: #d4d4d4; }\n";
   file << "    h1 { color: #569cd6; }\n";
   file << "    h2 { color: #4ec9b0; }\n";
-  file << "    table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }\n";
-  file << "    th, td { border: 1px solid #3c3c3c; padding: 8px; text-align: left; }\n";
+  file << "    table { border-collapse: collapse; width: 100%; margin-bottom: "
+          "20px; }\n";
+  file << "    th, td { border: 1px solid #3c3c3c; padding: 8px; text-align: "
+          "left; }\n";
   file << "    th { background-color: #252526; }\n";
   file << "    tr:nth-child(even) { background-color: #2d2d30; }\n";
   file << "    .warning { color: #ce9178; }\n";
@@ -404,24 +410,29 @@ Result<void> BuildSizeAnalyzer::exportAsHtml(const std::string &outputPath) cons
   file << "  <table>\n";
   file << "    <tr><th>Metric</th><th>Value</th></tr>\n";
   file << "    <tr><td>Total Size</td><td class='size'>"
-       << SizeVisualization::formatBytes(m_analysis.totalOriginalSize) << "</td></tr>\n";
+       << SizeVisualization::formatBytes(m_analysis.totalOriginalSize)
+       << "</td></tr>\n";
   file << "    <tr><td>File Count</td><td class='size'>"
        << m_analysis.totalFileCount << "</td></tr>\n";
-  file << "    <tr><td>Compression Ratio</td><td class='size'>"
-       << std::fixed << std::setprecision(2)
-       << (m_analysis.overallCompressionRatio * 100) << "%</td></tr>\n";
+  file << "    <tr><td>Compression Ratio</td><td class='size'>" << std::fixed
+       << std::setprecision(2) << (m_analysis.overallCompressionRatio * 100)
+       << "%</td></tr>\n";
   file << "    <tr><td>Wasted Space (Duplicates)</td><td class='size'>"
-       << SizeVisualization::formatBytes(m_analysis.totalWastedSpace) << "</td></tr>\n";
+       << SizeVisualization::formatBytes(m_analysis.totalWastedSpace)
+       << "</td></tr>\n";
   file << "    <tr><td>Unused Space</td><td class='size'>"
-       << SizeVisualization::formatBytes(m_analysis.unusedSpace) << "</td></tr>\n";
+       << SizeVisualization::formatBytes(m_analysis.unusedSpace)
+       << "</td></tr>\n";
   file << "    <tr><td>Potential Savings</td><td class='size'>"
-       << SizeVisualization::formatBytes(m_analysis.potentialSavings) << "</td></tr>\n";
+       << SizeVisualization::formatBytes(m_analysis.potentialSavings)
+       << "</td></tr>\n";
   file << "  </table>\n";
 
   // Categories
   file << "  <h2>Size by Category</h2>\n";
   file << "  <table>\n";
-  file << "    <tr><th>Category</th><th>Files</th><th>Size</th><th>% of Total</th></tr>\n";
+  file << "    <tr><th>Category</th><th>Files</th><th>Size</th><th>% of "
+          "Total</th></tr>\n";
   for (const auto &cat : m_analysis.categorySummaries) {
     std::string catName;
     switch (cat.category) {
@@ -459,7 +470,9 @@ Result<void> BuildSizeAnalyzer::exportAsHtml(const std::string &outputPath) cons
   if (!m_analysis.suggestions.empty()) {
     file << "  <h2>Optimization Suggestions</h2>\n";
     file << "  <table>\n";
-    file << "    <tr><th>Priority</th><th>Type</th><th>Asset</th><th>Description</th><th>Est. Savings</th></tr>\n";
+    file << "    "
+            "<tr><th>Priority</th><th>Type</th><th>Asset</th><th>Description</"
+            "th><th>Est. Savings</th></tr>\n";
     for (const auto &sug : m_analysis.suggestions) {
       std::string priority;
       std::string priorityClass;
@@ -497,14 +510,16 @@ Result<void> BuildSizeAnalyzer::exportAsHtml(const std::string &outputPath) cons
   return Result<void>::ok();
 }
 
-Result<void> BuildSizeAnalyzer::exportAsCsv(const std::string &outputPath) const {
+Result<void>
+BuildSizeAnalyzer::exportAsCsv(const std::string &outputPath) const {
   std::ofstream file(outputPath);
   if (!file.is_open()) {
     return Result<void>::error("Cannot create CSV file: " + outputPath);
   }
 
   // Header
-  file << "Path,Name,Category,Original Size,Compressed Size,Compression Ratio,Is Duplicate,Is Unused\n";
+  file << "Path,Name,Category,Original Size,Compressed Size,Compression "
+          "Ratio,Is Duplicate,Is Unused\n";
 
   // Assets
   for (const auto &asset : m_analysis.assets) {
@@ -534,11 +549,8 @@ Result<void> BuildSizeAnalyzer::exportAsCsv(const std::string &outputPath) const
     }
 
     file << "\"" << asset.path << "\","
-         << "\"" << asset.name << "\","
-         << catName << ","
-         << asset.originalSize << ","
-         << asset.compressedSize << ","
-         << asset.compressionRatio << ","
+         << "\"" << asset.name << "\"," << catName << "," << asset.originalSize
+         << "," << asset.compressedSize << "," << asset.compressionRatio << ","
          << (asset.isDuplicate ? "Yes" : "No") << ","
          << (asset.isUnused ? "Yes" : "No") << "\n";
   }
@@ -616,7 +628,8 @@ void BuildSizeAnalyzer::scanAssets() {
       info.name = entry.path().filename().string();
       info.category = category;
       info.originalSize = static_cast<u64>(entry.file_size());
-      info.compressedSize = info.originalSize; // Will be updated during analysis
+      info.compressedSize =
+          info.originalSize; // Will be updated during analysis
 
       m_analysis.assets.push_back(info);
       m_analysis.totalFileCount++;
@@ -747,8 +760,8 @@ void BuildSizeAnalyzer::generateSuggestions() {
     suggestion.priority = OptimizationSuggestion::Priority::High;
     suggestion.type = OptimizationSuggestion::Type::RemoveDuplicate;
     suggestion.assetPath = dup.paths[1]; // First duplicate
-    suggestion.description = "Remove duplicate file (same content as " +
-                             dup.paths[0] + ")";
+    suggestion.description =
+        "Remove duplicate file (same content as " + dup.paths[0] + ")";
     suggestion.estimatedSavings = dup.singleFileSize;
     suggestion.canAutoFix = true;
 
@@ -811,10 +824,11 @@ void BuildSizeAnalyzer::generateSuggestions() {
   }
 
   // Sort suggestions by estimated savings (descending)
-  std::sort(m_analysis.suggestions.begin(), m_analysis.suggestions.end(),
-            [](const OptimizationSuggestion &a, const OptimizationSuggestion &b) {
-              return a.estimatedSavings > b.estimatedSavings;
-            });
+  std::sort(
+      m_analysis.suggestions.begin(), m_analysis.suggestions.end(),
+      [](const OptimizationSuggestion &a, const OptimizationSuggestion &b) {
+        return a.estimatedSavings > b.estimatedSavings;
+      });
 }
 
 void BuildSizeAnalyzer::calculateSummaries() {

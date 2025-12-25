@@ -19,18 +19,18 @@
 #include "NovelMind/editor/qt/nm_dock_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_curve_point_item.hpp"
 
+#include <QComboBox>
+#include <QGraphicsPathItem>
 #include <QGraphicsScene>
 #include <QGraphicsView>
-#include <QGraphicsPathItem>
+#include <QPushButton>
 #include <QToolBar>
 #include <QWidget>
-#include <QComboBox>
-#include <QPushButton>
 
-#include <vector>
-#include <unordered_map>
-#include <memory>
 #include <cstdint>
+#include <memory>
+#include <unordered_map>
+#include <vector>
 
 class QToolBar;
 class QPushButton;
@@ -41,21 +41,15 @@ namespace NovelMind::editor::qt {
 /**
  * @brief Interpolation type for curve segments
  */
-enum class CurveInterpolation {
-  Linear,
-  EaseIn,
-  EaseOut,
-  EaseInOut,
-  Bezier
-};
+enum class CurveInterpolation { Linear, EaseIn, EaseOut, EaseInOut, Bezier };
 
 /**
  * @brief A single point in the curve data model
  */
 struct CurveDataPoint {
-  CurvePointId id;        ///< Unique stable identifier
-  qreal time;             ///< Normalized time [0, 1]
-  qreal value;            ///< Normalized value [0, 1]
+  CurvePointId id; ///< Unique stable identifier
+  qreal time;      ///< Normalized time [0, 1]
+  qreal value;     ///< Normalized value [0, 1]
   CurveInterpolation interpolation = CurveInterpolation::Linear;
 };
 
@@ -76,8 +70,9 @@ public:
    * @param interpolation Interpolation type
    * @return The ID of the newly added point
    */
-  CurvePointId addPoint(qreal time, qreal value,
-                        CurveInterpolation interpolation = CurveInterpolation::Linear);
+  CurvePointId
+  addPoint(qreal time, qreal value,
+           CurveInterpolation interpolation = CurveInterpolation::Linear);
 
   /**
    * @brief Remove a point by ID
@@ -101,7 +96,8 @@ public:
    * @param interpolation New interpolation type
    * @return true if point was found and updated
    */
-  bool updatePointInterpolation(CurvePointId id, CurveInterpolation interpolation);
+  bool updatePointInterpolation(CurvePointId id,
+                                CurveInterpolation interpolation);
 
   /**
    * @brief Get point by ID
@@ -230,7 +226,7 @@ signals:
    * @param curveId Curve data identifier
    */
   void openCurveEditorRequested(const QString &propertyName,
-                                 const QString &curveId);
+                                const QString &curveId);
 
 public slots:
   /**
@@ -328,7 +324,8 @@ private:
   std::vector<CurvePointId> m_selectedPoints;
 
   // Drag tracking for undo
-  std::unordered_map<CurvePointId, std::pair<qreal, qreal>> m_dragStartPositions;
+  std::unordered_map<CurvePointId, std::pair<qreal, qreal>>
+      m_dragStartPositions;
 
   // Layout constants
   static constexpr qreal MARGIN = 40.0;

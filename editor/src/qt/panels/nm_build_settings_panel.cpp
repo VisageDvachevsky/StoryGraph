@@ -10,8 +10,8 @@
  */
 
 #include "NovelMind/editor/qt/panels/nm_build_settings_panel.hpp"
-#include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/editor/build_system.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -136,7 +136,8 @@ void NMBuildSettingsPanel::setupUI() {
   m_buildButton = new QPushButton("Build Project", statusWidget);
   m_buildButton->setMinimumHeight(36);
   m_buildButton->setStyleSheet(
-      "QPushButton { background-color: #0078d4; color: white; font-weight: bold; "
+      "QPushButton { background-color: #0078d4; color: white; font-weight: "
+      "bold; "
       "border-radius: 4px; padding: 8px 16px; }"
       "QPushButton:hover { background-color: #1084d8; }"
       "QPushButton:pressed { background-color: #006cbd; }"
@@ -149,7 +150,8 @@ void NMBuildSettingsPanel::setupUI() {
   m_cancelButton->setMinimumHeight(36);
   m_cancelButton->setEnabled(false);
   m_cancelButton->setStyleSheet(
-      "QPushButton { background-color: #d83b01; color: white; font-weight: bold; "
+      "QPushButton { background-color: #d83b01; color: white; font-weight: "
+      "bold; "
       "border-radius: 4px; padding: 8px 16px; }"
       "QPushButton:hover { background-color: #ea4a12; }"
       "QPushButton:pressed { background-color: #c73000; }"
@@ -180,15 +182,17 @@ void NMBuildSettingsPanel::setupBuildSettings() {
   m_platformSelector->addItems(
       {"Windows", "Linux", "macOS", "Web (WASM)", "Android", "iOS"});
   m_platformSelector->setCurrentIndex(0);
-  connect(m_platformSelector, QOverload<int>::of(&QComboBox::currentIndexChanged),
-          this, &NMBuildSettingsPanel::onPlatformChanged);
+  connect(m_platformSelector,
+          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &NMBuildSettingsPanel::onPlatformChanged);
   platformLayout->addRow("Target Platform:", m_platformSelector);
 
   m_profileSelector = new QComboBox(platformGroup);
   m_profileSelector->addItems({"Debug", "Release", "Distribution"});
   m_profileSelector->setCurrentIndex(1); // Default to Release
-  connect(m_profileSelector, QOverload<int>::of(&QComboBox::currentIndexChanged),
-          this, &NMBuildSettingsPanel::onProfileChanged);
+  connect(m_profileSelector,
+          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &NMBuildSettingsPanel::onProfileChanged);
   platformLayout->addRow("Build Profile:", m_profileSelector);
 
   layout->addWidget(platformGroup);
@@ -240,7 +244,8 @@ void NMBuildSettingsPanel::setupBuildSettings() {
 
   QCheckBox *stripUnused = new QCheckBox("Strip Unused Assets", optionsGroup);
   stripUnused->setChecked(true);
-  stripUnused->setToolTip("Remove assets not referenced by any script or scene");
+  stripUnused->setToolTip(
+      "Remove assets not referenced by any script or scene");
   optionsLayout->addWidget(stripUnused);
 
   QCheckBox *encryptAssets = new QCheckBox("Encrypt Assets", optionsGroup);
@@ -248,7 +253,8 @@ void NMBuildSettingsPanel::setupBuildSettings() {
   encryptAssets->setToolTip("Encrypt resource packs (AES-256-GCM)");
   optionsLayout->addWidget(encryptAssets);
 
-  m_includeDevAssets = new QCheckBox("Include Development Assets", optionsGroup);
+  m_includeDevAssets =
+      new QCheckBox("Include Development Assets", optionsGroup);
   m_includeDevAssets->setChecked(false);
   m_includeDevAssets->setToolTip("Include test scenes and debug assets");
   optionsLayout->addWidget(m_includeDevAssets);
@@ -378,7 +384,8 @@ BuildSizeInfo NMBuildSettingsPanel::calculateBuildSize() const {
           std::string ext = entry.path().extension().string();
           std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
-          if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp") {
+          if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" ||
+              ext == ".bmp") {
             info.imagesSize += size;
           } else if (ext == ".ogg" || ext == ".wav" || ext == ".mp3") {
             info.audioSize += size;
@@ -428,7 +435,8 @@ QList<BuildWarning> NMBuildSettingsPanel::scanForWarnings() const {
       BuildWarning w;
       w.type = BuildWarningType::MissingAsset;
       w.message = "Missing project.json configuration file";
-      w.filePath = QString::fromStdString((projectDir / "project.json").string());
+      w.filePath =
+          QString::fromStdString((projectDir / "project.json").string());
       w.isCritical = true;
       warnings.append(w);
     }
@@ -439,7 +447,8 @@ QList<BuildWarning> NMBuildSettingsPanel::scanForWarnings() const {
       if (!fs::exists(projectDir / dir)) {
         BuildWarning w;
         w.type = BuildWarningType::MissingAsset;
-        w.message = QString("Missing required directory: %1").arg(QString::fromStdString(dir));
+        w.message = QString("Missing required directory: %1")
+                        .arg(QString::fromStdString(dir));
         w.filePath = QString::fromStdString((projectDir / dir).string());
         w.isCritical = true;
         warnings.append(w);
@@ -531,7 +540,8 @@ void NMBuildSettingsPanel::startBuild() {
   config.defaultLanguage = "en";
 
   // Setup callbacks
-  buildSystem->setOnProgressUpdate([this](const editor::BuildProgress &progress) {
+  buildSystem->setOnProgressUpdate([this](
+                                       const editor::BuildProgress &progress) {
     QMetaObject::invokeMethod(this, [this, progress]() {
       int percent = static_cast<int>(progress.progress * 100);
       m_progressBar->setValue(percent);
@@ -579,15 +589,17 @@ void NMBuildSettingsPanel::startBuild() {
 
         appendLog(QString("Build successful! Output: %1")
                       .arg(QString::fromStdString(result.outputPath)));
-        appendLog(QString("Total size: %1")
-                      .arg(QString::fromStdString(
-                          editor::BuildUtils::formatFileSize(result.totalSize))));
+        appendLog(
+            QString("Total size: %1")
+                .arg(QString::fromStdString(
+                    editor::BuildUtils::formatFileSize(result.totalSize))));
 
         emit buildCompleted(true, QString::fromStdString(result.outputPath));
 
         NMMessageDialog::showInfo(
             this, tr("Build Complete"),
-            tr("Build completed successfully!\n\nOutput: %1\nSize: %2\nTime: %3")
+            tr("Build completed successfully!\n\nOutput: %1\nSize: %2\nTime: "
+               "%3")
                 .arg(QString::fromStdString(result.outputPath))
                 .arg(QString::fromStdString(
                     editor::BuildUtils::formatFileSize(result.totalSize)))
@@ -693,8 +705,7 @@ void NMBuildSettingsPanel::onBuildClicked() {
         this, tr("Build Warnings"),
         tr("There are critical warnings that may cause the build to fail.\n\n"
            "Do you want to continue anyway?"),
-        {NMDialogButton::Yes, NMDialogButton::No},
-        NMDialogButton::No);
+        {NMDialogButton::Yes, NMDialogButton::No}, NMDialogButton::No);
 
     if (result != NMDialogButton::Yes) {
       return;
@@ -796,10 +807,9 @@ void NMBuildSettingsPanel::updateWarnings() {
     m_warningCountLabel->setText("No warnings");
     m_warningCountLabel->setStyleSheet("color: #4caf50; font-style: italic;");
   } else {
-    m_warningCountLabel->setText(
-        QString("%1 warnings (%2 critical)")
-            .arg(m_warnings.size())
-            .arg(criticalCount));
+    m_warningCountLabel->setText(QString("%1 warnings (%2 critical)")
+                                     .arg(m_warnings.size())
+                                     .arg(criticalCount));
     if (criticalCount > 0) {
       m_warningCountLabel->setStyleSheet("color: #ff6b6b; font-weight: bold;");
     } else {

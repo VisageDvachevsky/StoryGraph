@@ -1,14 +1,14 @@
 #include "NovelMind/platform/file_system.hpp"
 #include "NovelMind/core/logger.hpp"
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
-#include <cstdlib>
 
 #if defined(_WIN32)
 #include <Windows.h>
 #elif defined(__APPLE__)
-#include <mach-o/dyld.h>
 #include <limits.h>
+#include <mach-o/dyld.h>
 #endif
 
 namespace NovelMind::platform {
@@ -17,8 +17,7 @@ namespace fs = std::filesystem;
 
 class NativeFileSystem : public IFileSystem {
 public:
-  Result<std::vector<u8>>
-  readFile(const std::string &path) const override {
+  Result<std::vector<u8>> readFile(const std::string &path) const override {
     std::ifstream file(path, std::ios::binary);
     if (!file.is_open()) {
       return Result<std::vector<u8>>::error("Failed to open file: " + path);
@@ -27,7 +26,8 @@ public:
     file.seekg(0, std::ios::end);
     const std::streampos size = file.tellg();
     if (size < 0) {
-      return Result<std::vector<u8>>::error("Failed to read file size: " + path);
+      return Result<std::vector<u8>>::error("Failed to read file size: " +
+                                            path);
     }
 
     std::vector<u8> data(static_cast<size_t>(size));

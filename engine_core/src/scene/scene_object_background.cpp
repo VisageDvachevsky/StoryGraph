@@ -54,10 +54,8 @@ void BackgroundObject::render(renderer::IRenderer &renderer) {
   if (desiredH > 0.0f) {
     transform.scaleY = desiredH / static_cast<float>(texture.getHeight());
   }
-  transform.anchorX =
-      m_anchorX * static_cast<f32>(texture.getWidth());
-  transform.anchorY =
-      m_anchorY * static_cast<f32>(texture.getHeight());
+  transform.anchorX = m_anchorX * static_cast<f32>(texture.getWidth());
+  transform.anchorY = m_anchorY * static_cast<f32>(texture.getHeight());
 
   renderer::Color tint = m_tint;
   tint.a = static_cast<u8>(tint.a * m_alpha);

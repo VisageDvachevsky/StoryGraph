@@ -48,8 +48,7 @@ Result<void> Texture::loadFromMemory(const std::vector<u8> &data) {
 
   if (!pixels || width <= 0 || height <= 0) {
     const char *reason = stbi_failure_reason();
-    return Result<void>::error(
-        reason ? reason : "Failed to decode texture");
+    return Result<void>::error(reason ? reason : "Failed to decode texture");
   }
 
   auto result =

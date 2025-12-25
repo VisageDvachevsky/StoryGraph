@@ -420,7 +420,8 @@ void Compiler::compileSetStmt(const SetStmt &stmt) {
   // Store to variable
   u32 varIndex = addString(stmt.variable);
 
-  // Use SET_FLAG for flags (boolean variables), STORE_GLOBAL for general variables
+  // Use SET_FLAG for flags (boolean variables), STORE_GLOBAL for general
+  // variables
   if (stmt.isFlag) {
     emitOp(OpCode::SET_FLAG, varIndex);
   } else {

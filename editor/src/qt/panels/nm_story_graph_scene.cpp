@@ -1,40 +1,39 @@
-#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+#include "NovelMind/editor/project_manager.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
-#include "NovelMind/editor/project_manager.hpp"
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
 
 #include <QAction>
-#include <QFrame>
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
-#include <QDir>
+#include <QFrame>
 #include <QGraphicsSceneContextMenuEvent>
 #include <QGraphicsSceneMouseEvent>
 #include <QHBoxLayout>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineF>
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QRegularExpression>
 #include <QPushButton>
+#include <QRegularExpression>
 #include <QScrollBar>
+#include <QSet>
 #include <QTextStream>
 #include <QTimer>
 #include <QToolBar>
 #include <QVBoxLayout>
 #include <QWheelEvent>
 #include <algorithm>
-#include <functional>
-#include <QSet>
 #include <filesystem>
-
+#include <functional>
 
 namespace NovelMind::editor::qt {
 
@@ -48,8 +47,7 @@ NMStoryGraphScene::NMStoryGraphScene(QObject *parent) : QGraphicsScene(parent) {
 
 NMGraphNodeItem *NMStoryGraphScene::addNode(const QString &title,
                                             const QString &nodeType,
-                                            const QPointF &pos,
-                                            uint64_t nodeId,
+                                            const QPointF &pos, uint64_t nodeId,
                                             const QString &nodeIdString) {
   auto *node = new NMGraphNodeItem(title, nodeType);
   node->setPos(pos);
@@ -69,14 +67,13 @@ NMGraphNodeItem *NMStoryGraphScene::addNode(const QString &title,
   const bool isEntryNode =
       (nodeType.compare("Entry", Qt::CaseInsensitive) == 0);
   if (!isEntryNode) {
-    const auto scriptsDir =
-        QString::fromStdString(ProjectManager::instance().getFolderPath(
-            ProjectFolder::Scripts));
+    const auto scriptsDir = QString::fromStdString(
+        ProjectManager::instance().getFolderPath(ProjectFolder::Scripts));
     if (!scriptsDir.isEmpty()) {
       const QString scriptPathAbs =
           scriptsDir + "/" + node->nodeIdString() + ".nms";
-      const QString scriptPathRel = QString::fromStdString(
-          ProjectManager::instance().toRelativePath(
+      const QString scriptPathRel =
+          QString::fromStdString(ProjectManager::instance().toRelativePath(
               scriptPathAbs.toStdString()));
       node->setScriptPath(scriptPathRel);
 
@@ -110,8 +107,8 @@ NMGraphConnectionItem *NMStoryGraphScene::addConnection(NMGraphNodeItem *from,
   return addConnection(from->nodeId(), to->nodeId());
 }
 
-NMGraphConnectionItem *
-NMStoryGraphScene::addConnection(uint64_t fromNodeId, uint64_t toNodeId) {
+NMGraphConnectionItem *NMStoryGraphScene::addConnection(uint64_t fromNodeId,
+                                                        uint64_t toNodeId) {
   auto *from = findNode(fromNodeId);
   auto *to = findNode(toNodeId);
   if (!from || !to || hasConnection(fromNodeId, toNodeId)) {
@@ -233,7 +230,7 @@ bool NMStoryGraphScene::hasConnection(uint64_t fromNodeId,
 }
 
 bool NMStoryGraphScene::wouldCreateCycle(uint64_t fromNodeId,
-                                          uint64_t toNodeId) const {
+                                         uint64_t toNodeId) const {
   // If adding an edge from -> to would create a cycle, we need to check
   // if there's already a path from 'to' back to 'from'
   if (fromNodeId == toNodeId) {
@@ -409,7 +406,8 @@ QStringList NMStoryGraphScene::validateGraph() const {
     }
   }
   if (!hasEntry && !m_nodes.isEmpty()) {
-    errors.append(tr("No entry node defined. Set one node as the starting point."));
+    errors.append(
+        tr("No entry node defined. Set one node as the starting point."));
   }
 
   // Check for cycles
@@ -453,8 +451,8 @@ QStringList NMStoryGraphScene::validateGraph() const {
         !node->nodeType().contains("End", Qt::CaseInsensitive)) {
       // Also skip entry nodes if they have no other nodes
       if (!node->isEntry() || m_nodes.size() > 1) {
-        errors.append(
-            tr("Dead end: '%1' has no outgoing connections").arg(node->title()));
+        errors.append(tr("Dead end: '%1' has no outgoing connections")
+                          .arg(node->title()));
       }
     }
   }

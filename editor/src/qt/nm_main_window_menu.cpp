@@ -1,5 +1,5 @@
-#include "NovelMind/editor/qt/nm_main_window.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
+#include "NovelMind/editor/qt/nm_main_window.hpp"
 
 #include <QAction>
 #include <QActionGroup>
@@ -178,7 +178,8 @@ void NMMainWindow::setupMenuBar() {
   m_actionToggleVoiceStudio->setCheckable(true);
   m_actionToggleVoiceStudio->setChecked(false);
   m_actionToggleVoiceStudio->setToolTip(
-      tr("Voice Studio - Record and edit voice lines with waveform visualization (Ctrl+Shift+V)"));
+      tr("Voice Studio - Record and edit voice lines with waveform "
+         "visualization (Ctrl+Shift+V)"));
   m_actionToggleVoiceStudio->setShortcut(QKeySequence("Ctrl+Shift+V"));
 
   m_actionToggleVoiceManager = panelsMenu->addAction(
@@ -245,8 +246,8 @@ void NMMainWindow::setupMenuBar() {
 
   viewMenu->addSeparator();
 
-  m_actionFocusMode =
-      viewMenu->addAction(iconMgr.getIcon("panel-scene", 16), tr("&Focus Mode"));
+  m_actionFocusMode = viewMenu->addAction(iconMgr.getIcon("panel-scene", 16),
+                                          tr("&Focus Mode"));
   m_actionFocusMode->setCheckable(true);
   m_actionFocusMode->setToolTip(
       tr("Focus Scene View with Inspector and Assets"));
@@ -263,85 +264,74 @@ void NMMainWindow::setupMenuBar() {
   QMenu *workspaceMenu = viewMenu->addMenu(tr("&Workspaces"));
 
   // D2: New primary workspace presets
-  m_actionLayoutDefault =
-      workspaceMenu->addAction(iconMgr.getIcon("panel-scene", 16),
-                               tr("&Default"));
-  m_actionLayoutDefault->setToolTip(
-      tr("Balanced layout for general editing (Scene, Story, Inspector, Assets)"));
+  m_actionLayoutDefault = workspaceMenu->addAction(
+      iconMgr.getIcon("panel-scene", 16), tr("&Default"));
+  m_actionLayoutDefault->setToolTip(tr(
+      "Balanced layout for general editing (Scene, Story, Inspector, Assets)"));
   m_actionLayoutDefault->setShortcut(QKeySequence("Ctrl+Alt+1"));
 
-  m_actionLayoutStoryScript =
-      workspaceMenu->addAction(iconMgr.getIcon("panel-graph", 16),
-                               tr("Story / &Script"));
+  m_actionLayoutStoryScript = workspaceMenu->addAction(
+      iconMgr.getIcon("panel-graph", 16), tr("Story / &Script"));
   m_actionLayoutStoryScript->setToolTip(
-      tr("Story graph and script editing (Story Graph, Script Editor, Inspector, Localization)"));
+      tr("Story graph and script editing (Story Graph, Script Editor, "
+         "Inspector, Localization)"));
   m_actionLayoutStoryScript->setShortcut(QKeySequence("Ctrl+Alt+2"));
 
-  m_actionLayoutSceneAnimation =
-      workspaceMenu->addAction(iconMgr.getIcon("panel-timeline", 16),
-                               tr("Scene / &Animation"));
+  m_actionLayoutSceneAnimation = workspaceMenu->addAction(
+      iconMgr.getIcon("panel-timeline", 16), tr("Scene / &Animation"));
   m_actionLayoutSceneAnimation->setToolTip(
-      tr("Scene and animation editing (Scene View, Timeline, Curve Editor, Hierarchy)"));
+      tr("Scene and animation editing (Scene View, Timeline, Curve Editor, "
+         "Hierarchy)"));
   m_actionLayoutSceneAnimation->setShortcut(QKeySequence("Ctrl+Alt+3"));
 
-  m_actionLayoutAudioVoice =
-      workspaceMenu->addAction(iconMgr.getIcon("panel-voice", 16),
-                               tr("&Audio / Voice"));
-  m_actionLayoutAudioVoice->setToolTip(
-      tr("Audio and voice management (Voice Studio, Voice Manager, Audio Mixer)"));
+  m_actionLayoutAudioVoice = workspaceMenu->addAction(
+      iconMgr.getIcon("panel-voice", 16), tr("&Audio / Voice"));
+  m_actionLayoutAudioVoice->setToolTip(tr(
+      "Audio and voice management (Voice Studio, Voice Manager, Audio Mixer)"));
   m_actionLayoutAudioVoice->setShortcut(QKeySequence("Ctrl+Alt+4"));
 
   workspaceMenu->addSeparator();
   workspaceMenu->addAction(tr("Legacy Workspaces"))->setEnabled(false);
 
   // Legacy workspace presets
-  m_actionLayoutStory =
-      workspaceMenu->addAction(iconMgr.getIcon("panel-graph", 16),
-                               tr("Stor&y (Legacy)"));
+  m_actionLayoutStory = workspaceMenu->addAction(
+      iconMgr.getIcon("panel-graph", 16), tr("Stor&y (Legacy)"));
   m_actionLayoutStory->setToolTip(tr("Story Graph + Inspector + Play + Log"));
   m_actionLayoutStory->setShortcut(QKeySequence("Ctrl+1"));
 
-  m_actionLayoutScene =
-      workspaceMenu->addAction(iconMgr.getIcon("panel-scene", 16),
-                               tr("S&cene (Legacy)"));
+  m_actionLayoutScene = workspaceMenu->addAction(
+      iconMgr.getIcon("panel-scene", 16), tr("S&cene (Legacy)"));
   m_actionLayoutScene->setToolTip(
       tr("Scene View + Assets + Inspector + Hierarchy"));
   m_actionLayoutScene->setShortcut(QKeySequence("Ctrl+2"));
 
-  m_actionLayoutScript =
-      workspaceMenu->addAction(iconMgr.getIcon("panel-console", 16),
-                               tr("Scr&ipt (Legacy)"));
-  m_actionLayoutScript->setToolTip(
-      tr("Script Editor + Story Graph + Play"));
+  m_actionLayoutScript = workspaceMenu->addAction(
+      iconMgr.getIcon("panel-console", 16), tr("Scr&ipt (Legacy)"));
+  m_actionLayoutScript->setToolTip(tr("Script Editor + Story Graph + Play"));
   m_actionLayoutScript->setShortcut(QKeySequence("Ctrl+3"));
 
-  m_actionLayoutDeveloper =
-      workspaceMenu->addAction(iconMgr.getIcon("panel-diagnostics", 16),
-                               tr("&Developer (Legacy)"));
+  m_actionLayoutDeveloper = workspaceMenu->addAction(
+      iconMgr.getIcon("panel-diagnostics", 16), tr("&Developer (Legacy)"));
   m_actionLayoutDeveloper->setToolTip(
       tr("Scene + Script + Console + Issues + Diagnostics + Debug"));
   m_actionLayoutDeveloper->setShortcut(QKeySequence("Ctrl+4"));
 
-  m_actionLayoutCompact =
-      workspaceMenu->addAction(iconMgr.getIcon("panel-asset", 16),
-                               tr("&Compact (Legacy)"));
+  m_actionLayoutCompact = workspaceMenu->addAction(
+      iconMgr.getIcon("panel-asset", 16), tr("&Compact (Legacy)"));
   m_actionLayoutCompact->setToolTip(
       tr("Compact layout with more panels visible at once"));
   m_actionLayoutCompact->setShortcut(QKeySequence("Ctrl+5"));
 
   QMenu *layoutMenu = viewMenu->addMenu(tr("&Layouts"));
-  m_actionSaveLayout =
-      layoutMenu->addAction(iconMgr.getIcon("file-save", 16),
-                            tr("&Save Layout"));
+  m_actionSaveLayout = layoutMenu->addAction(iconMgr.getIcon("file-save", 16),
+                                             tr("&Save Layout"));
   m_actionSaveLayout->setToolTip(tr("Save current layout"));
-  m_actionLoadLayout =
-      layoutMenu->addAction(iconMgr.getIcon("file-open", 16),
-                            tr("&Load Layout"));
+  m_actionLoadLayout = layoutMenu->addAction(iconMgr.getIcon("file-open", 16),
+                                             tr("&Load Layout"));
   m_actionLoadLayout->setToolTip(tr("Load saved layout"));
   layoutMenu->addSeparator();
-  m_actionResetLayout =
-      layoutMenu->addAction(iconMgr.getIcon("refresh", 16),
-                            tr("&Reset Layout"));
+  m_actionResetLayout = layoutMenu->addAction(iconMgr.getIcon("refresh", 16),
+                                              tr("&Reset Layout"));
   m_actionResetLayout->setToolTip(tr("Reset all panels to workspace defaults"));
 
   layoutMenu->addSeparator();
@@ -351,14 +341,12 @@ void NMMainWindow::setupMenuBar() {
   m_actionLockLayout->setShortcut(QKeySequence("Ctrl+Shift+L"));
   m_actionLockLayout->setToolTip(tr("Prevent moving or floating panels"));
 
-  m_actionTabbedDockOnly =
-      layoutMenu->addAction(tr("Tabbed Dock Only"));
+  m_actionTabbedDockOnly = layoutMenu->addAction(tr("Tabbed Dock Only"));
   m_actionTabbedDockOnly->setCheckable(true);
   m_actionTabbedDockOnly->setShortcut(QKeySequence("Ctrl+Shift+T"));
   m_actionTabbedDockOnly->setToolTip(tr("Keep panels in tabbed docks"));
 
-  m_actionFloatAllowed =
-      layoutMenu->addAction(tr("Float Allowed"));
+  m_actionFloatAllowed = layoutMenu->addAction(tr("Float Allowed"));
   m_actionFloatAllowed->setCheckable(true);
   m_actionFloatAllowed->setChecked(true);
   m_actionFloatAllowed->setToolTip(tr("Allow panels to float"));
@@ -426,12 +414,14 @@ void NMMainWindow::setupMenuBar() {
   m_actionSaveState =
       playMenu->addAction(iconMgr.getIcon("file-save", 16), tr("&Save State"));
   m_actionSaveState->setToolTip(tr("Save runtime state to slot 0"));
-  m_actionSaveState->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_F5));
+  m_actionSaveState->setShortcut(
+      QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_F5));
 
   m_actionLoadState =
       playMenu->addAction(iconMgr.getIcon("file-open", 16), tr("&Load State"));
   m_actionLoadState->setToolTip(tr("Load runtime state from slot 0"));
-  m_actionLoadState->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_F6));
+  m_actionLoadState->setShortcut(
+      QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_F6));
 
   playMenu->addSeparator();
 

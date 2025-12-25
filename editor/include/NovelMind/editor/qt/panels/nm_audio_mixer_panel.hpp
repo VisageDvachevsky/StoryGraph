@@ -17,14 +17,14 @@
  * - Preview playback without affecting runtime state
  */
 
-#include "NovelMind/editor/qt/nm_dock_panel.hpp"
 #include "NovelMind/audio/audio_manager.hpp"
+#include "NovelMind/editor/qt/nm_dock_panel.hpp"
 
 #include <QHash>
 #include <QPointer>
+#include <QTimer>
 #include <QToolBar>
 #include <QWidget>
-#include <QTimer>
 
 #include <memory>
 

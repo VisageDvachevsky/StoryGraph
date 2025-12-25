@@ -1,13 +1,13 @@
 #include "NovelMind/editor/qt/nm_welcome_dialog.hpp"
-#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 
 #include <QCheckBox>
 #include <QDateTime>
 #include <QDesktopServices>
+#include <QDir>
 #include <QEasingCurve>
 #include <QEvent>
-#include <QDir>
 #include <QFileInfo>
 #include <QFrame>
 #include <QGraphicsOpacityEffect>
@@ -238,7 +238,8 @@ void NMWelcomeDialog::setupRightPanel() {
       {"Getting Started Guide", "Learn the basics of NovelMind Editor",
        "https://github.com/VisageDvachevsky/NovelMind"},
       {"Tutorial Videos", "Video tutorials for common tasks",
-       "https://github.com/VisageDvachevsky/NovelMind/tree/main/examples/sample_vn"},
+       "https://github.com/VisageDvachevsky/NovelMind/tree/main/examples/"
+       "sample_vn"},
       {"API Documentation", "Complete API reference",
        "https://github.com/VisageDvachevsky/NovelMind/tree/main/docs"},
       {"Community Forum", "Ask questions and share projects",
@@ -813,7 +814,8 @@ void NMWelcomeDialog::startEntranceAnimations() {
   // Using QGraphicsOpacityEffect which properly handles the rendering pipeline
 
   auto createFadeIn = [this](QWidget *widget, int delayMs) {
-    if (!widget) return;
+    if (!widget)
+      return;
 
     // Create and apply opacity effect
     auto *effect = new QGraphicsOpacityEffect(widget);
@@ -831,16 +833,15 @@ void NMWelcomeDialog::startEntranceAnimations() {
     QTimer::singleShot(delayMs, this, [anim, effect, widget]() {
       anim->start(QPropertyAnimation::DeleteWhenStopped);
       // Clear effect after animation to restore normal rendering
-      QObject::connect(anim, &QPropertyAnimation::finished, widget, [widget]() {
-        widget->setGraphicsEffect(nullptr);
-      });
+      QObject::connect(anim, &QPropertyAnimation::finished, widget,
+                       [widget]() { widget->setGraphicsEffect(nullptr); });
     });
   };
 
   // Stagger the panel animations for a nice cascading effect
-  createFadeIn(m_leftPanel, 0);      // Left panel fades in first
-  createFadeIn(m_centerPanel, 100);  // Center panel slightly delayed
-  createFadeIn(m_rightPanel, 200);   // Right panel last
+  createFadeIn(m_leftPanel, 0);     // Left panel fades in first
+  createFadeIn(m_centerPanel, 100); // Center panel slightly delayed
+  createFadeIn(m_rightPanel, 200);  // Right panel last
 }
 
 void NMWelcomeDialog::animateButtonHover(QWidget *button, bool entering) {

@@ -13,7 +13,8 @@ ScriptInterpreter::~ScriptInterpreter() = default;
 
 Result<void>
 ScriptInterpreter::loadFromBytecode(const std::vector<u8> &bytecode) {
-  // Header structure: magic(4) + version(2) + flags(2) + instrCount(4) + constPool(4) + stringCount(4) + symbolTable(4) = 24 bytes
+  // Header structure: magic(4) + version(2) + flags(2) + instrCount(4) +
+  // constPool(4) + stringCount(4) + symbolTable(4) = 24 bytes
   constexpr usize HEADER_SIZE = 24;
 
   if (bytecode.size() < HEADER_SIZE) {
@@ -39,7 +40,8 @@ ScriptInterpreter::loadFromBytecode(const std::vector<u8> &bytecode) {
   // Validate version (currently only version 1 is supported)
   constexpr u16 SUPPORTED_VERSION = 1;
   if (version > SUPPORTED_VERSION) {
-    return Result<void>::error("Unsupported bytecode version: " + std::to_string(version));
+    return Result<void>::error("Unsupported bytecode version: " +
+                               std::to_string(version));
   }
 
   offset += sizeof(u16); // Skip flags
@@ -74,9 +76,11 @@ ScriptInterpreter::loadFromBytecode(const std::vector<u8> &bytecode) {
 
   // Validate that bytecode is large enough for instructions
   constexpr usize INSTRUCTION_SIZE = 5; // 1 byte opcode + 4 bytes operand
-  usize requiredSize = offset + (static_cast<usize>(instrCount) * INSTRUCTION_SIZE);
+  usize requiredSize =
+      offset + (static_cast<usize>(instrCount) * INSTRUCTION_SIZE);
   if (requiredSize > bytecode.size()) {
-    return Result<void>::error("Bytecode too small for declared instruction count");
+    return Result<void>::error(
+        "Bytecode too small for declared instruction count");
   }
 
   // Read instructions
@@ -85,7 +89,8 @@ ScriptInterpreter::loadFromBytecode(const std::vector<u8> &bytecode) {
 
   for (u32 i = 0; i < instrCount; ++i) {
     if (offset + INSTRUCTION_SIZE > bytecode.size()) {
-      return Result<void>::error("Unexpected end of bytecode at instruction " + std::to_string(i));
+      return Result<void>::error("Unexpected end of bytecode at instruction " +
+                                 std::to_string(i));
     }
 
     Instruction instr;
@@ -107,7 +112,8 @@ ScriptInterpreter::loadFromBytecode(const std::vector<u8> &bytecode) {
 
   for (u32 i = 0; i < stringCount; ++i) {
     if (offset >= bytecode.size()) {
-      return Result<void>::error("Unexpected end of bytecode at string " + std::to_string(i));
+      return Result<void>::error("Unexpected end of bytecode at string " +
+                                 std::to_string(i));
     }
 
     std::string str;
@@ -116,12 +122,14 @@ ScriptInterpreter::loadFromBytecode(const std::vector<u8> &bytecode) {
       ++offset;
 
       if (str.size() > MAX_STRING_LENGTH) {
-        return Result<void>::error("String " + std::to_string(i) + " exceeds maximum allowed length");
+        return Result<void>::error("String " + std::to_string(i) +
+                                   " exceeds maximum allowed length");
       }
     }
 
     if (offset >= bytecode.size()) {
-      return Result<void>::error("Unterminated string at index " + std::to_string(i));
+      return Result<void>::error("Unterminated string at index " +
+                                 std::to_string(i));
     }
     ++offset; // Skip null terminator
     stringTable.push_back(str);

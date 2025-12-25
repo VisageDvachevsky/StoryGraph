@@ -20,8 +20,8 @@ namespace NovelMind::editor::qt {
  * @brief Type of navigation source
  */
 enum class NavigationSourceType {
-  StoryGraph,  ///< Story graph node location
-  Script       ///< Script file and line location
+  StoryGraph, ///< Story graph node location
+  Script      ///< Script file and line location
 };
 
 /**

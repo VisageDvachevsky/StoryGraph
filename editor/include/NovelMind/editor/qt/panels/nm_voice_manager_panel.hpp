@@ -47,16 +47,16 @@ namespace NovelMind::editor::qt {
  * @brief Voice line entry representing a dialogue line and its voice file
  */
 struct VoiceLineEntry {
-  QString dialogueId;       // Unique ID of the dialogue line
-  QString scriptPath;       // Script file containing the line
-  int lineNumber = 0;       // Line number in script
-  QString speaker;          // Character speaking
-  QString dialogueText;     // The dialogue text
-  QString voiceFilePath;    // Path to voice file (if assigned)
-  QString actor;            // Voice actor name
-  bool isMatched = false;   // Whether a voice file is assigned
-  bool isVerified = false;  // Whether the match has been verified
-  double duration = 0.0;    // Voice file duration in seconds
+  QString dialogueId;      // Unique ID of the dialogue line
+  QString scriptPath;      // Script file containing the line
+  int lineNumber = 0;      // Line number in script
+  QString speaker;         // Character speaking
+  QString dialogueText;    // The dialogue text
+  QString voiceFilePath;   // Path to voice file (if assigned)
+  QString actor;           // Voice actor name
+  bool isMatched = false;  // Whether a voice file is assigned
+  bool isVerified = false; // Whether the match has been verified
+  double duration = 0.0;   // Voice file duration in seconds
 };
 
 /**
@@ -64,7 +64,7 @@ struct VoiceLineEntry {
  */
 struct DurationCacheEntry {
   double duration = 0.0;
-  qint64 mtime = 0;  // File modification time for cache invalidation
+  qint64 mtime = 0; // File modification time for cache invalidation
 };
 
 class NMVoiceManagerPanel : public NMDockPanel {
@@ -91,7 +91,8 @@ public:
   /**
    * @brief Get list of missing voice lines for current locale
    */
-  [[nodiscard]] std::vector<const NovelMind::audio::VoiceManifestLine *> getMissingLines() const;
+  [[nodiscard]] std::vector<const NovelMind::audio::VoiceManifestLine *>
+  getMissingLines() const;
 
   /**
    * @brief Get list of unmatched lines (lines with no voice files)
@@ -117,7 +118,8 @@ signals:
   /**
    * @brief Emitted when a voice file assignment changes
    */
-  void voiceFileChanged(const QString &dialogueId, const QString &voiceFilePath);
+  void voiceFileChanged(const QString &dialogueId,
+                        const QString &voiceFilePath);
 
   /**
    * @brief Emitted when a playback error occurs
@@ -211,7 +213,7 @@ private:
   QQueue<QString> m_probeQueue;
   QString m_currentProbeFile;
   bool m_isProbing = false;
-  static constexpr int MAX_CONCURRENT_PROBES = 1;  // One at a time for stability
+  static constexpr int MAX_CONCURRENT_PROBES = 1; // One at a time for stability
 
   // Duration cache: path -> {duration, mtime}
   std::unordered_map<std::string, DurationCacheEntry> m_durationCache;

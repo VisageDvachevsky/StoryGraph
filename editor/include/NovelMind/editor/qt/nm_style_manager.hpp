@@ -64,20 +64,20 @@ struct TypographyTokens {
  * @brief Panel-specific accent colors for visual identity
  */
 struct PanelAccents {
-  QColor sceneView{0x2e, 0xc4, 0xb6};      // Teal
-  QColor storyGraph{0x6a, 0xa6, 0xff};     // Blue
-  QColor inspector{0xf0, 0xb2, 0x4a};      // Orange/Gold
-  QColor assetBrowser{0x5f, 0xd1, 0x8a};   // Green
-  QColor scriptEditor{0xff, 0x9b, 0x66};   // Coral
-  QColor console{0x8e, 0xa1, 0xb5};        // Gray-blue
-  QColor playToolbar{0x48, 0xc7, 0x6e};    // Bright green
-  QColor timeline{0x9f, 0x7a, 0xea};       // Purple
-  QColor curveEditor{0xe8, 0x6a, 0x92};    // Pink
-  QColor voiceManager{0x4a, 0xc1, 0xd6};   // Cyan
-  QColor localization{0xff, 0xc1, 0x07};   // Yellow
-  QColor diagnostics{0xe1, 0x4e, 0x43};    // Red (for warnings/errors)
-  QColor hierarchy{0x7c, 0xb3, 0x42};      // Lime
-  QColor scenePalette{0xd6, 0x8f, 0xd6};   // Lavender
+  QColor sceneView{0x2e, 0xc4, 0xb6};    // Teal
+  QColor storyGraph{0x6a, 0xa6, 0xff};   // Blue
+  QColor inspector{0xf0, 0xb2, 0x4a};    // Orange/Gold
+  QColor assetBrowser{0x5f, 0xd1, 0x8a}; // Green
+  QColor scriptEditor{0xff, 0x9b, 0x66}; // Coral
+  QColor console{0x8e, 0xa1, 0xb5};      // Gray-blue
+  QColor playToolbar{0x48, 0xc7, 0x6e};  // Bright green
+  QColor timeline{0x9f, 0x7a, 0xea};     // Purple
+  QColor curveEditor{0xe8, 0x6a, 0x92};  // Pink
+  QColor voiceManager{0x4a, 0xc1, 0xd6}; // Cyan
+  QColor localization{0xff, 0xc1, 0x07}; // Yellow
+  QColor diagnostics{0xe1, 0x4e, 0x43};  // Red (for warnings/errors)
+  QColor hierarchy{0x7c, 0xb3, 0x42};    // Lime
+  QColor scenePalette{0xd6, 0x8f, 0xd6}; // Lavender
 };
 
 /**
@@ -87,10 +87,10 @@ struct EditorPalette {
   // =========================================================================
   // BACKGROUND COLORS (Layered surfaces)
   // =========================================================================
-  QColor bgDarkest{0x0d, 0x10, 0x14}; // Base background (deepest layer)
-  QColor bgDark{0x14, 0x18, 0x1e};    // Panel backgrounds
-  QColor bgMedium{0x1c, 0x21, 0x29};  // Elevated surfaces (cards, inputs)
-  QColor bgLight{0x26, 0x2d, 0x38};   // Hover states
+  QColor bgDarkest{0x0d, 0x10, 0x14};  // Base background (deepest layer)
+  QColor bgDark{0x14, 0x18, 0x1e};     // Panel backgrounds
+  QColor bgMedium{0x1c, 0x21, 0x29};   // Elevated surfaces (cards, inputs)
+  QColor bgLight{0x26, 0x2d, 0x38};    // Hover states
   QColor bgElevated{0x2e, 0x36, 0x43}; // Popups, dropdowns, tooltips
 
   // =========================================================================
@@ -113,22 +113,22 @@ struct EditorPalette {
   // =========================================================================
   // SEMANTIC/STATUS COLORS
   // =========================================================================
-  QColor error{0xe5, 0x4d, 0x42};        // Error states
-  QColor errorSubtle{0x3a, 0x1f, 0x1f};  // Error background
-  QColor warning{0xf5, 0xa6, 0x23};      // Warning states
-  QColor warningSubtle{0x3a, 0x32, 0x1a};// Warning background
-  QColor success{0x3d, 0xc9, 0x7e};      // Success states
-  QColor successSubtle{0x1a, 0x3a, 0x2a};// Success background
-  QColor info{0x4a, 0x9e, 0xff};         // Info states
-  QColor infoSubtle{0x1a, 0x2a, 0x3a};   // Info background
+  QColor error{0xe5, 0x4d, 0x42};         // Error states
+  QColor errorSubtle{0x3a, 0x1f, 0x1f};   // Error background
+  QColor warning{0xf5, 0xa6, 0x23};       // Warning states
+  QColor warningSubtle{0x3a, 0x32, 0x1a}; // Warning background
+  QColor success{0x3d, 0xc9, 0x7e};       // Success states
+  QColor successSubtle{0x1a, 0x3a, 0x2a}; // Success background
+  QColor info{0x4a, 0x9e, 0xff};          // Info states
+  QColor infoSubtle{0x1a, 0x2a, 0x3a};    // Info background
 
   // =========================================================================
   // BORDER COLORS
   // =========================================================================
-  QColor borderDark{0x0a, 0x0d, 0x10};   // Strong borders
+  QColor borderDark{0x0a, 0x0d, 0x10};    // Strong borders
   QColor borderDefault{0x2a, 0x32, 0x3e}; // Default borders
-  QColor borderLight{0x38, 0x42, 0x50};  // Subtle borders
-  QColor borderFocus{0x3b, 0x9e, 0xff};  // Focus ring
+  QColor borderLight{0x38, 0x42, 0x50};   // Subtle borders
+  QColor borderFocus{0x3b, 0x9e, 0xff};   // Focus ring
 
   // =========================================================================
   // GRAPH/NODE SPECIFIC COLORS
@@ -211,12 +211,16 @@ public:
   /**
    * @brief Get typography tokens
    */
-  [[nodiscard]] const TypographyTokens &typography() const { return m_typography; }
+  [[nodiscard]] const TypographyTokens &typography() const {
+    return m_typography;
+  }
 
   /**
    * @brief Get panel accent colors
    */
-  [[nodiscard]] const PanelAccents &panelAccents() const { return m_panelAccents; }
+  [[nodiscard]] const PanelAccents &panelAccents() const {
+    return m_panelAccents;
+  }
 
   /**
    * @brief Get the default font for the editor

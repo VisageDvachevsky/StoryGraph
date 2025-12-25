@@ -1,6 +1,6 @@
-#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 
 #include <QColor>
 #include <QFont>
@@ -88,7 +88,8 @@ NMSceneObject::NMSceneObject(const QString &id, NMSceneObjectType type,
   }
 
   // Draw icon in top-left corner
-  QPixmap icon = NMIconManager::instance().getPixmap(iconName, 32, palette.textPrimary);
+  QPixmap icon =
+      NMIconManager::instance().getPixmap(iconName, 32, palette.textPrimary);
   painter.drawPixmap(8, 8, icon);
 
   // Draw type text
@@ -104,13 +105,9 @@ NMSceneObject::NMSceneObject(const QString &id, NMSceneObjectType type,
   setTransformOriginPoint(boundingRect().center());
 }
 
-void NMSceneObject::setScaleX(qreal scale) {
-  setScaleXY(scale, m_scaleY);
-}
+void NMSceneObject::setScaleX(qreal scale) { setScaleXY(scale, m_scaleY); }
 
-void NMSceneObject::setScaleY(qreal scale) {
-  setScaleXY(m_scaleX, scale);
-}
+void NMSceneObject::setScaleY(qreal scale) { setScaleXY(m_scaleX, scale); }
 
 void NMSceneObject::setScaleXY(qreal scaleX, qreal scaleY) {
   m_scaleX = scaleX;
@@ -118,9 +115,7 @@ void NMSceneObject::setScaleXY(qreal scaleX, qreal scaleY) {
   setTransform(QTransform::fromScale(m_scaleX, m_scaleY));
 }
 
-void NMSceneObject::setUniformScale(qreal scale) {
-  setScaleXY(scale, scale);
-}
+void NMSceneObject::setUniformScale(qreal scale) { setScaleXY(scale, scale); }
 
 void NMSceneObject::setSelected(bool selected) {
   m_selected = selected;
@@ -227,9 +222,7 @@ void NMSceneObject::addTag(const QString &tag) {
   }
 }
 
-void NMSceneObject::removeTag(const QString &tag) {
-  m_tags.removeAll(tag);
-}
+void NMSceneObject::removeTag(const QString &tag) { m_tags.removeAll(tag); }
 
 bool NMSceneObject::hasTag(const QString &tag) const {
   return m_tags.contains(tag);

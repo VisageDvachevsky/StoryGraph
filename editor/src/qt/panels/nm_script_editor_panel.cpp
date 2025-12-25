@@ -1,33 +1,33 @@
 #include "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp"
+#include "NovelMind/core/logger.hpp"
 #include "NovelMind/editor/project_manager.hpp"
-#include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
 #include "NovelMind/scripting/compiler.hpp"
 #include "NovelMind/scripting/lexer.hpp"
 #include "NovelMind/scripting/parser.hpp"
 #include "NovelMind/scripting/validator.hpp"
-#include "NovelMind/core/logger.hpp"
 
 #include <QAbstractItemView>
 #include <QCompleter>
-#include <QFileSystemWatcher>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QFileSystemWatcher>
 #include <QHeaderView>
 #include <QKeyEvent>
 #include <QPainter>
 #include <QRegularExpression>
 #include <QScrollBar>
 #include <QSet>
-#include <QStringListModel>
 #include <QStandardItem>
 #include <QStandardItemModel>
+#include <QStringListModel>
 #include <QStyledItemDelegate>
-#include <QTextStream>
 #include <QTextBlock>
 #include <QTextFormat>
+#include <QTextStream>
 #include <QToolTip>
 #include <QVBoxLayout>
 #include <QWindow>
@@ -147,9 +147,8 @@ void NMScriptEditorPanel::refreshFileList() {
       QTreeWidgetItem *fileItem = new QTreeWidgetItem(parentItem);
       fileItem->setText(
           0, QString::fromStdString(entry.path().filename().string()));
-      fileItem->setData(
-          0, Qt::UserRole,
-          QString::fromStdString(entry.path().string()));
+      fileItem->setData(0, Qt::UserRole,
+                        QString::fromStdString(entry.path().string()));
     }
   } catch (const std::exception &e) {
     core::Logger::instance().warning(
@@ -236,8 +235,8 @@ void NMScriptEditorPanel::onFormatRequested() {
   const int originalPos = editor->textCursor().position();
   editor->setPlainText(formatted.join("\n"));
   QTextCursor cursor = editor->textCursor();
-  cursor.setPosition(std::min(originalPos,
-                              editor->document()->characterCount() - 1));
+  cursor.setPosition(
+      std::min(originalPos, editor->document()->characterCount() - 1));
   editor->setTextCursor(cursor);
 }
 
@@ -290,13 +289,12 @@ void NMScriptEditorPanel::setupContent() {
   m_tabs->setTabsClosable(true);
   connect(m_tabs, &QTabWidget::currentChanged, this,
           &NMScriptEditorPanel::onCurrentTabChanged);
-  connect(m_tabs, &QTabWidget::tabCloseRequested, this,
-          [this](int index) {
-            QWidget *widget = m_tabs->widget(index);
-            m_tabPaths.remove(widget);
-            m_tabs->removeTab(index);
-            delete widget;
-          });
+  connect(m_tabs, &QTabWidget::tabCloseRequested, this, [this](int index) {
+    QWidget *widget = m_tabs->widget(index);
+    m_tabPaths.remove(widget);
+    m_tabs->removeTab(index);
+    delete widget;
+  });
 
   m_splitter->setStretchFactor(1, 1);
   layout->addWidget(m_splitter);
@@ -322,9 +320,8 @@ void NMScriptEditorPanel::addEditorTab(const QString &path) {
           [this](const QString &, const QString &html) {
             emit docHtmlChanged(html);
           });
-  connect(editor, &QPlainTextEdit::textChanged, this, [this]() {
-    m_diagnosticsTimer.start();
-  });
+  connect(editor, &QPlainTextEdit::textChanged, this,
+          [this]() { m_diagnosticsTimer.start(); });
 
   connect(editor, &QPlainTextEdit::textChanged, this, [this, editor]() {
     const int index = m_tabs->indexOf(editor);
@@ -398,9 +395,8 @@ bool NMScriptEditorPanel::ensureScriptFile(const QString &path) {
     return false;
   }
 
-  const QString sceneName = info.completeBaseName().isEmpty()
-                                ? "scene"
-                                : info.completeBaseName();
+  const QString sceneName =
+      info.completeBaseName().isEmpty() ? "scene" : info.completeBaseName();
   QTextStream out(&file);
   out << "// " << sceneName << "\n";
   out << "scene " << sceneName << " {\n";
@@ -517,8 +513,7 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
   const QRegularExpression reFlag("\\bflag\\s+([A-Za-z_][A-Za-z0-9_]*)");
   const QRegularExpression reSetVar(
       "\\bset\\s+(?!flag\\s)([A-Za-z_][A-Za-z0-9_]*)");
-  const QRegularExpression reBackground(
-      "show\\s+background\\s+\"([^\"]+)\"");
+  const QRegularExpression reBackground("show\\s+background\\s+\"([^\"]+)\"");
   const QRegularExpression reVoice("play\\s+voice\\s+\"([^\"]+)\"");
   const QRegularExpression reMusic("play\\s+music\\s+\"([^\"]+)\"");
 
@@ -538,8 +533,7 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
       const QString content = QString::fromUtf8(file.readAll());
       file.close();
 
-      auto collect = [&](const QRegularExpression &regex,
-                         auto &&callback) {
+      auto collect = [&](const QRegularExpression &regex, auto &&callback) {
         QRegularExpressionMatchIterator it = regex.globalMatch(content);
         while (it.hasNext()) {
           const QRegularExpressionMatch match = it.next();
@@ -598,9 +592,8 @@ NMScriptEditorPanel::validateSource(const QString &path,
   Lexer lexer;
   auto lexResult = lexer.tokenize(src);
   for (const auto &err : lexer.getErrors()) {
-    out.push_back(
-        {path, static_cast<int>(err.location.line),
-         QString::fromStdString(err.message), "error"});
+    out.push_back({path, static_cast<int>(err.location.line),
+                   QString::fromStdString(err.message), "error"});
   }
   if (!lexResult.isOk()) {
     return out;
@@ -609,9 +602,8 @@ NMScriptEditorPanel::validateSource(const QString &path,
   Parser parser;
   auto parseResult = parser.parse(lexResult.value());
   for (const auto &err : parser.getErrors()) {
-    out.push_back(
-        {path, static_cast<int>(err.location.line),
-         QString::fromStdString(err.message), "error"});
+    out.push_back({path, static_cast<int>(err.location.line),
+                   QString::fromStdString(err.message), "error"});
   }
   if (!parseResult.isOk()) {
     return out;
@@ -626,8 +618,7 @@ NMScriptEditorPanel::validateSource(const QString &path,
     } else if (err.severity == Severity::Error) {
       severity = "error";
     }
-    out.push_back({path,
-                   static_cast<int>(err.span.start.line),
+    out.push_back({path, static_cast<int>(err.span.start.line),
                    QString::fromStdString(err.message), severity});
   }
 
@@ -656,8 +647,8 @@ void NMScriptEditorPanel::goToLocation(const QString &path, int line) {
   if (!editor) {
     return;
   }
-  QTextCursor cursor(editor->document()->findBlockByLineNumber(
-      std::max(0, line - 1)));
+  QTextCursor cursor(
+      editor->document()->findBlockByLineNumber(std::max(0, line - 1)));
   editor->setTextCursor(cursor);
   editor->setFocus();
 }
@@ -666,8 +657,7 @@ QList<NMScriptEditor::CompletionEntry>
 NMScriptEditorPanel::buildProjectCompletionEntries() const {
   QList<NMScriptEditor::CompletionEntry> entries;
 
-  auto addEntries = [&entries](const QStringList &list,
-                               const QString &detail) {
+  auto addEntries = [&entries](const QStringList &list, const QString &detail) {
     for (const auto &item : list) {
       entries.push_back({item, detail});
     }
@@ -694,16 +684,15 @@ QHash<QString, QString> NMScriptEditorPanel::buildProjectHoverDocs() const {
         ProjectManager::instance().toRelativePath(path.toStdString()));
   };
 
-  auto addDocs = [&](const QHash<QString, QString> &map,
-                     const QString &label) {
+  auto addDocs = [&](const QHash<QString, QString> &map, const QString &label) {
     for (auto it = map.constBegin(); it != map.constEnd(); ++it) {
       const QString key = it.key();
       const QString path = relPath(it.value());
-      docs.insert(key.toLower(),
-                  QString("%1 \"%2\"%3")
-                      .arg(label, key,
-                           path.isEmpty() ? QString()
-                                          : QString(" (%1)").arg(path)));
+      docs.insert(
+          key.toLower(),
+          QString("%1 \"%2\"%3")
+              .arg(label, key,
+                   path.isEmpty() ? QString() : QString(" (%1)").arg(path)));
     }
   };
 
@@ -713,8 +702,7 @@ QHash<QString, QString> NMScriptEditorPanel::buildProjectHoverDocs() const {
   addDocs(m_symbolIndex.variables, tr("Variable"));
 
   for (const auto &bg : m_symbolIndex.backgrounds) {
-    docs.insert(bg.toLower(),
-                tr("Background asset \"%1\"").arg(bg));
+    docs.insert(bg.toLower(), tr("Background asset \"%1\"").arg(bg));
   }
   for (const auto &m : m_symbolIndex.music) {
     docs.insert(m.toLower(), tr("Music track \"%1\"").arg(m));
@@ -737,18 +725,16 @@ QHash<QString, QString> NMScriptEditorPanel::buildProjectDocHtml() const {
         ProjectManager::instance().toRelativePath(path.toStdString()));
   };
 
-  auto addDocs = [&](const QHash<QString, QString> &map,
-                     const QString &label) {
+  auto addDocs = [&](const QHash<QString, QString> &map, const QString &label) {
     for (auto it = map.constBegin(); it != map.constEnd(); ++it) {
       const QString name = it.key();
       const QString file = relPath(it.value());
       QString html = QString("<h3>%1</h3>").arg(name.toHtmlEscaped());
       html += QString("<p>%1 definition%2</p>")
                   .arg(label.toHtmlEscaped(),
-                       file.isEmpty()
-                           ? QString()
-                           : QString(" in <code>%1</code>")
-                                 .arg(file.toHtmlEscaped()));
+                       file.isEmpty() ? QString()
+                                      : QString(" in <code>%1</code>")
+                                            .arg(file.toHtmlEscaped()));
       docs.insert(name.toLower(), html);
     }
   };
@@ -774,7 +760,8 @@ QHash<QString, QString> NMScriptEditorPanel::buildProjectDocHtml() const {
 }
 
 void NMScriptEditorPanel::pushCompletionsToEditors() {
-  QList<NMScriptEditor::CompletionEntry> entries = detail::buildKeywordEntries();
+  QList<NMScriptEditor::CompletionEntry> entries =
+      detail::buildKeywordEntries();
   entries.append(buildProjectCompletionEntries());
 
   QHash<QString, NMScriptEditor::CompletionEntry> merged;
@@ -794,8 +781,8 @@ void NMScriptEditorPanel::pushCompletionsToEditors() {
 
   QHash<QString, QString> hoverDocs = detail::buildHoverDocs();
   const QHash<QString, QString> projectHoverDocs = buildProjectHoverDocs();
-  for (auto it = projectHoverDocs.constBegin(); it != projectHoverDocs.constEnd();
-       ++it) {
+  for (auto it = projectHoverDocs.constBegin();
+       it != projectHoverDocs.constEnd(); ++it) {
     hoverDocs.insert(it.key(), it.value());
   }
 
@@ -828,6 +815,5 @@ QList<NMScriptEditor *> NMScriptEditorPanel::editors() const {
   }
   return list;
 }
-
 
 } // namespace NovelMind::editor::qt

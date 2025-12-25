@@ -6,15 +6,15 @@
  */
 
 #include "NovelMind/editor/qt/editor_capabilities_check.hpp"
-#include "NovelMind/editor/qt/nm_main_window.hpp"
 #include "NovelMind/core/logger.hpp"
+#include "NovelMind/editor/qt/nm_main_window.hpp"
 
 #include <cassert>
 #include <sstream>
 
 namespace NovelMind::editor::qt {
 
-const char* getPanelName(RequiredPanel panel) {
+const char *getPanelName(RequiredPanel panel) {
   switch (panel) {
   case RequiredPanel::SceneView:
     return "SceneView";
@@ -89,7 +89,7 @@ static std::string getCategoryForPanel(RequiredPanel panel) {
   return "Unknown";
 }
 
-static std::string getCategoryForAction(const char* actionId) {
+static std::string getCategoryForAction(const char *actionId) {
   std::string id(actionId);
   if (id.find("Audio:") == 0 || id.find("Voice:") == 0) {
     return "Audio";
@@ -118,8 +118,8 @@ static std::string getCategoryForAction(const char* actionId) {
   return "Unknown";
 }
 
-CapabilityCheckResult checkPanelAvailable(const NMMainWindow* window,
-                                           RequiredPanel panel) {
+CapabilityCheckResult checkPanelAvailable(const NMMainWindow *window,
+                                          RequiredPanel panel) {
   CapabilityCheckResult result;
   result.category = getCategoryForPanel(panel);
   result.capability = std::string("Panel:") + getPanelName(panel);
@@ -195,8 +195,8 @@ CapabilityCheckResult checkPanelAvailable(const NMMainWindow* window,
   return result;
 }
 
-CapabilityCheckResult checkActionAvailable(const NMMainWindow* window,
-                                            const char* actionId) {
+CapabilityCheckResult checkActionAvailable(const NMMainWindow *window,
+                                           const char *actionId) {
   CapabilityCheckResult result;
   result.category = getCategoryForAction(actionId);
   result.capability = actionId;
@@ -259,8 +259,8 @@ CapabilityCheckResult checkActionAvailable(const NMMainWindow* window,
   return result;
 }
 
-EditorCapabilitiesReport checkEditorCapabilities(const NMMainWindow* window,
-                                                  bool strict) {
+EditorCapabilitiesReport checkEditorCapabilities(const NMMainWindow *window,
+                                                 bool strict) {
   EditorCapabilitiesReport report;
   report.totalChecks = 0;
   report.passedChecks = 0;
@@ -288,16 +288,15 @@ EditorCapabilitiesReport checkEditorCapabilities(const NMMainWindow* window,
     } else {
       report.failedChecks++;
       if (strict) {
-        core::Logger::instance().error(
-            "CAPABILITY CHECK FAILED: Panel " + result.capability +
-            " is not available");
+        core::Logger::instance().error("CAPABILITY CHECK FAILED: Panel " +
+                                       result.capability + " is not available");
         assert(false && "Missing required panel");
       }
     }
   }
 
   // Check all required actions
-  const char* actions[] = {
+  const char *actions[] = {
       RequiredActions::AUDIO_PREVIEW,   RequiredActions::AUDIO_VOLUME,
       RequiredActions::VOICE_BINDING,   RequiredActions::LOC_EDIT,
       RequiredActions::LOC_IMPORT,      RequiredActions::LOC_EXPORT,
@@ -321,9 +320,8 @@ EditorCapabilitiesReport checkEditorCapabilities(const NMMainWindow* window,
     } else {
       report.failedChecks++;
       if (strict) {
-        core::Logger::instance().error(
-            "CAPABILITY CHECK FAILED: Action " + result.capability +
-            " is not available");
+        core::Logger::instance().error("CAPABILITY CHECK FAILED: Action " +
+                                       result.capability + " is not available");
         assert(false && "Missing required action");
       }
     }
@@ -343,7 +341,7 @@ std::string EditorCapabilitiesReport::toString() const {
 
   if (failedChecks > 0) {
     ss << "--- Failed Capabilities ---\n";
-    for (const auto& result : results) {
+    for (const auto &result : results) {
       if (!result.available) {
         ss << "  [FAIL] " << result.category << "/" << result.capability;
         if (!result.details.empty()) {
@@ -365,15 +363,15 @@ std::string EditorCapabilitiesReport::toString() const {
   return ss.str();
 }
 
-void logCapabilitiesReport(const EditorCapabilitiesReport& report) {
-  auto& logger = core::Logger::instance();
+void logCapabilitiesReport(const EditorCapabilitiesReport &report) {
+  auto &logger = core::Logger::instance();
 
   logger.info("=== Editor Capabilities Check ===");
   logger.info("Total: " + std::to_string(report.totalChecks) +
               ", Passed: " + std::to_string(report.passedChecks) +
               ", Failed: " + std::to_string(report.failedChecks));
 
-  for (const auto& result : report.results) {
+  for (const auto &result : report.results) {
     if (!result.available) {
       logger.warning("[MISSING] " + result.category + "/" + result.capability +
                      ": " + result.details);

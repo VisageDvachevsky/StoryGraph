@@ -59,10 +59,10 @@ void NMDiagnosticsPanel::setupUI() {
   m_diagnosticsTree->setWordWrap(true);
 
   // Set column widths - make Message and File columns much wider
-  m_diagnosticsTree->setColumnWidth(0, 80);   // Type
-  m_diagnosticsTree->setColumnWidth(1, 500);  // Message - much wider
-  m_diagnosticsTree->setColumnWidth(2, 300);  // File - wider
-  m_diagnosticsTree->setColumnWidth(3, 60);   // Line
+  m_diagnosticsTree->setColumnWidth(0, 80);  // Type
+  m_diagnosticsTree->setColumnWidth(1, 500); // Message - much wider
+  m_diagnosticsTree->setColumnWidth(2, 300); // File - wider
+  m_diagnosticsTree->setColumnWidth(3, 60);  // Line
 
   // Enable text wrapping in items
   m_diagnosticsTree->setTextElideMode(Qt::ElideNone);

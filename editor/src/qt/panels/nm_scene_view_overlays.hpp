@@ -25,13 +25,13 @@
 #include <QOpenGLFunctions>
 #include <QOpenGLWidget>
 #include <QPainter>
+#include <QPixmap>
 #include <QPointF>
 #include <QPushButton>
 #include <QSizePolicy>
 #include <QStringList>
 #include <QTimer>
 #include <QVBoxLayout>
-#include <QPixmap>
 
 #include <algorithm>
 #include <cmath>
@@ -109,41 +109,41 @@ public:
     m_choicesBox->hide();
 
     const auto &palette = NMStyleManager::instance().palette();
-    setStyleSheet(QString(
-                      "QFrame#DialogueBox {"
-                      "  background: qlineargradient(x1:0, y1:0, x2:0, y2:1, "
-                      "stop:0 rgba(12, 12, 16, 235), stop:1 rgba(6, 6, 8, 235));"
-                      "  border: 1px solid %1;"
-                      "  border-radius: 14px;"
-                      "}"
-                      "QFrame#NamePlate {"
-                      "  background-color: rgba(20, 20, 24, 220);"
-                      "  border: 1px solid %1;"
-                      "  border-radius: 10px;"
-                      "}"
-                      "QLabel#NameLabel {"
-                      "  color: %2;"
-                      "  font-weight: bold;"
-                      "  letter-spacing: 0.4px;"
-                      "}"
-                      "QLabel#TextLabel {"
-                      "  color: %3;"
-                      "}"
-                      "QPushButton#ChoiceButton {"
-                      "  background-color: rgba(18, 18, 24, 225);"
-                      "  color: %3;"
-                      "  border: 1px solid %1;"
-                      "  border-radius: 10px;"
-                      "  padding: 12px 16px;"
-                      "  text-align: left;"
-                      "}"
-                      "QPushButton#ChoiceButton:hover {"
-                      "  border-color: %2;"
-                      "  background-color: rgba(28, 28, 36, 230);"
-                      "}")
-                      .arg(palette.borderLight.name())
-                      .arg(palette.accentPrimary.name())
-                      .arg(palette.textPrimary.name()));
+    setStyleSheet(
+        QString("QFrame#DialogueBox {"
+                "  background: qlineargradient(x1:0, y1:0, x2:0, y2:1, "
+                "stop:0 rgba(12, 12, 16, 235), stop:1 rgba(6, 6, 8, 235));"
+                "  border: 1px solid %1;"
+                "  border-radius: 14px;"
+                "}"
+                "QFrame#NamePlate {"
+                "  background-color: rgba(20, 20, 24, 220);"
+                "  border: 1px solid %1;"
+                "  border-radius: 10px;"
+                "}"
+                "QLabel#NameLabel {"
+                "  color: %2;"
+                "  font-weight: bold;"
+                "  letter-spacing: 0.4px;"
+                "}"
+                "QLabel#TextLabel {"
+                "  color: %3;"
+                "}"
+                "QPushButton#ChoiceButton {"
+                "  background-color: rgba(18, 18, 24, 225);"
+                "  color: %3;"
+                "  border: 1px solid %1;"
+                "  border-radius: 10px;"
+                "  padding: 12px 16px;"
+                "  text-align: left;"
+                "}"
+                "QPushButton#ChoiceButton:hover {"
+                "  border-color: %2;"
+                "  background-color: rgba(28, 28, 36, 230);"
+                "}")
+            .arg(palette.borderLight.name())
+            .arg(palette.accentPrimary.name())
+            .arg(palette.textPrimary.name()));
 
     auto *dialogueShadow = new QGraphicsDropShadowEffect(this);
     dialogueShadow->setBlurRadius(18);
@@ -345,10 +345,8 @@ public:
   void setViewCamera(const QPointF &center, qreal zoom) {
     m_camera.setViewportSize(static_cast<f32>(width()),
                              static_cast<f32>(height()));
-    const f32 baseX =
-        m_snapshot.camera.valid ? m_snapshot.camera.x : 0.0f;
-    const f32 baseY =
-        m_snapshot.camera.valid ? m_snapshot.camera.y : 0.0f;
+    const f32 baseX = m_snapshot.camera.valid ? m_snapshot.camera.x : 0.0f;
+    const f32 baseY = m_snapshot.camera.valid ? m_snapshot.camera.y : 0.0f;
     const f32 baseZoom =
         m_snapshot.camera.valid ? m_snapshot.camera.zoom : 1.0f;
     const f32 centerX = static_cast<f32>(center.x());
@@ -426,34 +424,32 @@ private:
 
   GLTexture placeholderTexture(const QString &label,
                                scene::SceneObjectType type) {
-    QSize sz = (type == scene::SceneObjectType::Background)
-                   ? QSize(1280, 720)
-                   : QSize(400, 600);
-  QImage img(sz, QImage::Format_ARGB32_Premultiplied);
-  if (img.isNull()) {
-    QImage fallback(QSize(1, 1), QImage::Format_ARGB32_Premultiplied);
-    fallback.fill(Qt::transparent);
-    return uploadTexture(fallback, label);
-  }
-  QColor fill = (type == scene::SceneObjectType::Background)
+    QSize sz = (type == scene::SceneObjectType::Background) ? QSize(1280, 720)
+                                                            : QSize(400, 600);
+    QImage img(sz, QImage::Format_ARGB32_Premultiplied);
+    if (img.isNull()) {
+      QImage fallback(QSize(1, 1), QImage::Format_ARGB32_Premultiplied);
+      fallback.fill(Qt::transparent);
+      return uploadTexture(fallback, label);
+    }
+    QColor fill = (type == scene::SceneObjectType::Background)
                       ? QColor(40, 50, 70)
                       : QColor(70, 80, 95);
-  img.fill(fill);
-  QPainter p(&img);
-  if (!p.isActive()) {
-    QImage fallback(QSize(1, 1), QImage::Format_ARGB32_Premultiplied);
-    fallback.fill(Qt::transparent);
-    return uploadTexture(fallback, label);
-  }
-  p.setPen(QColor(180, 200, 255));
-  p.drawRect(QRect(QPoint(0, 0), sz - QSize(1, 1)));
-  p.drawText(QRect(QPoint(0, 0), sz), Qt::AlignCenter, label);
-  p.end();
+    img.fill(fill);
+    QPainter p(&img);
+    if (!p.isActive()) {
+      QImage fallback(QSize(1, 1), QImage::Format_ARGB32_Premultiplied);
+      fallback.fill(Qt::transparent);
+      return uploadTexture(fallback, label);
+    }
+    p.setPen(QColor(180, 200, 255));
+    p.drawRect(QRect(QPoint(0, 0), sz - QSize(1, 1)));
+    p.drawText(QRect(QPoint(0, 0), sz), Qt::AlignCenter, label);
+    p.end();
     return uploadTexture(QPixmap::fromImage(img).toImage(), label);
   }
 
-  GLTexture resolveTexture(const QString &hint,
-                           scene::SceneObjectType type) {
+  GLTexture resolveTexture(const QString &hint, scene::SceneObjectType type) {
     if (m_textureCache.contains(hint)) {
       return m_textureCache.value(hint);
     }
@@ -516,11 +512,11 @@ private:
     for (const auto &obj : m_snapshot.objects) {
       sorted.push_back(&obj);
     }
-    std::sort(sorted.begin(), sorted.end(),
-              [](const scene::SceneObjectState *a,
-                 const scene::SceneObjectState *b) {
-                return a->zOrder < b->zOrder;
-              });
+    std::sort(
+        sorted.begin(), sorted.end(),
+        [](const scene::SceneObjectState *a, const scene::SceneObjectState *b) {
+          return a->zOrder < b->zOrder;
+        });
 
     glEnable(GL_TEXTURE_2D);
 
@@ -529,15 +525,12 @@ private:
         continue;
       }
 
-      GLTexture tex =
-          resolveTexture(textureHintFromState(*state), state->type);
+      GLTexture tex = resolveTexture(textureHintFromState(*state), state->type);
 
-      const f32 drawW = (state->width > 0.0f)
-                            ? state->width
-                            : static_cast<f32>(tex.width);
-      const f32 drawH = (state->height > 0.0f)
-                            ? state->height
-                            : static_cast<f32>(tex.height);
+      const f32 drawW =
+          (state->width > 0.0f) ? state->width : static_cast<f32>(tex.width);
+      const f32 drawH =
+          (state->height > 0.0f) ? state->height : static_cast<f32>(tex.height);
 
       const f32 anchorX = drawW * 0.5f;
       const f32 anchorY = drawH * 0.5f;
@@ -598,12 +591,11 @@ private:
     m_textLayout.setDefaultStyle(style);
     m_textLayout.setMaxWidth(static_cast<f32>(width()) * 0.8f);
 
-    renderer::TextLayout layout =
-        m_textLayout.layout(m_snapshot.dialogueText);
+    renderer::TextLayout layout = m_textLayout.layout(m_snapshot.dialogueText);
 
     const auto &atlasTex = m_fontAtlas->getAtlasTexture();
-    auto atlasId =
-        static_cast<GLuint>(reinterpret_cast<uintptr_t>(atlasTex.getNativeHandle()));
+    auto atlasId = static_cast<GLuint>(
+        reinterpret_cast<uintptr_t>(atlasTex.getNativeHandle()));
     if (atlasId == 0) {
       return;
     }
@@ -612,8 +604,7 @@ private:
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
     f32 originX = static_cast<f32>(width()) * 0.1f;
-    f32 originY =
-        static_cast<f32>(height()) - (layout.totalHeight + 40.0f);
+    f32 originY = static_cast<f32>(height()) - (layout.totalHeight + 40.0f);
 
     f32 penY = originY;
     for (const auto &line : layout.lines) {
@@ -679,7 +670,8 @@ private:
     const f32 choiceHeight = 40.0f;
     const f32 choiceSpacing = 12.0f;
     const f32 totalHeight = static_cast<f32>(m_snapshot.choiceOptions.size()) *
-                            (choiceHeight + choiceSpacing) - choiceSpacing;
+                                (choiceHeight + choiceSpacing) -
+                            choiceSpacing;
 
     f32 originX = (static_cast<f32>(width()) - choiceWidth) * 0.5f;
     f32 originY = (static_cast<f32>(height()) - totalHeight) * 0.5f;
@@ -687,12 +679,14 @@ private:
     glDisable(GL_TEXTURE_2D);
 
     for (size_t i = 0; i < m_snapshot.choiceOptions.size(); ++i) {
-      const f32 y = originY + static_cast<f32>(i) * (choiceHeight + choiceSpacing);
+      const f32 y =
+          originY + static_cast<f32>(i) * (choiceHeight + choiceSpacing);
 
       // Draw choice background
-      renderer::Color bgColor = (static_cast<i32>(i) == m_snapshot.selectedChoice)
-                                  ? renderer::Color(40, 50, 70, 230)
-                                  : renderer::Color(20, 25, 35, 220);
+      renderer::Color bgColor =
+          (static_cast<i32>(i) == m_snapshot.selectedChoice)
+              ? renderer::Color(40, 50, 70, 230)
+              : renderer::Color(20, 25, 35, 220);
 
       glColor4f(static_cast<f32>(bgColor.r) / 255.0f,
                 static_cast<f32>(bgColor.g) / 255.0f,
@@ -707,9 +701,10 @@ private:
       glEnd();
 
       // Draw border
-      renderer::Color borderColor = (static_cast<i32>(i) == m_snapshot.selectedChoice)
-                                      ? renderer::Color(100, 140, 200, 255)
-                                      : renderer::Color(60, 70, 90, 255);
+      renderer::Color borderColor =
+          (static_cast<i32>(i) == m_snapshot.selectedChoice)
+              ? renderer::Color(100, 140, 200, 255)
+              : renderer::Color(60, 70, 90, 255);
 
       glColor4f(static_cast<f32>(borderColor.r) / 255.0f,
                 static_cast<f32>(borderColor.g) / 255.0f,
@@ -729,8 +724,8 @@ private:
 
     // Render choice text
     const auto &atlasTex = m_fontAtlas->getAtlasTexture();
-    auto atlasId =
-        static_cast<GLuint>(reinterpret_cast<uintptr_t>(atlasTex.getNativeHandle()));
+    auto atlasId = static_cast<GLuint>(
+        reinterpret_cast<uintptr_t>(atlasTex.getNativeHandle()));
     if (atlasId == 0) {
       return;
     }
@@ -739,7 +734,8 @@ private:
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
     for (size_t i = 0; i < m_snapshot.choiceOptions.size(); ++i) {
-      const f32 y = originY + static_cast<f32>(i) * (choiceHeight + choiceSpacing);
+      const f32 y =
+          originY + static_cast<f32>(i) * (choiceHeight + choiceSpacing);
       const std::string &choiceText = m_snapshot.choiceOptions[i];
 
       f32 penX = originX + 16.0f;
@@ -783,8 +779,7 @@ private:
     glBegin(GL_QUADS);
     glVertex2f(0.0f, 0.0f);
     glVertex2f(static_cast<GLfloat>(width()), 0.0f);
-    glVertex2f(static_cast<GLfloat>(width()),
-               static_cast<GLfloat>(height()));
+    glVertex2f(static_cast<GLfloat>(width()), static_cast<GLfloat>(height()));
     glVertex2f(0.0f, static_cast<GLfloat>(height()));
     glEnd();
     glEnable(GL_TEXTURE_2D);
@@ -813,8 +808,7 @@ private:
     }
 
     if (fontData.empty()) {
-      m_fontAtlasStatus =
-          "No system font found. Dialogue preview disabled.";
+      m_fontAtlasStatus = "No system font found. Dialogue preview disabled.";
       NOVELMIND_LOG_WARN(
           "FontAtlas: no system font found, dialogue text preview disabled");
       return;
@@ -823,8 +817,7 @@ private:
     auto font = std::make_shared<renderer::Font>();
     auto loadRes = font->loadFromMemory(fontData, 24);
     if (loadRes.isError()) {
-      m_fontAtlasStatus =
-          "Failed to load font. Dialogue preview disabled.";
+      m_fontAtlasStatus = "Failed to load font. Dialogue preview disabled.";
       NOVELMIND_LOG_WARN("FontAtlas: failed to load font from memory");
       return;
     }
@@ -834,9 +827,9 @@ private:
                                    "abcdefghijklmnopqrstuvwxyz"
                                    "0123456789.,!?;:-_()[]{}<>/\\'\" ");
     if (res.isError()) {
-      m_fontAtlasStatus =
-          "Font atlas build failed. Dialogue preview disabled.";
-      NOVELMIND_LOG_WARN(std::string("FontAtlas: build failed: ") + res.error());
+      m_fontAtlasStatus = "Font atlas build failed. Dialogue preview disabled.";
+      NOVELMIND_LOG_WARN(std::string("FontAtlas: build failed: ") +
+                         res.error());
       return;
     }
 

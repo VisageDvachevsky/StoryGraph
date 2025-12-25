@@ -9,9 +9,7 @@ namespace NovelMind::editor {
 
 namespace {
 
-std::string toStdString(const QString &value) {
-  return value.toStdString();
-}
+std::string toStdString(const QString &value) { return value.toStdString(); }
 
 QString toQString(const std::string &value) {
   return QString::fromStdString(value);

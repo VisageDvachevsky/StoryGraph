@@ -44,8 +44,8 @@ void ResourceManager::setVfs(vfs::IVirtualFileSystem *vfs) { m_vfs = vfs; }
 
 void ResourceManager::setBasePath(const std::string &path) {
   m_basePath = path;
-  if (!m_basePath.empty() &&
-      m_basePath.back() != '/' && m_basePath.back() != '\\') {
+  if (!m_basePath.empty() && m_basePath.back() != '/' &&
+      m_basePath.back() != '\\') {
     m_basePath.push_back(fs::path::preferred_separator);
   }
 }
@@ -194,8 +194,7 @@ ResourceManager::readResource(const std::string &id) const {
     }
   }
 
-  return Result<std::vector<u8>>::error(
-      "Failed to read resource: " + id);
+  return Result<std::vector<u8>>::error("Failed to read resource: " + id);
 }
 
 std::string ResourceManager::resolvePath(const std::string &id) const {

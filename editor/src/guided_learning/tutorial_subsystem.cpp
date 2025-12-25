@@ -18,16 +18,14 @@ namespace NovelMind::editor::guided_learning {
 // Static instance
 std::unique_ptr<NMTutorialSubsystem> NMTutorialSubsystem::s_instance;
 
-NMTutorialSubsystem& NMTutorialSubsystem::instance() {
+NMTutorialSubsystem &NMTutorialSubsystem::instance() {
   if (!s_instance) {
     s_instance.reset(new NMTutorialSubsystem());
   }
   return *s_instance;
 }
 
-bool NMTutorialSubsystem::hasInstance() {
-  return s_instance != nullptr;
-}
+bool NMTutorialSubsystem::hasInstance() { return s_instance != nullptr; }
 
 NMTutorialSubsystem::NMTutorialSubsystem() : QObject(nullptr) {
   setObjectName("NMTutorialSubsystem");
@@ -39,8 +37,9 @@ NMTutorialSubsystem::~NMTutorialSubsystem() {
   }
 }
 
-Result<void> NMTutorialSubsystem::initialize(QWidget* parentWidget,
-                                              const TutorialSubsystemConfig& config) {
+Result<void>
+NMTutorialSubsystem::initialize(QWidget *parentWidget,
+                                const TutorialSubsystemConfig &config) {
   if (m_initialized) {
     return Result<void>::error("Tutorial subsystem already initialized");
   }
@@ -62,7 +61,8 @@ Result<void> NMTutorialSubsystem::initialize(QWidget* parentWidget,
   // Set up progress file path
   QString progressPath;
   if (config.userProgressPath.empty()) {
-    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QString appDataPath =
+        QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     QDir dir(appDataPath);
     if (!dir.exists()) {
       dir.mkpath(".");
@@ -75,9 +75,11 @@ Result<void> NMTutorialSubsystem::initialize(QWidget* parentWidget,
   NMTutorialManager::instance().setProgressFilePath(progressPath.toStdString());
 
   // Load existing progress
-  auto loadResult = NMTutorialManager::instance().loadProgress(progressPath.toStdString());
+  auto loadResult =
+      NMTutorialManager::instance().loadProgress(progressPath.toStdString());
   if (!loadResult.isOk() && config.verboseLogging) {
-    qDebug() << "No existing tutorial progress found (this is normal on first run)";
+    qDebug()
+        << "No existing tutorial progress found (this is normal on first run)";
   }
 
   // Load tutorial definitions
@@ -89,7 +91,7 @@ Result<void> NMTutorialSubsystem::initialize(QWidget* parentWidget,
     searchPaths << QCoreApplication::applicationDirPath() + "/" + tutorialPath;
     searchPaths << ":/tutorials"; // Qt resources
 
-    for (const auto& path : searchPaths) {
+    for (const auto &path : searchPaths) {
       QDir dir(path);
       if (dir.exists()) {
         tutorialPath = path;
@@ -100,7 +102,8 @@ Result<void> NMTutorialSubsystem::initialize(QWidget* parentWidget,
 
   if (QDir(tutorialPath).exists()) {
     auto loadTutorialsResult =
-        NMTutorialManager::instance().loadTutorialsFromDirectory(tutorialPath.toStdString());
+        NMTutorialManager::instance().loadTutorialsFromDirectory(
+            tutorialPath.toStdString());
     if (loadTutorialsResult.isOk()) {
       qDebug() << "Loaded" << loadTutorialsResult.value() << "tutorials from"
                << tutorialPath;
@@ -155,25 +158,23 @@ void NMTutorialSubsystem::shutdown() {
   qDebug() << "Tutorial Subsystem shutdown complete";
 }
 
-NMTutorialManager& NMTutorialSubsystem::tutorialManager() {
+NMTutorialManager &NMTutorialSubsystem::tutorialManager() {
   return NMTutorialManager::instance();
 }
 
-NMAnchorRegistry& NMTutorialSubsystem::anchorRegistry() {
+NMAnchorRegistry &NMTutorialSubsystem::anchorRegistry() {
   return NMAnchorRegistry::instance();
 }
 
-NMHelpOverlay* NMTutorialSubsystem::helpOverlay() {
-  return m_overlay.get();
-}
+NMHelpOverlay *NMTutorialSubsystem::helpOverlay() { return m_overlay.get(); }
 
-bool NMTutorialSubsystem::startTutorial(const std::string& tutorialId) {
+bool NMTutorialSubsystem::startTutorial(const std::string &tutorialId) {
   if (!m_initialized)
     return false;
   return NMTutorialManager::instance().startTutorial(tutorialId);
 }
 
-bool NMTutorialSubsystem::showHint(const std::string& hintId) {
+bool NMTutorialSubsystem::showHint(const std::string &hintId) {
   if (!m_initialized)
     return false;
   return NMTutorialManager::instance().showHint(hintId);
@@ -215,7 +216,8 @@ void NMTutorialSubsystem::registerSettings() {
   SettingDefinition hintsDef;
   hintsDef.key = "guidedLearning.hintsEnabled";
   hintsDef.displayName = "Show Contextual Hints";
-  hintsDef.description = "Display helpful hints when panels are empty or errors occur";
+  hintsDef.description =
+      "Display helpful hints when panels are empty or errors occur";
   hintsDef.category = "Editor/Guided Learning";
   hintsDef.type = SettingType::Bool;
   hintsDef.scope = SettingScope::User;
@@ -224,7 +226,8 @@ void NMTutorialSubsystem::registerSettings() {
   SettingDefinition firstRunDef;
   firstRunDef.key = "guidedLearning.walkthroughsOnFirstRun";
   firstRunDef.displayName = "Show Walkthroughs on First Run";
-  firstRunDef.description = "Automatically show tutorials when using a feature for the first time";
+  firstRunDef.description =
+      "Automatically show tutorials when using a feature for the first time";
   firstRunDef.category = "Editor/Guided Learning";
   firstRunDef.type = SettingType::Bool;
   firstRunDef.scope = SettingScope::User;
@@ -248,7 +251,8 @@ Result<void> NMTutorialSubsystem::saveUserPreferences() {
     return Result<void>::error("Subsystem not initialized");
   }
 
-  QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+  QString appDataPath =
+      QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
   QString progressPath = QDir(appDataPath).filePath("tutorial_progress.json");
 
   return NMTutorialManager::instance().saveProgress(progressPath.toStdString());
@@ -259,20 +263,20 @@ Result<void> NMTutorialSubsystem::loadUserPreferences() {
     return Result<void>::error("Subsystem not initialized");
   }
 
-  QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+  QString appDataPath =
+      QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
   QString progressPath = QDir(appDataPath).filePath("tutorial_progress.json");
 
   return NMTutorialManager::instance().loadProgress(progressPath.toStdString());
 }
 
 void NMTutorialSubsystem::connectToEventBus() {
-  auto& bus = EventBus::instance();
+  auto &bus = EventBus::instance();
 
   // Subscribe to panel focus changes
   auto panelFocusSub = bus.subscribe(
-      EditorEventType::PanelFocusChanged,
-      [this](const EditorEvent& event) {
-        if (auto* e = dynamic_cast<const PanelFocusChangedEvent*>(&event)) {
+      EditorEventType::PanelFocusChanged, [this](const EditorEvent &event) {
+        if (auto *e = dynamic_cast<const PanelFocusChangedEvent *>(&event)) {
           onPanelFocusChanged(*e);
         }
       });
@@ -280,18 +284,16 @@ void NMTutorialSubsystem::connectToEventBus() {
 
   // Subscribe to project events
   auto projectOpenedSub = bus.subscribe(
-      EditorEventType::ProjectOpened,
-      [this](const EditorEvent& event) {
-        if (auto* e = dynamic_cast<const ProjectEvent*>(&event)) {
+      EditorEventType::ProjectOpened, [this](const EditorEvent &event) {
+        if (auto *e = dynamic_cast<const ProjectEvent *>(&event)) {
           onProjectOpened(*e);
         }
       });
   m_eventSubscriptions.emplace_back(&bus, projectOpenedSub);
 
   auto projectClosedSub = bus.subscribe(
-      EditorEventType::ProjectClosed,
-      [this](const EditorEvent& event) {
-        if (auto* e = dynamic_cast<const ProjectEvent*>(&event)) {
+      EditorEventType::ProjectClosed, [this](const EditorEvent &event) {
+        if (auto *e = dynamic_cast<const ProjectEvent *>(&event)) {
           onProjectClosed(*e);
         }
       });
@@ -299,9 +301,8 @@ void NMTutorialSubsystem::connectToEventBus() {
 
   // Subscribe to error events
   auto errorSub = bus.subscribe(
-      EditorEventType::ErrorOccurred,
-      [this](const EditorEvent& event) {
-        if (auto* e = dynamic_cast<const ErrorEvent*>(&event)) {
+      EditorEventType::ErrorOccurred, [this](const EditorEvent &event) {
+        if (auto *e = dynamic_cast<const ErrorEvent *>(&event)) {
           onErrorOccurred(*e);
         }
       });
@@ -312,14 +313,15 @@ void NMTutorialSubsystem::disconnectFromEventBus() {
   m_eventSubscriptions.clear();
 }
 
-void NMTutorialSubsystem::onPanelFocusChanged(const PanelFocusChangedEvent& event) {
+void NMTutorialSubsystem::onPanelFocusChanged(
+    const PanelFocusChangedEvent &event) {
   if (!m_initialized || !event.hasFocus)
     return;
 
   NMTutorialManager::instance().onPanelOpened(event.panelName);
 }
 
-void NMTutorialSubsystem::onProjectOpened(const ProjectEvent& event) {
+void NMTutorialSubsystem::onProjectOpened(const ProjectEvent &event) {
   if (!m_initialized)
     return;
 
@@ -327,7 +329,7 @@ void NMTutorialSubsystem::onProjectOpened(const ProjectEvent& event) {
   (void)event;
 }
 
-void NMTutorialSubsystem::onProjectClosed(const ProjectEvent& event) {
+void NMTutorialSubsystem::onProjectClosed(const ProjectEvent &event) {
   if (!m_initialized)
     return;
 
@@ -336,7 +338,7 @@ void NMTutorialSubsystem::onProjectClosed(const ProjectEvent& event) {
   (void)event;
 }
 
-void NMTutorialSubsystem::onErrorOccurred(const ErrorEvent& event) {
+void NMTutorialSubsystem::onErrorOccurred(const ErrorEvent &event) {
   if (!m_initialized)
     return;
 

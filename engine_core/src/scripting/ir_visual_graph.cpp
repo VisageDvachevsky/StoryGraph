@@ -79,7 +79,8 @@ std::unique_ptr<IRGraph> VisualGraph::toIR() const {
       {"SceneStart", IRNodeType::SceneStart},
       {"SceneEnd", IRNodeType::SceneEnd},
       {"Comment", IRNodeType::Comment},
-      {"Scene", IRNodeType::Scene},  // Scene node type for Visual-First/Code-First workflows
+      {"Scene", IRNodeType::Scene}, // Scene node type for
+                                    // Visual-First/Code-First workflows
       {"Sequence", IRNodeType::Sequence},
       {"Branch", IRNodeType::Branch},
       {"Switch", IRNodeType::Switch},

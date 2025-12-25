@@ -71,7 +71,7 @@ enum class ProjectJsonError : u32 {
  * @brief JSON value type for simple parsing
  */
 using JsonValue = std::variant<std::nullptr_t, bool, i64, f64, std::string,
-                                std::vector<std::string>>;
+                               std::vector<std::string>>;
 
 /**
  * @brief Simple JSON object representation
@@ -92,8 +92,8 @@ public:
    * @param outMetadata Parsed metadata
    * @return Success or specific error code
    */
-  [[nodiscard]] static Result<void> parseFromString(const std::string &json,
-                                                     ProjectMetadata &outMetadata);
+  [[nodiscard]] static Result<void>
+  parseFromString(const std::string &json, ProjectMetadata &outMetadata);
 
   /**
    * @brief Serialize project metadata to JSON string
@@ -101,8 +101,8 @@ public:
    * @param outJson Resulting JSON string
    * @return Success or specific error code
    */
-  [[nodiscard]] static Result<void> serializeToString(const ProjectMetadata &metadata,
-                                                       std::string &outJson);
+  [[nodiscard]] static Result<void>
+  serializeToString(const ProjectMetadata &metadata, std::string &outJson);
 
   /**
    * @brief Load project metadata from file
@@ -111,7 +111,7 @@ public:
    * @return Success or specific error code
    */
   [[nodiscard]] static Result<void> loadFromFile(const std::string &path,
-                                                  ProjectMetadata &outMetadata);
+                                                 ProjectMetadata &outMetadata);
 
   /**
    * @brief Save project metadata to file atomically
@@ -126,7 +126,7 @@ public:
    * This ensures no corruption on write failures
    */
   [[nodiscard]] static Result<void> saveToFile(const std::string &path,
-                                                const ProjectMetadata &metadata);
+                                               const ProjectMetadata &metadata);
 
   /**
    * @brief Validate project metadata
@@ -154,16 +154,16 @@ private:
   // Field extraction helpers
   template <typename T>
   [[nodiscard]] static Result<T> getField(const JsonObject &obj,
-                                           const std::string &key);
+                                          const std::string &key);
 
   template <typename T>
   [[nodiscard]] static Result<T> getOptionalField(const JsonObject &obj,
-                                                   const std::string &key,
-                                                   const T &defaultValue);
+                                                  const std::string &key,
+                                                  const T &defaultValue);
 
   // Migration support
   [[nodiscard]] static Result<void> migrateFromVersion(u32 version,
-                                                        JsonObject &obj);
+                                                       JsonObject &obj);
 };
 
 } // namespace NovelMind::editor

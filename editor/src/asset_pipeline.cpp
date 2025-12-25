@@ -4,6 +4,8 @@
  */
 
 #include "NovelMind/editor/asset_pipeline.hpp"
+#include <QImage>
+#include <QString>
 #include <algorithm>
 #include <chrono>
 #include <filesystem>
@@ -11,8 +13,6 @@
 #include <iomanip>
 #include <random>
 #include <sstream>
-#include <QImage>
-#include <QString>
 
 namespace NovelMind::editor {
 
@@ -184,8 +184,9 @@ Result<void> ImageImporter::processImage(const std::string &sourcePath,
   }
 }
 
-Result<void> ImageImporter::generateThumbnail(const std::string &sourcePath,
-                                              const std::string &thumbnailPath) {
+Result<void>
+ImageImporter::generateThumbnail(const std::string &sourcePath,
+                                 const std::string &thumbnailPath) {
   // Generate a scaled thumbnail if possible, otherwise fall back to copy.
   try {
     fs::create_directories(fs::path(thumbnailPath).parent_path());
@@ -197,8 +198,7 @@ Result<void> ImageImporter::generateThumbnail(const std::string &sourcePath,
         return Result<void>::ok();
       }
     }
-    fs::copy(sourcePath, thumbnailPath,
-             fs::copy_options::overwrite_existing);
+    fs::copy(sourcePath, thumbnailPath, fs::copy_options::overwrite_existing);
     return Result<void>::ok();
   } catch (const fs::filesystem_error &e) {
     return Result<void>::error(std::string("Failed to generate thumbnail: ") +
@@ -612,8 +612,9 @@ AssetDatabase::importAsset(const std::string &sourcePath) {
   return importAssetToPath(sourcePath, destPath);
 }
 
-Result<AssetMetadata> AssetDatabase::importAssetToPath(
-    const std::string &sourcePath, const std::string &destPath) {
+Result<AssetMetadata>
+AssetDatabase::importAssetToPath(const std::string &sourcePath,
+                                 const std::string &destPath) {
   IAssetImporter *importer = getImporterForFile(sourcePath);
   if (!importer) {
     return Result<AssetMetadata>::error("No importer found for file: " +

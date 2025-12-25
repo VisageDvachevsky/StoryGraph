@@ -83,8 +83,7 @@ public:
    * @param fn Function to call with the typed object pointer
    * @return true if object existed, matched type, and function was called
    */
-  template <typename T>
-  bool withObjectAs(std::function<void(T *)> fn) const {
+  template <typename T> bool withObjectAs(std::function<void(T *)> fn) const {
     if (auto *obj = getAs<T>()) {
       fn(obj);
       return true;
@@ -123,7 +122,7 @@ public:
    * @param onClear Callback to execute when selection is cleared
    */
   explicit ScopedInspectorSelection(SceneObjectHandle handle,
-                                     ClearCallback onClear = nullptr)
+                                    ClearCallback onClear = nullptr)
       : m_handle(std::move(handle)), m_onClear(std::move(onClear)) {}
 
   /**

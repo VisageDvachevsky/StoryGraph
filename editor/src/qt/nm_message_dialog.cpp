@@ -1,6 +1,6 @@
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
-#include "nm_dialogs_detail.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
+#include "nm_dialogs_detail.hpp"
 
 #include <QHBoxLayout>
 #include <QLabel>
@@ -95,14 +95,12 @@ void NMMessageDialog::buildUi(const QString &message, NMMessageType type,
   iconLabel->setAlignment(Qt::AlignCenter);
   iconLabel->setText(dialogIconText(type));
   const QColor iconColor = dialogIconColor(type);
-  iconLabel->setStyleSheet(QString("background-color: %1; color: %2; "
-                                   "border-radius: 16px; font-weight: 700;")
-                               .arg(NMStyleManager::colorToStyleString(
-                                   iconColor))
-                               .arg(NMStyleManager::colorToStyleString(
-                                   NMStyleManager::instance()
-                                       .palette()
-                                       .textPrimary)));
+  iconLabel->setStyleSheet(
+      QString("background-color: %1; color: %2; "
+              "border-radius: 16px; font-weight: 700;")
+          .arg(NMStyleManager::colorToStyleString(iconColor))
+          .arg(NMStyleManager::colorToStyleString(
+              NMStyleManager::instance().palette().textPrimary)));
 
   auto *messageLabel = new QLabel(message, this);
   messageLabel->setWordWrap(true);
@@ -141,7 +139,8 @@ NMDialogButton NMMessageDialog::showInfo(QWidget *parent, const QString &title,
   return dialog.choice();
 }
 
-NMDialogButton NMMessageDialog::showWarning(QWidget *parent, const QString &title,
+NMDialogButton NMMessageDialog::showWarning(QWidget *parent,
+                                            const QString &title,
                                             const QString &message) {
   NMMessageDialog dialog(parent, title, message, NMMessageType::Warning,
                          {NMDialogButton::Ok}, NMDialogButton::Ok);
@@ -165,6 +164,5 @@ NMDialogButton NMMessageDialog::showQuestion(
   dialog.exec();
   return dialog.choice();
 }
-
 
 } // namespace NovelMind::editor::qt

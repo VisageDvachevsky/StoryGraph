@@ -1,7 +1,7 @@
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
-#include "NovelMind/editor/qt/panels/nm_story_graph_minimap.hpp"
-#include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/project_manager.hpp"
+#include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
+#include "NovelMind/editor/qt/panels/nm_story_graph_minimap.hpp"
 
 #include <QAction>
 #include <QComboBox>
@@ -97,10 +97,8 @@ void NMStoryGraphPanel::rebuildFromProjectScripts() {
   QHash<QString, QString> sceneToFile;
   QList<QPair<QString, QString>> edges;
 
-  const QRegularExpression sceneRe(
-      "\\bscene\\s+([A-Za-z_][A-Za-z0-9_]*)");
-  const QRegularExpression gotoRe(
-      "\\bgoto\\s+([A-Za-z_][A-Za-z0-9_]*)");
+  const QRegularExpression sceneRe("\\bscene\\s+([A-Za-z_][A-Za-z0-9_]*)");
+  const QRegularExpression gotoRe("\\bgoto\\s+([A-Za-z_][A-Za-z0-9_]*)");
   const QRegularExpression choiceRe(
       "\"([^\"]+)\"\\s*->\\s*([A-Za-z_][A-Za-z0-9_]*)");
 
@@ -117,8 +115,7 @@ void NMStoryGraphPanel::rebuildFromProjectScripts() {
     file.close();
 
     const QString relPath = QString::fromStdString(
-        ProjectManager::instance().toRelativePath(
-            entry.path().string()));
+        ProjectManager::instance().toRelativePath(entry.path().string()));
 
     // Collect scene blocks with ranges
     struct SceneBlock {
@@ -155,8 +152,7 @@ void NMStoryGraphPanel::rebuildFromProjectScripts() {
         }
       }
 
-      QRegularExpressionMatchIterator choiceIt =
-          choiceRe.globalMatch(slice);
+      QRegularExpressionMatchIterator choiceIt = choiceRe.globalMatch(slice);
       while (choiceIt.hasNext()) {
         const QString target = choiceIt.next().captured(2);
         if (!target.isEmpty()) {
@@ -177,9 +173,9 @@ void NMStoryGraphPanel::rebuildFromProjectScripts() {
     const int row = index / 4;
     const QPointF defaultPos(col * 260.0, row * 140.0);
     const auto layoutIt = m_layoutNodes.constFind(sceneId);
-    const QPointF pos =
-        (layoutIt != m_layoutNodes.constEnd()) ? layoutIt->position
-                                               : defaultPos;
+    const QPointF pos = (layoutIt != m_layoutNodes.constEnd())
+                            ? layoutIt->position
+                            : defaultPos;
     const QString type =
         (layoutIt != m_layoutNodes.constEnd() && !layoutIt->type.isEmpty())
             ? layoutIt->type
@@ -299,7 +295,8 @@ void NMStoryGraphPanel::setupToolBar() {
   m_toolBar->addSeparator();
 
   QAction *actionAutoLayout = m_toolBar->addAction(tr("Auto Layout"));
-  actionAutoLayout->setToolTip(tr("Automatically arrange nodes (hierarchical layout)"));
+  actionAutoLayout->setToolTip(
+      tr("Automatically arrange nodes (hierarchical layout)"));
   connect(actionAutoLayout, &QAction::triggered, this,
           &NMStoryGraphPanel::onAutoLayout);
 
@@ -313,21 +310,25 @@ void NMStoryGraphPanel::setupToolBar() {
   m_localePreviewSelector = new QComboBox(m_toolBar);
   m_localePreviewSelector->setMinimumWidth(80);
   m_localePreviewSelector->addItem(tr("Source"), "");
-  m_localePreviewSelector->setToolTip(tr("Preview dialogue text in selected locale"));
-  connect(m_localePreviewSelector, QOverload<int>::of(&QComboBox::currentIndexChanged),
-          this, &NMStoryGraphPanel::onLocalePreviewChanged);
+  m_localePreviewSelector->setToolTip(
+      tr("Preview dialogue text in selected locale"));
+  connect(m_localePreviewSelector,
+          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &NMStoryGraphPanel::onLocalePreviewChanged);
   m_toolBar->addWidget(m_localePreviewSelector);
 
   // Generate localization keys button
   m_generateKeysBtn = new QPushButton(tr("Gen Keys"), m_toolBar);
-  m_generateKeysBtn->setToolTip(tr("Generate localization keys for all dialogue nodes"));
+  m_generateKeysBtn->setToolTip(
+      tr("Generate localization keys for all dialogue nodes"));
   connect(m_generateKeysBtn, &QPushButton::clicked, this,
           &NMStoryGraphPanel::onGenerateLocalizationKeysClicked);
   m_toolBar->addWidget(m_generateKeysBtn);
 
   // Export dialogue button
   m_exportDialogueBtn = new QPushButton(tr("Export"), m_toolBar);
-  m_exportDialogueBtn->setToolTip(tr("Export all dialogue to localization files"));
+  m_exportDialogueBtn->setToolTip(
+      tr("Export all dialogue to localization files"));
   connect(m_exportDialogueBtn, &QPushButton::clicked, this,
           &NMStoryGraphPanel::onExportDialogueClicked);
   m_toolBar->addWidget(m_exportDialogueBtn);

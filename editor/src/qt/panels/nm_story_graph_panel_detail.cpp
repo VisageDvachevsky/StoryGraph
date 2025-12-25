@@ -99,8 +99,8 @@ bool loadGraphLayout(QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
       continue;
     }
     NMStoryGraphPanel::LayoutNode node;
-    node.position = QPointF(obj.value("x").toDouble(),
-                            obj.value("y").toDouble());
+    node.position =
+        QPointF(obj.value("x").toDouble(), obj.value("y").toDouble());
     node.type = obj.value("type").toString();
     node.scriptPath = obj.value("scriptPath").toString();
     node.title = obj.value("title").toString();
@@ -349,7 +349,8 @@ bool updateSceneGraphBlock(const QString &sceneId, const QString &scriptPath,
   updated += body;
   updated += content.mid(bodyEnd);
 
-  if (!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text |
+                 QIODevice::Truncate)) {
     return false;
   }
   file.write(updated.toUtf8());
@@ -371,8 +372,7 @@ QStringList splitChoiceLines(const QString &raw) {
   return filtered;
 }
 
-NMStoryGraphPanel::LayoutNode
-buildLayoutFromNode(const NMGraphNodeItem *node) {
+NMStoryGraphPanel::LayoutNode buildLayoutFromNode(const NMGraphNodeItem *node) {
   NMStoryGraphPanel::LayoutNode layout;
   if (!node) {
     return layout;

@@ -1,19 +1,19 @@
 #include "NovelMind/editor/qt/panels/nm_story_graph_voice_integration.hpp"
-#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
-#include "NovelMind/editor/qt/nm_dialogs.hpp"
-#include "NovelMind/editor/voice_manager.hpp"
-#include "NovelMind/audio/voice_manifest.hpp"
 #include "NovelMind/audio/audio_manager.hpp"
+#include "NovelMind/audio/voice_manifest.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+#include "NovelMind/editor/voice_manager.hpp"
 
-#include <QFileInfo>
-#include <QDir>
 #include <QDebug>
+#include <QDir>
+#include <QFileInfo>
 
 namespace NovelMind::editor::qt {
 
-NMStoryGraphVoiceIntegration::NMStoryGraphVoiceIntegration(NMStoryGraphPanel *graphPanel, QObject *parent)
-    : QObject(parent),
-      m_graphPanel(graphPanel) {
+NMStoryGraphVoiceIntegration::NMStoryGraphVoiceIntegration(
+    NMStoryGraphPanel *graphPanel, QObject *parent)
+    : QObject(parent), m_graphPanel(graphPanel) {
   // Initialize with user's home directory as default
   m_lastBrowseDirectory = QDir::homePath();
 }
@@ -24,11 +24,13 @@ void NMStoryGraphVoiceIntegration::setVoiceManager(VoiceManager *voiceManager) {
   m_voiceManager = voiceManager;
 }
 
-void NMStoryGraphVoiceIntegration::setVoiceManifest(audio::VoiceManifest *manifest) {
+void NMStoryGraphVoiceIntegration::setVoiceManifest(
+    audio::VoiceManifest *manifest) {
   m_manifest = manifest;
 }
 
-void NMStoryGraphVoiceIntegration::assignVoiceClip(const QString &nodeIdString, const QString &currentPath) {
+void NMStoryGraphVoiceIntegration::assignVoiceClip(const QString &nodeIdString,
+                                                   const QString &currentPath) {
   if (!m_graphPanel) {
     qWarning() << "[VoiceIntegration] Graph panel is null";
     return;
@@ -45,11 +47,8 @@ void NMStoryGraphVoiceIntegration::assignVoiceClip(const QString &nodeIdString, 
 
   // Open file dialog for voice file selection
   QString voiceFile = NMFileDialog::getOpenFileName(
-      m_graphPanel,
-      tr("Select Voice Clip"),
-      initialDir,
-      tr("Audio Files (*.ogg *.wav *.mp3 *.flac *.opus);;All Files (*)")
-  );
+      m_graphPanel, tr("Select Voice Clip"), initialDir,
+      tr("Audio Files (*.ogg *.wav *.mp3 *.flac *.opus);;All Files (*)"));
 
   if (voiceFile.isEmpty()) {
     // User cancelled
@@ -74,25 +73,28 @@ void NMStoryGraphVoiceIntegration::assignVoiceClip(const QString &nodeIdString, 
   // Emit signal
   emit voiceClipChanged(nodeIdString, voiceFile, bindingStatus);
 
-  qDebug() << "[VoiceIntegration] Assigned voice clip:" << voiceFile << "to node:" << nodeIdString;
+  qDebug() << "[VoiceIntegration] Assigned voice clip:" << voiceFile
+           << "to node:" << nodeIdString;
 }
 
-void NMStoryGraphVoiceIntegration::autoDetectVoice(const QString &nodeIdString, const QString &localizationKey) {
+void NMStoryGraphVoiceIntegration::autoDetectVoice(
+    const QString &nodeIdString, const QString &localizationKey) {
   if (!m_voiceManager) {
     emit errorOccurred("Voice Manager not available");
     qWarning() << "[VoiceIntegration] Voice Manager is null";
     return;
   }
 
-  qDebug() << "[VoiceIntegration] Auto-detecting voice for node:" << nodeIdString
-           << "with key:" << localizationKey;
+  qDebug() << "[VoiceIntegration] Auto-detecting voice for node:"
+           << nodeIdString << "with key:" << localizationKey;
 
   // TODO: Implement auto-detection using VoiceManager
   // For now, emit error
   emit errorOccurred("Auto-detection not yet implemented");
 }
 
-void NMStoryGraphVoiceIntegration::previewVoice(const QString &nodeIdString, const QString &voicePath) {
+void NMStoryGraphVoiceIntegration::previewVoice(const QString &nodeIdString,
+                                                const QString &voicePath) {
   if (voicePath.isEmpty()) {
     emit errorOccurred("No voice clip assigned to preview");
     return;
@@ -119,9 +121,8 @@ void NMStoryGraphVoiceIntegration::stopPreview() {
   }
 }
 
-void NMStoryGraphVoiceIntegration::updateNodeVoiceStatus(const QString &nodeIdString,
-                                                          const QString &voicePath,
-                                                          int bindingStatus) {
+void NMStoryGraphVoiceIntegration::updateNodeVoiceStatus(
+    const QString &nodeIdString, const QString &voicePath, int bindingStatus) {
   if (!m_graphPanel) {
     return;
   }
@@ -135,7 +136,8 @@ void NMStoryGraphVoiceIntegration::updateNodeVoiceStatus(const QString &nodeIdSt
   }
 }
 
-int NMStoryGraphVoiceIntegration::determineBindingStatus(const QString &voicePath) {
+int NMStoryGraphVoiceIntegration::determineBindingStatus(
+    const QString &voicePath) {
   if (voicePath.isEmpty()) {
     return 0; // Unbound
   }

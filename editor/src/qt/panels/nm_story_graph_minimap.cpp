@@ -1,6 +1,6 @@
 #include "NovelMind/editor/qt/panels/nm_story_graph_minimap.hpp"
-#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
 
 #include <QMouseEvent>
 #include <QPainter>
@@ -116,9 +116,7 @@ void NMStoryGraphMinimap::onSceneChanged() {
   }
 }
 
-void NMStoryGraphMinimap::performDeferredUpdate() {
-  updateMinimap();
-}
+void NMStoryGraphMinimap::performDeferredUpdate() { updateMinimap(); }
 
 void NMStoryGraphMinimap::fitGraphInView() {
   if (!m_graphScene || m_graphScene->nodes().isEmpty()) {
@@ -149,9 +147,8 @@ QRectF NMStoryGraphMinimap::getViewportRectInScene() const {
 
   // Get the visible rect in the main view's scene coordinates
   QPointF topLeft = m_mainView->mapToScene(0, 0);
-  QPointF bottomRight =
-      m_mainView->mapToScene(m_mainView->viewport()->width(),
-                             m_mainView->viewport()->height());
+  QPointF bottomRight = m_mainView->mapToScene(
+      m_mainView->viewport()->width(), m_mainView->viewport()->height());
 
   return QRectF(topLeft, bottomRight);
 }
@@ -191,8 +188,8 @@ void NMStoryGraphMinimap::mouseMoveEvent(QMouseEvent *event) {
 
     if (m_mainView) {
       // Move the main view's center by the delta
-      QPointF currentCenter = m_mainView->mapToScene(
-          m_mainView->viewport()->rect().center());
+      QPointF currentCenter =
+          m_mainView->mapToScene(m_mainView->viewport()->rect().center());
       m_mainView->centerOn(currentCenter + delta);
     }
 

@@ -1,7 +1,7 @@
 #include "NovelMind/editor/qt/panels/nm_hierarchy_panel.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
-#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 
 #include <QAction>
 #include <QComboBox>
@@ -51,10 +51,8 @@ void NMHierarchyTree::setScene(NMSceneGraphicsScene *scene) {
 void NMHierarchyTree::refresh() {
   QString previouslySelected;
   if (!selectedItems().isEmpty()) {
-    previouslySelected = selectedItems()
-                             .first()
-                             ->data(0, Qt::UserRole)
-                             .toString();
+    previouslySelected =
+        selectedItems().first()->data(0, Qt::UserRole).toString();
   }
 
   QSignalBlocker blocker(this);
@@ -138,7 +136,8 @@ void NMHierarchyTree::refresh() {
       QFont font = item->font(0);
       font.setItalic(true);
       item->setFont(0, font);
-      item->setForeground(0, NMStyleManager::instance().palette().accentPrimary);
+      item->setForeground(0,
+                          NMStyleManager::instance().palette().accentPrimary);
       item->setToolTip(0, tr("Runtime preview object (read-only)"));
       item->setFlags(item->flags() & ~Qt::ItemIsUserCheckable);
     }
@@ -257,7 +256,7 @@ void NMHierarchyTree::onItemChanged(QTreeWidgetItem *item, int column) {
     // Use undo command if scene view panel is available
     if (m_sceneViewPanel) {
       auto *cmd = new ToggleObjectVisibilityCommand(m_sceneViewPanel, objectId,
-                                                     oldVisible, newVisible);
+                                                    oldVisible, newVisible);
       NMUndoManager::instance().pushCommand(cmd);
     } else {
       m_scene->setObjectVisible(objectId, newVisible);
@@ -329,8 +328,8 @@ void NMHierarchyTree::dropEvent(QDropEvent *event) {
   const QString newParentId = isLayerItem(dropItem) ? QString() : dropObjectId;
 
   // Create undo command for reparenting
-  auto *cmd =
-      new ReparentObjectCommand(m_sceneViewPanel, dragObjectId, oldParentId, newParentId);
+  auto *cmd = new ReparentObjectCommand(m_sceneViewPanel, dragObjectId,
+                                        oldParentId, newParentId);
   NMUndoManager::instance().pushCommand(cmd);
 
   // Prevent default drop behavior since we handle it via undo command
@@ -496,7 +495,8 @@ void NMHierarchyPanel::setupToolBar() {
   m_typeFilterCombo->addItem(tr("Effect"));
   m_typeFilterCombo->setMaximumWidth(120);
   m_toolBar->addWidget(m_typeFilterCombo);
-  connect(m_typeFilterCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+  connect(m_typeFilterCombo,
+          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           &NMHierarchyPanel::onTypeFilterChanged);
 
   m_toolBar->addSeparator();

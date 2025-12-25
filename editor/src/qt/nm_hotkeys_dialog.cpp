@@ -1,6 +1,6 @@
 #include "NovelMind/editor/qt/nm_hotkeys_dialog.hpp"
-#include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
 
 #include <QApplication>
 #include <QDialogButtonBox>
@@ -8,9 +8,9 @@
 #include <QFileDialog>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QJsonArray>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
@@ -32,7 +32,8 @@ public:
 
     auto *layout = new QVBoxLayout(this);
     m_label = new QLabel(tr("Press the key combination you want to use.\n"
-                            "Press Escape to cancel."), this);
+                            "Press Escape to cancel."),
+                         this);
     m_label->setAlignment(Qt::AlignCenter);
     layout->addWidget(m_label);
 
@@ -68,16 +69,20 @@ protected:
     Qt::KeyboardModifiers modifiers = event->modifiers();
 
     // Ignore modifier-only keys
-    if (key == Qt::Key_Control || key == Qt::Key_Shift ||
-        key == Qt::Key_Alt || key == Qt::Key_Meta) {
+    if (key == Qt::Key_Control || key == Qt::Key_Shift || key == Qt::Key_Alt ||
+        key == Qt::Key_Meta) {
       return;
     }
 
     int combo = key;
-    if (modifiers & Qt::ControlModifier) combo |= Qt::CTRL;
-    if (modifiers & Qt::ShiftModifier) combo |= Qt::SHIFT;
-    if (modifiers & Qt::AltModifier) combo |= Qt::ALT;
-    if (modifiers & Qt::MetaModifier) combo |= Qt::META;
+    if (modifiers & Qt::ControlModifier)
+      combo |= Qt::CTRL;
+    if (modifiers & Qt::ShiftModifier)
+      combo |= Qt::SHIFT;
+    if (modifiers & Qt::AltModifier)
+      combo |= Qt::ALT;
+    if (modifiers & Qt::MetaModifier)
+      combo |= Qt::META;
 
     m_sequence = QKeySequence(combo);
     m_shortcutLabel->setText(m_sequence.toString(QKeySequence::NativeText));
@@ -112,9 +117,10 @@ void NMHotkeysDialog::buildUi(const QList<NMHotkeyEntry> &entries) {
   layout->setContentsMargins(12, 12, 12, 12);
   layout->setSpacing(8);
 
-  auto *title = new QLabel(
-      tr("<b>Hotkeys & Tips</b><br><span style='color: gray;'>Double-click to edit. Type to filter.</span>"),
-      this);
+  auto *title =
+      new QLabel(tr("<b>Hotkeys & Tips</b><br><span style='color: "
+                    "gray;'>Double-click to edit. Type to filter.</span>"),
+                 this);
   title->setTextFormat(Qt::RichText);
   layout->addWidget(title);
 
@@ -133,26 +139,25 @@ void NMHotkeysDialog::buildUi(const QList<NMHotkeyEntry> &entries) {
   m_tree->header()->setSectionResizeMode(2, QHeaderView::Stretch);
 
   const auto &palette = NMStyleManager::instance().palette();
-  m_tree->setStyleSheet(
-      QString("QTreeWidget {"
-              "  background-color: %1;"
-              "  color: %2;"
-              "  border: 1px solid %3;"
-              "}"
-              "QTreeWidget::item:selected {"
-              "  background-color: %4;"
-              "}"
-              "QHeaderView::section {"
-              "  background-color: %5;"
-              "  color: %2;"
-              "  padding: 4px 6px;"
-              "  border: 1px solid %3;"
-              "}")
-          .arg(palette.bgMedium.name())
-          .arg(palette.textPrimary.name())
-          .arg(palette.borderDark.name())
-          .arg(palette.bgLight.name())
-          .arg(palette.bgDark.name()));
+  m_tree->setStyleSheet(QString("QTreeWidget {"
+                                "  background-color: %1;"
+                                "  color: %2;"
+                                "  border: 1px solid %3;"
+                                "}"
+                                "QTreeWidget::item:selected {"
+                                "  background-color: %4;"
+                                "}"
+                                "QHeaderView::section {"
+                                "  background-color: %5;"
+                                "  color: %2;"
+                                "  padding: 4px 6px;"
+                                "  border: 1px solid %3;"
+                                "}")
+                            .arg(palette.bgMedium.name())
+                            .arg(palette.textPrimary.name())
+                            .arg(palette.borderDark.name())
+                            .arg(palette.bgLight.name())
+                            .arg(palette.bgDark.name()));
 
   QMap<QString, QTreeWidgetItem *> sectionItems;
   for (const auto &entry : entries) {
@@ -172,7 +177,7 @@ void NMHotkeysDialog::buildUi(const QList<NMHotkeyEntry> &entries) {
     item->setText(0, entry.action);
     item->setText(1, entry.shortcut);
     item->setText(2, entry.notes);
-    item->setData(0, Qt::UserRole, entry.id);  // Store ID for lookup
+    item->setData(0, Qt::UserRole, entry.id); // Store ID for lookup
 
     // Mark modified entries
     if (entry.isModified) {
@@ -223,7 +228,8 @@ void NMHotkeysDialog::buildUi(const QList<NMHotkeyEntry> &entries) {
   m_applyBtn = buttons->addButton(QDialogButtonBox::Apply);
   buttons->addButton(QDialogButtonBox::Close);
   connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
-  connect(m_applyBtn, &QPushButton::clicked, this, &NMHotkeysDialog::onApplyClicked);
+  connect(m_applyBtn, &QPushButton::clicked, this,
+          &NMHotkeysDialog::onApplyClicked);
   layout->addWidget(buttons);
 
   // Connect signals
@@ -288,16 +294,16 @@ void NMHotkeysDialog::onItemDoubleClicked(QTreeWidgetItem *item, int column) {
   // Check if this entry is customizable
   QString actionId = item->data(0, Qt::UserRole).toString();
   if (m_entries.contains(actionId) && !m_entries[actionId].isCustomizable) {
-    NMMessageDialog::showInfo(
-        this, tr("Cannot Modify"),
-        tr("This shortcut cannot be customized."));
+    NMMessageDialog::showInfo(this, tr("Cannot Modify"),
+                              tr("This shortcut cannot be customized."));
     return;
   }
 
   // Record new shortcut
   ShortcutRecorder recorder(this);
   if (recorder.exec() == QDialog::Accepted) {
-    QString newShortcut = recorder.sequence().toString(QKeySequence::NativeText);
+    QString newShortcut =
+        recorder.sequence().toString(QKeySequence::NativeText);
     setShortcutForItem(item, newShortcut);
   }
 }
@@ -312,15 +318,15 @@ void NMHotkeysDialog::onRecordShortcut() {
   QString actionId = item->data(0, Qt::UserRole).toString();
 
   if (m_entries.contains(actionId) && !m_entries[actionId].isCustomizable) {
-    NMMessageDialog::showInfo(
-        this, tr("Cannot Modify"),
-        tr("This shortcut cannot be customized."));
+    NMMessageDialog::showInfo(this, tr("Cannot Modify"),
+                              tr("This shortcut cannot be customized."));
     return;
   }
 
   ShortcutRecorder recorder(this);
   if (recorder.exec() == QDialog::Accepted) {
-    QString newShortcut = recorder.sequence().toString(QKeySequence::NativeText);
+    QString newShortcut =
+        recorder.sequence().toString(QKeySequence::NativeText);
     setShortcutForItem(item, newShortcut);
   }
 }
@@ -351,8 +357,7 @@ void NMHotkeysDialog::onResetAllToDefaults() {
       this, tr("Reset All Shortcuts"),
       tr("Are you sure you want to reset all shortcuts to their defaults?\n"
          "This cannot be undone."),
-      {NMDialogButton::Yes, NMDialogButton::No},
-      NMDialogButton::No);
+      {NMDialogButton::Yes, NMDialogButton::No}, NMDialogButton::No);
 
   if (result != NMDialogButton::Yes) {
     return;
@@ -375,8 +380,7 @@ void NMHotkeysDialog::onResetAllToDefaults() {
 
 void NMHotkeysDialog::onExportClicked() {
   QString filePath = QFileDialog::getSaveFileName(
-      this, tr("Export Hotkeys"),
-      QString(), tr("JSON Files (*.json)"));
+      this, tr("Export Hotkeys"), QString(), tr("JSON Files (*.json)"));
 
   if (filePath.isEmpty()) {
     return;
@@ -395,17 +399,15 @@ void NMHotkeysDialog::onExportClicked() {
 
 void NMHotkeysDialog::onImportClicked() {
   QString filePath = QFileDialog::getOpenFileName(
-      this, tr("Import Hotkeys"),
-      QString(), tr("JSON Files (*.json)"));
+      this, tr("Import Hotkeys"), QString(), tr("JSON Files (*.json)"));
 
   if (filePath.isEmpty()) {
     return;
   }
 
   if (importFromFile(filePath)) {
-    NMMessageDialog::showInfo(
-        this, tr("Import Successful"),
-        tr("Hotkeys have been imported successfully."));
+    NMMessageDialog::showInfo(this, tr("Import Successful"),
+                              tr("Hotkeys have been imported successfully."));
   } else {
     NMMessageDialog::showError(
         this, tr("Import Failed"),
@@ -428,7 +430,7 @@ void NMHotkeysDialog::onApplyClicked() {
 }
 
 void NMHotkeysDialog::setShortcutForItem(QTreeWidgetItem *item,
-                                          const QString &shortcut) {
+                                         const QString &shortcut) {
   QString actionId = item->data(0, Qt::UserRole).toString();
 
   if (!m_entries.contains(actionId)) {
@@ -466,11 +468,10 @@ void NMHotkeysDialog::updateConflictWarnings() {
   QString warningText = tr("Conflicts detected: ");
   QStringList conflictStrings;
   for (const auto &conflict : conflicts) {
-    conflictStrings.append(
-        tr("'%1' and '%2' both use %3")
-            .arg(conflict.action1Name)
-            .arg(conflict.action2Name)
-            .arg(conflict.shortcut));
+    conflictStrings.append(tr("'%1' and '%2' both use %3")
+                               .arg(conflict.action1Name)
+                               .arg(conflict.action2Name)
+                               .arg(conflict.shortcut));
   }
   warningText += conflictStrings.join("; ");
 
@@ -592,8 +593,7 @@ bool NMHotkeysDialog::importFromFile(const QString &filePath) {
 
     if (m_entries.contains(id)) {
       m_entries[id].shortcut = shortcut;
-      m_entries[id].isModified =
-          (shortcut != m_entries[id].defaultShortcut);
+      m_entries[id].isModified = (shortcut != m_entries[id].defaultShortcut);
 
       if (auto *item = m_itemLookup.value(id)) {
         item->setText(1, shortcut);

@@ -82,7 +82,8 @@ void ProjectIntegrityChecker::addListener(IIntegrityCheckListener *listener) {
   }
 }
 
-void ProjectIntegrityChecker::removeListener(IIntegrityCheckListener *listener) {
+void ProjectIntegrityChecker::removeListener(
+    IIntegrityCheckListener *listener) {
   m_listeners.erase(
       std::remove(m_listeners.begin(), m_listeners.end(), listener),
       m_listeners.end());
@@ -207,8 +208,8 @@ IntegrityReport ProjectIntegrityChecker::runFullCheck() {
   m_lastReport = IntegrityReport();
   m_lastReport.issues = std::move(m_currentIssues);
   m_lastReport.summary = calculateSummary(m_lastReport.issues);
-  m_lastReport.checkTimestamp =
-      static_cast<u64>(std::chrono::system_clock::now().time_since_epoch().count());
+  m_lastReport.checkTimestamp = static_cast<u64>(
+      std::chrono::system_clock::now().time_since_epoch().count());
   m_lastReport.checkDurationMs = static_cast<f64>(duration.count());
   m_lastReport.passed = m_lastReport.summary.criticalCount == 0 &&
                         m_lastReport.summary.errorCount == 0;
@@ -287,8 +288,8 @@ IntegrityReport ProjectIntegrityChecker::checkCategory(IssueCategory category) {
   IntegrityReport report;
   report.issues = std::move(issues);
   report.summary = calculateSummary(report.issues);
-  report.passed = report.summary.criticalCount == 0 &&
-                  report.summary.errorCount == 0;
+  report.passed =
+      report.summary.criticalCount == 0 && report.summary.errorCount == 0;
 
   return report;
 }
@@ -361,10 +362,8 @@ void ProjectIntegrityChecker::checkProjectConfiguration(
       issue.message = "Project was created with engine version " +
                       projectVersion + " (current: " + currentVersion + ")";
       issue.filePath = projectFile.string();
-      issue.suggestions.push_back(
-          "Update project to current engine version");
-      issue.suggestions.push_back(
-          "Some features may not work as expected");
+      issue.suggestions.push_back("Update project to current engine version");
+      issue.suggestions.push_back("Some features may not work as expected");
       issues.push_back(issue);
     }
   }
@@ -454,8 +453,10 @@ void ProjectIntegrityChecker::checkSceneReferences(
       // Basic JSON validation - check for balanced braces
       int braceCount = 0;
       for (char c : content) {
-        if (c == '{') braceCount++;
-        else if (c == '}') braceCount--;
+        if (c == '{')
+          braceCount++;
+        else if (c == '}')
+          braceCount--;
       }
       if (braceCount != 0) {
         IntegrityIssue issue;
@@ -493,7 +494,8 @@ void ProjectIntegrityChecker::checkSceneReferences(
             std::string sceneRef =
                 match[1].matched ? match[1].str() : match[2].str();
 
-            if (!sceneRef.empty() && sceneIds.find(sceneRef) == sceneIds.end()) {
+            if (!sceneRef.empty() &&
+                sceneIds.find(sceneRef) == sceneIds.end()) {
               IntegrityIssue issue;
               issue.severity = IssueSeverity::Error;
               issue.category = IssueCategory::Scene;
@@ -524,9 +526,8 @@ void ProjectIntegrityChecker::scanProjectAssets() {
   }
 
   std::vector<std::string> assetExtensions = {
-      ".png", ".jpg",  ".jpeg", ".gif",  ".bmp",  ".webp",
-      ".ogg", ".wav",  ".mp3",  ".flac", ".ttf",  ".otf",
-      ".nmscript"};
+      ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp",    ".ogg",
+      ".wav", ".mp3", ".flac", ".ttf", ".otf", ".nmscript"};
 
   for (const auto &entry : fs::recursive_directory_iterator(assetsDir)) {
     if (entry.is_regular_file()) {
@@ -548,7 +549,8 @@ void ProjectIntegrityChecker::collectAssetReferences() {
   // Scan scene files for asset references
   fs::path scenesDir = fs::path(m_projectPath) / "Scenes";
   if (fs::exists(scenesDir)) {
-    std::regex assetRefPattern(R"(\"(?:textureId|imageId|audioId|fontId)\":\s*\"([^\"]+)\")");
+    std::regex assetRefPattern(
+        R"(\"(?:textureId|imageId|audioId|fontId)\":\s*\"([^\"]+)\")");
 
     for (const auto &entry : fs::recursive_directory_iterator(scenesDir)) {
       if (entry.path().extension() == ".nmscene" ||
@@ -573,7 +575,8 @@ void ProjectIntegrityChecker::collectAssetReferences() {
   // Scan script files for asset references
   fs::path scriptsDir = fs::path(m_projectPath) / "Scripts";
   if (fs::exists(scriptsDir)) {
-    std::regex assetRefPattern(R"(show\s+(?:background|character)\s+\"([^\"]+)\")");
+    std::regex assetRefPattern(
+        R"(show\s+(?:background|character)\s+\"([^\"]+)\")");
 
     for (const auto &entry : fs::recursive_directory_iterator(scriptsDir)) {
       if (entry.path().extension() == ".nms") {
@@ -724,7 +727,8 @@ void ProjectIntegrityChecker::scanLocalizationFiles() {
       std::smatch match;
       std::string::const_iterator searchStart(content.cbegin());
 
-      while (std::regex_search(searchStart, content.cend(), match, keyPattern)) {
+      while (
+          std::regex_search(searchStart, content.cend(), match, keyPattern)) {
         keys.push_back(match[1].str());
         searchStart = match.suffix().first;
       }
@@ -759,7 +763,8 @@ void ProjectIntegrityChecker::checkLocalizationKeys(
         issue.code = "L001";
         issue.message = "Duplicate localization key in " + locale + ": " + key;
         issue.filePath =
-            (fs::path(m_projectPath) / "Localization" / (locale + ".json")).string();
+            (fs::path(m_projectPath) / "Localization" / (locale + ".json"))
+                .string();
         issues.push_back(issue);
       }
       seen.insert(key);
@@ -797,7 +802,8 @@ void ProjectIntegrityChecker::checkMissingTranslations(
         issue.code = "L002";
         issue.message = "Missing translation for '" + key + "' in " + locale;
         issue.filePath =
-            (fs::path(m_projectPath) / "Localization" / (locale + ".json")).string();
+            (fs::path(m_projectPath) / "Localization" / (locale + ".json"))
+                .string();
         issue.hasQuickFix = true;
         issue.quickFixDescription = "Add key with empty value";
         issues.push_back(issue);
@@ -893,7 +899,8 @@ void ProjectIntegrityChecker::checkDeadEnds(
                                scenePattern)) {
         std::string sceneName = sceneMatch[1].str();
 
-        // Find the scene content (simplified - real implementation would parse braces)
+        // Find the scene content (simplified - real implementation would parse
+        // braces)
         size_t braceStart = content.find(
             '{', static_cast<std::string::size_type>(sceneMatch.position()));
         if (braceStart == std::string::npos) {
@@ -921,7 +928,8 @@ void ProjectIntegrityChecker::checkDeadEnds(
                           "' may be a dead end (no goto, choice, or end)";
           issue.filePath = entry.path().string();
           issue.suggestions.push_back("Add 'end' to end the story");
-          issue.suggestions.push_back("Add 'goto' to continue to another scene");
+          issue.suggestions.push_back(
+              "Add 'goto' to continue to another scene");
           issues.push_back(issue);
         }
 
@@ -1038,8 +1046,8 @@ bool ProjectIntegrityChecker::shouldExclude(const std::string &path) const {
   return false;
 }
 
-Result<void> ProjectIntegrityChecker::applyQuickFix(
-    const IntegrityIssue &issue) {
+Result<void>
+ProjectIntegrityChecker::applyQuickFix(const IntegrityIssue &issue) {
   if (!issue.hasQuickFix) {
     return Result<void>::error("No quick fix available for this issue");
   }
@@ -1054,13 +1062,15 @@ Result<void> ProjectIntegrityChecker::applyQuickFix(
       std::error_code ec;
       fs::create_directories(issue.filePath, ec);
       if (ec) {
-        return Result<void>::error("Failed to create directory: " + ec.message());
+        return Result<void>::error("Failed to create directory: " +
+                                   ec.message());
       }
       return Result<void>::ok();
     }
   } else if (issue.code == "C003" || issue.code == "G001") {
     // Set/create start scene - would need to modify project settings
-    return QuickFixes::connectUnreachableNode(m_projectPath, scripting::NodeId{0});
+    return QuickFixes::connectUnreachableNode(m_projectPath,
+                                              scripting::NodeId{0});
   } else if (issue.code == "A002") {
     // Create placeholder asset
     return QuickFixes::createPlaceholderAsset(m_projectPath, issue.filePath);
@@ -1083,7 +1093,8 @@ Result<void> ProjectIntegrityChecker::applyQuickFix(
     return QuickFixes::addMissingLocalizationKey(m_projectPath, key, locale);
   }
 
-  return Result<void>::error("Quick fix not implemented for issue: " + issue.code);
+  return Result<void>::error("Quick fix not implemented for issue: " +
+                             issue.code);
 }
 
 // ============================================================================
@@ -1123,10 +1134,12 @@ Result<void> createPlaceholderAsset(const std::string &projectPath,
 Result<void> addMissingLocalizationKey(const std::string &projectPath,
                                        const std::string &key,
                                        const std::string &locale) {
-  fs::path locFile = fs::path(projectPath) / "Localization" / (locale + ".json");
+  fs::path locFile =
+      fs::path(projectPath) / "Localization" / (locale + ".json");
 
   if (!fs::exists(locFile)) {
-    return Result<void>::error("Localization file not found: " + locFile.string());
+    return Result<void>::error("Localization file not found: " +
+                               locFile.string());
   }
 
   // Read existing content

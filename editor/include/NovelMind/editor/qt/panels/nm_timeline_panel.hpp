@@ -25,13 +25,13 @@
 #include <QMap>
 #include <QSet>
 #include <QToolBar>
+#include <QUndoStack>
 #include <QVector>
 #include <QWidget>
-#include <QUndoStack>
 
 #include "NovelMind/editor/qt/panels/nm_keyframe_item.hpp"
-#include <memory>
 #include <atomic>
+#include <memory>
 
 class QToolBar;
 class QPushButton;
@@ -77,7 +77,7 @@ enum class EasingType {
   EaseInBounce,
   EaseOutBounce,
   Step,
-  Custom  // Uses curve data
+  Custom // Uses curve data
 };
 
 /**
@@ -191,7 +191,7 @@ signals:
   void keyframeDeleted(const QString &trackName, int frame);
   void keyframeMoved(const QString &trackName, int fromFrame, int toFrame);
   void keyframeEasingChanged(const QString &trackName, int frame,
-                              EasingType easing);
+                             EasingType easing);
   void syncFrameRequested(int frame);
 
 public slots:
@@ -289,12 +289,12 @@ public slots:
   /**
    * @brief Get track by name
    */
-  [[nodiscard]] TimelineTrack* getTrack(const QString& name) const;
+  [[nodiscard]] TimelineTrack *getTrack(const QString &name) const;
 
   /**
    * @brief Get all tracks
    */
-  const QMap<QString, TimelineTrack*>& getTracks() const { return m_tracks; }
+  const QMap<QString, TimelineTrack *> &getTracks() const { return m_tracks; }
 
   /**
    * @brief Get current FPS
@@ -394,7 +394,7 @@ private:
 
   // Render caching for timeline tracks
   std::unique_ptr<TimelineRenderCache> m_renderCache;
-  std::atomic<uint64_t> m_dataVersion{0};  // For cache invalidation
+  std::atomic<uint64_t> m_dataVersion{0}; // For cache invalidation
 
   // Performance tracking
   double m_lastRenderTimeMs = 0.0;

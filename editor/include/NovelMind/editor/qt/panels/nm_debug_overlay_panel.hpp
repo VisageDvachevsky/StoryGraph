@@ -8,8 +8,8 @@
 #include <QToolBar>
 #include <QTreeWidget>
 #include <QVBoxLayout>
-#include <QVariantMap>
 #include <QVariantList>
+#include <QVariantMap>
 
 namespace NovelMind::editor::qt {
 

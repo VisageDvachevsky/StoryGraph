@@ -8,9 +8,9 @@
  * with dialogue nodes in the story graph.
  */
 
+#include <QFileDialog>
 #include <QObject>
 #include <QString>
-#include <QFileDialog>
 #include <memory>
 
 class QWidget;
@@ -33,7 +33,8 @@ class NMStoryGraphVoiceIntegration : public QObject {
   Q_OBJECT
 
 public:
-  explicit NMStoryGraphVoiceIntegration(NMStoryGraphPanel *graphPanel, QObject *parent = nullptr);
+  explicit NMStoryGraphVoiceIntegration(NMStoryGraphPanel *graphPanel,
+                                        QObject *parent = nullptr);
   ~NMStoryGraphVoiceIntegration() override;
 
   /**
@@ -54,7 +55,8 @@ public:
   /**
    * @brief Auto-detect voice file based on localization key
    */
-  void autoDetectVoice(const QString &nodeIdString, const QString &localizationKey);
+  void autoDetectVoice(const QString &nodeIdString,
+                       const QString &localizationKey);
 
   /**
    * @brief Preview voice clip for a dialogue node
@@ -70,12 +72,14 @@ signals:
   /**
    * @brief Emitted when voice clip assignment changes
    */
-  void voiceClipChanged(const QString &nodeIdString, const QString &voicePath, int bindingStatus);
+  void voiceClipChanged(const QString &nodeIdString, const QString &voicePath,
+                        int bindingStatus);
 
   /**
    * @brief Emitted when recording is requested
    */
-  void recordingRequested(const QString &nodeIdString, const QString &dialogueText, const QString &speaker);
+  void recordingRequested(const QString &nodeIdString,
+                          const QString &dialogueText, const QString &speaker);
 
   /**
    * @brief Emitted when an error occurs
@@ -83,7 +87,8 @@ signals:
   void errorOccurred(const QString &message);
 
 private:
-  void updateNodeVoiceStatus(const QString &nodeIdString, const QString &voicePath, int bindingStatus);
+  void updateNodeVoiceStatus(const QString &nodeIdString,
+                             const QString &voicePath, int bindingStatus);
   int determineBindingStatus(const QString &voicePath);
 
   NMStoryGraphPanel *m_graphPanel = nullptr;

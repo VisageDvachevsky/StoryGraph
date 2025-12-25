@@ -36,11 +36,11 @@ namespace NovelMind::audio {
  * @brief Audio device information
  */
 struct AudioDeviceInfo {
-  std::string id;           // Unique device ID
-  std::string name;         // Human-readable device name
-  bool isDefault = false;   // Is this the system default device
-  u32 maxInputChannels = 0; // Maximum supported input channels
-  u32 maxOutputChannels = 0;// Maximum supported output channels
+  std::string id;            // Unique device ID
+  std::string name;          // Human-readable device name
+  bool isDefault = false;    // Is this the system default device
+  u32 maxInputChannels = 0;  // Maximum supported input channels
+  u32 maxOutputChannels = 0; // Maximum supported output channels
   std::vector<u32> supportedSampleRates;
 };
 
@@ -48,9 +48,9 @@ struct AudioDeviceInfo {
  * @brief Recording format configuration
  */
 struct RecordingFormat {
-  u32 sampleRate = 48000;   // Sample rate in Hz
-  u8 channels = 1;          // Number of channels (1 = mono, 2 = stereo)
-  u8 bitsPerSample = 16;    // Bits per sample (16, 24, 32)
+  u32 sampleRate = 48000; // Sample rate in Hz
+  u8 channels = 1;        // Number of channels (1 = mono, 2 = stereo)
+  u8 bitsPerSample = 16;  // Bits per sample (16, 24, 32)
 
   // Output format
   enum class FileFormat : u8 {
@@ -61,12 +61,12 @@ struct RecordingFormat {
   FileFormat outputFormat = FileFormat::WAV;
 
   // Processing options
-  bool autoTrimSilence = false;   // Remove silence from start/end
-  f32 silenceThreshold = -40.0f;  // Silence threshold in dB
-  f32 silenceMinDuration = 0.1f;  // Minimum silence duration to trim (seconds)
+  bool autoTrimSilence = false;  // Remove silence from start/end
+  f32 silenceThreshold = -40.0f; // Silence threshold in dB
+  f32 silenceMinDuration = 0.1f; // Minimum silence duration to trim (seconds)
 
-  bool normalize = false;         // Normalize audio level
-  f32 normalizeTarget = -1.0f;    // Target level in dB (negative)
+  bool normalize = false;      // Normalize audio level
+  f32 normalizeTarget = -1.0f; // Target level in dB (negative)
 };
 
 /**
@@ -96,13 +96,13 @@ struct LevelMeter {
  * @brief Recording result
  */
 struct RecordingResult {
-  std::string filePath;     // Path to recorded file
-  f32 duration = 0.0f;      // Duration in seconds
-  u32 sampleRate = 0;       // Sample rate
-  u8 channels = 0;          // Number of channels
-  u64 fileSize = 0;         // File size in bytes
-  bool trimmed = false;     // Was silence trimmed
-  bool normalized = false;  // Was audio normalized
+  std::string filePath;    // Path to recorded file
+  f32 duration = 0.0f;     // Duration in seconds
+  u32 sampleRate = 0;      // Sample rate
+  u8 channels = 0;         // Number of channels
+  u64 fileSize = 0;        // File size in bytes
+  bool trimmed = false;    // Was silence trimmed
+  bool normalized = false; // Was audio normalized
 };
 
 /**
@@ -231,7 +231,9 @@ public:
   /**
    * @brief Get current recording format
    */
-  [[nodiscard]] const RecordingFormat &getRecordingFormat() const { return m_format; }
+  [[nodiscard]] const RecordingFormat &getRecordingFormat() const {
+    return m_format;
+  }
 
   // =========================================================================
   // Monitoring
@@ -323,7 +325,9 @@ public:
   /**
    * @brief Get current recording path
    */
-  [[nodiscard]] const std::string &getRecordingPath() const { return m_outputPath; }
+  [[nodiscard]] const std::string &getRecordingPath() const {
+    return m_outputPath;
+  }
 
   // =========================================================================
   // Callbacks

@@ -24,7 +24,8 @@ void applyDialogFrameStyle(QDialog *dialog) {
   const auto &p = NMStyleManager::instance().palette();
 
   // D4: Enhanced dialog styling for consistent UX
-  dialog->setStyleSheet(QString(R"(
+  dialog->setStyleSheet(
+      QString(R"(
     QDialog {
       background-color: %1;
       border: 1px solid %2;
@@ -119,27 +120,18 @@ void applyDialogFrameStyle(QDialog *dialog) {
       border-color: %4;
     }
   )")
-                             .arg(NMStyleManager::colorToStyleString(p.bgDark))
-                             .arg(NMStyleManager::colorToStyleString(
-                                 p.borderLight))
-                             .arg(NMStyleManager::colorToStyleString(
-                                 p.textPrimary))
-                             .arg(NMStyleManager::colorToStyleString(
-                                 p.accentPrimary))
-                             .arg(NMStyleManager::colorToStyleString(
-                                 p.textPrimary))
-                             .arg(NMStyleManager::colorToStyleString(
-                                 p.accentHover))
-                             .arg(NMStyleManager::colorToStyleString(
-                                 p.bgMedium))
-                             .arg(NMStyleManager::colorToStyleString(
-                                 p.borderLight))
-                             .arg(NMStyleManager::colorToStyleString(
-                                 p.bgLight))
-                             .arg(NMStyleManager::colorToStyleString(
-                                 p.textSecondary))
-                             .arg(DIALOG_BUTTON_MIN_WIDTH)
-                             .arg(DIALOG_BUTTON_HEIGHT));
+          .arg(NMStyleManager::colorToStyleString(p.bgDark))
+          .arg(NMStyleManager::colorToStyleString(p.borderLight))
+          .arg(NMStyleManager::colorToStyleString(p.textPrimary))
+          .arg(NMStyleManager::colorToStyleString(p.accentPrimary))
+          .arg(NMStyleManager::colorToStyleString(p.textPrimary))
+          .arg(NMStyleManager::colorToStyleString(p.accentHover))
+          .arg(NMStyleManager::colorToStyleString(p.bgMedium))
+          .arg(NMStyleManager::colorToStyleString(p.borderLight))
+          .arg(NMStyleManager::colorToStyleString(p.bgLight))
+          .arg(NMStyleManager::colorToStyleString(p.textSecondary))
+          .arg(DIALOG_BUTTON_MIN_WIDTH)
+          .arg(DIALOG_BUTTON_HEIGHT));
 }
 
 void animateDialogIn(QDialog *dialog) {
@@ -211,8 +203,7 @@ void applyValidationStyle(QLineEdit *lineEdit, bool isValid,
 }
 
 void setupInputValidation(
-    QLineEdit *lineEdit,
-    std::function<bool(const QString &)> validator,
+    QLineEdit *lineEdit, std::function<bool(const QString &)> validator,
     std::function<QString(const QString &)> errorMessageProvider,
     std::function<void(bool)> onValidChanged) {
   if (!lineEdit || !validator) {
@@ -239,9 +230,8 @@ void setupInputValidation(
                    });
 
   // Clean up tracking variable when widget is destroyed
-  QObject::connect(lineEdit, &QObject::destroyed, [prevValid]() {
-    delete prevValid;
-  });
+  QObject::connect(lineEdit, &QObject::destroyed,
+                   [prevValid]() { delete prevValid; });
 }
 
 void setupDialogKeyboardBehavior(QDialog *dialog, QPushButton *primaryButton) {

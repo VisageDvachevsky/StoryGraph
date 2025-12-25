@@ -4,9 +4,10 @@
 #include <QAbstractItemView>
 #include <QComboBox>
 #include <QDir>
+#include <QFileIconProvider>
 #include <QFileInfo>
 #include <QFileSystemModel>
-#include <QFileIconProvider>
+#include <QHBoxLayout>
 #include <QHeaderView>
 #include <QImage>
 #include <QItemSelectionModel>
@@ -17,10 +18,9 @@
 #include <QPushButton>
 #include <QSortFilterProxyModel>
 #include <QSplitter>
+#include <QTimer>
 #include <QTreeView>
 #include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QTimer>
 #include <QVector>
 
 namespace NovelMind::editor::qt {
@@ -199,15 +199,16 @@ void NMFileDialog::buildUi() {
   }
   m_treeView->setAnimated(true);
   m_treeView->setIndentation(16);
-  connect(m_treeView, &QTreeView::clicked, this, [this](const QModelIndex &idx) {
-    if (!idx.isValid()) {
-      return;
-    }
-    const QString path = m_dirModel->filePath(idx);
-    if (!path.isEmpty()) {
-      setDirectory(path);
-    }
-  });
+  connect(m_treeView, &QTreeView::clicked, this,
+          [this](const QModelIndex &idx) {
+            if (!idx.isValid()) {
+              return;
+            }
+            const QString path = m_dirModel->filePath(idx);
+            if (!path.isEmpty()) {
+              setDirectory(path);
+            }
+          });
 
   m_listView = new QListView(splitter);
   m_listView->setModel(m_filterProxy);
@@ -219,27 +220,27 @@ void NMFileDialog::buildUi() {
   m_listView->setAlternatingRowColors(true);
   m_listView->setSpacing(2);
 
-  connect(m_listView, &QListView::doubleClicked, this,
-          [this](const QModelIndex &index) {
-            if (!index.isValid()) {
-              return;
-            }
-            const QModelIndex source =
-                static_cast<NMFileFilterProxy *>(m_filterProxy)
-                    ->mapToSource(index);
-            const QString path = m_fileModel->filePath(source);
-            if (path.isEmpty()) {
-              return;
-            }
-            if (m_fileModel->isDir(source)) {
-              setDirectory(path);
-              return;
-            }
-            if (m_mode != Mode::SelectDirectory) {
-              m_selectedPaths = {path};
-              accept();
-            }
-          });
+  connect(
+      m_listView, &QListView::doubleClicked, this,
+      [this](const QModelIndex &index) {
+        if (!index.isValid()) {
+          return;
+        }
+        const QModelIndex source =
+            static_cast<NMFileFilterProxy *>(m_filterProxy)->mapToSource(index);
+        const QString path = m_fileModel->filePath(source);
+        if (path.isEmpty()) {
+          return;
+        }
+        if (m_fileModel->isDir(source)) {
+          setDirectory(path);
+          return;
+        }
+        if (m_mode != Mode::SelectDirectory) {
+          m_selectedPaths = {path};
+          accept();
+        }
+      });
 
   auto *previewWidget = new QFrame(splitter);
   previewWidget->setFrameShape(QFrame::StyledPanel);
@@ -304,9 +305,7 @@ void NMFileDialog::buildUi() {
     m_filterCombo->setVisible(false);
   }
   connect(m_filterCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-          this, [this](int) {
-            applyFilter(m_filterCombo->currentText());
-          });
+          this, [this](int) { applyFilter(m_filterCombo->currentText()); });
 
   footerLayout->addWidget(m_filterCombo, 0, Qt::AlignLeft);
   footerLayout->addStretch();
@@ -486,8 +485,7 @@ void NMFileDialog::updatePreview() {
     return;
   }
 
-  const QModelIndexList selected =
-      m_listView->selectionModel()->selectedRows();
+  const QModelIndexList selected = m_listView->selectionModel()->selectedRows();
   if (selected.isEmpty()) {
     m_previewImage->setPixmap(QPixmap());
     m_previewImage->setText(tr("No preview"));
@@ -504,9 +502,8 @@ void NMFileDialog::updatePreview() {
     return;
   }
 
-  const QModelIndex source =
-      static_cast<NMFileFilterProxy *>(m_filterProxy)->mapToSource(
-          selected.front());
+  const QModelIndex source = static_cast<NMFileFilterProxy *>(m_filterProxy)
+                                 ->mapToSource(selected.front());
   if (!source.isValid()) {
     return;
   }
@@ -533,14 +530,13 @@ void NMFileDialog::updatePreview() {
     QImage image(path);
     if (!image.isNull()) {
       QPixmap pix = QPixmap::fromImage(image);
-      m_previewImage->setPixmap(
-          pix.scaled(m_previewImage->size(), Qt::KeepAspectRatio,
-                     Qt::SmoothTransformation));
-      m_previewMeta->setText(
-          tr("%1 x %2 | %3 KB")
-              .arg(image.width())
-              .arg(image.height())
-              .arg(static_cast<int>(info.size() / 1024)));
+      m_previewImage->setPixmap(pix.scaled(m_previewImage->size(),
+                                           Qt::KeepAspectRatio,
+                                           Qt::SmoothTransformation));
+      m_previewMeta->setText(tr("%1 x %2 | %3 KB")
+                                 .arg(image.width())
+                                 .arg(image.height())
+                                 .arg(static_cast<int>(info.size() / 1024)));
       return;
     }
   }
@@ -548,8 +544,7 @@ void NMFileDialog::updatePreview() {
   QFileIconProvider iconProvider;
   m_previewImage->setPixmap(
       iconProvider.icon(info).pixmap(m_previewImage->size()));
-  m_previewMeta->setText(
-      tr("%1 KB").arg(static_cast<int>(info.size() / 1024)));
+  m_previewMeta->setText(tr("%1 KB").arg(static_cast<int>(info.size() / 1024)));
 }
 
 void NMFileDialog::acceptSelection() {
@@ -592,7 +587,8 @@ QString NMFileDialog::getOpenFileName(QWidget *parent, const QString &title,
   return QString();
 }
 
-QStringList NMFileDialog::getOpenFileNames(QWidget *parent, const QString &title,
+QStringList NMFileDialog::getOpenFileNames(QWidget *parent,
+                                           const QString &title,
                                            const QString &dir,
                                            const QString &filter) {
   NMFileDialog dialog(parent, title, Mode::OpenFiles, dir, filter);
@@ -623,6 +619,5 @@ QString NMFileDialog::getExistingDirectory(QWidget *parent,
   }
   return QString();
 }
-
 
 } // namespace NovelMind::editor::qt

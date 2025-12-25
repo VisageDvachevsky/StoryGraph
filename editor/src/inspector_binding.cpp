@@ -1,7 +1,7 @@
 #include "NovelMind/editor/inspector_binding.hpp"
 #include "NovelMind/editor/event_bus.hpp"
-#include "NovelMind/editor/undo_system.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
+#include "NovelMind/editor/undo_system.hpp"
 #include <algorithm>
 
 namespace NovelMind::editor {
@@ -485,9 +485,8 @@ void InspectorBindingManager::endPropertyBatch() {
 
   // Record all batch changes as a single undo entry
   if (!m_batchChanges.empty()) {
-    NMUndoManager::instance().beginMacro(
-        QString::fromStdString(m_batchDescription.empty()
-                                   ? "Batch Property Change"
+    NMUndoManager::instance().beginMacro(QString::fromStdString(
+        m_batchDescription.empty() ? "Batch Property Change"
                                    : m_batchDescription));
     for (const auto &ctx : m_batchChanges) {
       recordPropertyChange(ctx);
@@ -696,8 +695,7 @@ void InspectorBindingManager::recordPropertyChange(
 void InspectorBindingManager::applyPropertyChangeFromUndo(
     const PropertyChangeContext &context, const PropertyValue &value,
     bool isUndo) {
-  if (!m_target.isValid() ||
-      context.target.id != m_target.id ||
+  if (!m_target.isValid() || context.target.id != m_target.id ||
       context.target.type != m_target.type) {
     return; // Target changed; cannot safely apply.
   }

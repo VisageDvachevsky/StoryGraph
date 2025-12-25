@@ -1,7 +1,7 @@
-#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "nm_scene_view_overlays.hpp"
 
 #include <QAbstractButton>
@@ -68,8 +68,7 @@ void NMSceneViewPanel::setupToolBar() {
   });
 
   auto *guidesMenu = new QMenu(this);
-  QAction *actionStageGuides =
-      guidesMenu->addAction(tr("Stage Frame"));
+  QAction *actionStageGuides = guidesMenu->addAction(tr("Stage Frame"));
   actionStageGuides->setCheckable(true);
   actionStageGuides->setChecked(true);
   connect(actionStageGuides, &QAction::toggled, this, [this](bool enabled) {
@@ -145,14 +144,13 @@ void NMSceneViewPanel::setupToolBar() {
     }
   });
 
-  QAction *actionAddUI = m_toolBar->addAction(
-      iconMgr.getIcon("object-ui"), tr("UI"));
+  QAction *actionAddUI =
+      m_toolBar->addAction(iconMgr.getIcon("object-ui"), tr("UI"));
   actionAddUI->setToolTip(tr("Add UI Element"));
   connect(actionAddUI, &QAction::triggered, this, [this]() {
     if (m_scene) {
       SceneObjectSnapshot snapshot;
-      snapshot.id =
-          QString("ui_%1").arg(QDateTime::currentMSecsSinceEpoch());
+      snapshot.id = QString("ui_%1").arg(QDateTime::currentMSecsSinceEpoch());
       snapshot.name = "New UI Element";
       snapshot.type = NMSceneObjectType::UI;
       snapshot.position = QPointF(0, 0);
@@ -166,8 +164,8 @@ void NMSceneViewPanel::setupToolBar() {
     }
   });
 
-  QAction *actionAddEffect = m_toolBar->addAction(
-      iconMgr.getIcon("object-effect"), tr("Effect"));
+  QAction *actionAddEffect =
+      m_toolBar->addAction(iconMgr.getIcon("object-effect"), tr("Effect"));
   actionAddEffect->setToolTip(tr("Add Effect"));
   connect(actionAddEffect, &QAction::triggered, this, [this]() {
     if (m_scene) {
@@ -329,8 +327,8 @@ void NMSceneViewPanel::setupToolBar() {
   // Gizmo mode buttons (exclusive)
   auto *gizmoGroup = new QButtonGroup(this);
 
-  QAction *actionMove = m_toolBar->addAction(
-      iconMgr.getIcon("transform-move"), tr("Move"));
+  QAction *actionMove =
+      m_toolBar->addAction(iconMgr.getIcon("transform-move"), tr("Move"));
   actionMove->setToolTip(tr("Move Gizmo (W)"));
   actionMove->setCheckable(true);
   actionMove->setChecked(true);
@@ -341,15 +339,15 @@ void NMSceneViewPanel::setupToolBar() {
   connect(actionMove, &QAction::triggered, this,
           &NMSceneViewPanel::onGizmoModeMove);
 
-  QAction *actionRotate = m_toolBar->addAction(
-      iconMgr.getIcon("transform-rotate"), tr("Rotate"));
+  QAction *actionRotate =
+      m_toolBar->addAction(iconMgr.getIcon("transform-rotate"), tr("Rotate"));
   actionRotate->setToolTip(tr("Rotate Gizmo (E)"));
   actionRotate->setCheckable(true);
   connect(actionRotate, &QAction::triggered, this,
           &NMSceneViewPanel::onGizmoModeRotate);
 
-  QAction *actionScale = m_toolBar->addAction(
-      iconMgr.getIcon("transform-scale"), tr("Scale"));
+  QAction *actionScale =
+      m_toolBar->addAction(iconMgr.getIcon("transform-scale"), tr("Scale"));
   actionScale->setToolTip(tr("Scale Gizmo (R)"));
   actionScale->setCheckable(true);
   connect(actionScale, &QAction::triggered, this,
@@ -415,10 +413,8 @@ void NMSceneViewPanel::setupContent() {
   registerShortcut(QKeySequence("G"), [this]() { toggleGrid(); });
   registerShortcut(QKeySequence("H"),
                    [this]() { toggleSelectionVisibility(); });
-  registerShortcut(QKeySequence::Copy,
-                   [this]() { copySelectedObject(); });
-  registerShortcut(QKeySequence::Paste,
-                   [this]() { pasteClipboardObject(); });
+  registerShortcut(QKeySequence::Copy, [this]() { copySelectedObject(); });
+  registerShortcut(QKeySequence::Paste, [this]() { pasteClipboardObject(); });
   registerShortcut(QKeySequence(Qt::CTRL | Qt::Key_D),
                    [this]() { duplicateSelectedObject(); });
   registerShortcut(QKeySequence(Qt::Key_Delete),
@@ -463,10 +459,9 @@ void NMSceneViewPanel::setupContent() {
   connect(m_scene, &NMSceneGraphicsScene::deleteRequested, this,
           &NMSceneViewPanel::onDeleteRequested);
 
-  connect(m_playOverlay, &NMPlayPreviewOverlay::choiceSelected, this,
-          [](int index) {
-            NMPlayModeController::instance().selectChoice(index);
-          });
+  connect(
+      m_playOverlay, &NMPlayPreviewOverlay::choiceSelected, this,
+      [](int index) { NMPlayModeController::instance().selectChoice(index); });
   connect(m_playOverlay, &NMPlayPreviewOverlay::advanceRequested, this,
           []() { NMPlayModeController::instance().advanceDialogue(); });
 
@@ -610,8 +605,7 @@ void NMSceneViewPanel::onAssetsDropped(const QStringList &paths,
     }
 
     auto *selected = m_scene->selectedObject();
-    if (selected &&
-        selected->sceneBoundingRect().contains(dropPos)) {
+    if (selected && selected->sceneBoundingRect().contains(dropPos)) {
       setObjectAsset(selected->id(), path);
     } else {
       addObjectFromAsset(path, dropPos);
@@ -755,8 +749,7 @@ void NMSceneViewPanel::onContextMenuRequested(const QPoint &globalPos,
           [this]() { frameSelected(); });
 
   QAction *frameAllAction = menu.addAction(tr("Frame All"));
-  connect(frameAllAction, &QAction::triggered, this,
-          [this]() { frameAll(); });
+  connect(frameAllAction, &QAction::triggered, this, [this]() { frameAll(); });
 
   menu.addSeparator();
 
@@ -824,6 +817,5 @@ void NMSceneViewPanel::onDragActiveChanged(bool active) {
 }
 
 // === Play Mode Integration ===
-
 
 } // namespace NovelMind::editor::qt

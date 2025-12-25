@@ -89,7 +89,9 @@ public:
   /**
    * @brief Get the current voice line ID
    */
-  [[nodiscard]] const std::string &getCurrentLineId() const { return m_currentLineId; }
+  [[nodiscard]] const std::string &getCurrentLineId() const {
+    return m_currentLineId;
+  }
 
 signals:
   /**

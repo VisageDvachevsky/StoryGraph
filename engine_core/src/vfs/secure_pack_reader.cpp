@@ -127,8 +127,7 @@ SecurePackFileSystem::listResources(ResourceType type) const {
   std::vector<std::string> filtered;
   for (const auto &id : resources) {
     auto meta = m_reader->getResourceMeta(id);
-    if (meta.has_value() &&
-        static_cast<ResourceType>(meta->type) == type) {
+    if (meta.has_value() && static_cast<ResourceType>(meta->type) == type) {
       filtered.push_back(id);
     }
   }

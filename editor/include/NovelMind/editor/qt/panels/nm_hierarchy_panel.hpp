@@ -32,8 +32,12 @@ public:
   void setScene(class NMSceneGraphicsScene *scene);
   [[nodiscard]] class NMSceneGraphicsScene *scene() const { return m_scene; }
 
-  void setSceneViewPanel(class NMSceneViewPanel *panel) { m_sceneViewPanel = panel; }
-  [[nodiscard]] class NMSceneViewPanel *sceneViewPanel() const { return m_sceneViewPanel; }
+  void setSceneViewPanel(class NMSceneViewPanel *panel) {
+    m_sceneViewPanel = panel;
+  }
+  [[nodiscard]] class NMSceneViewPanel *sceneViewPanel() const {
+    return m_sceneViewPanel;
+  }
 
   /**
    * @brief Clear and rebuild the tree
@@ -48,7 +52,8 @@ public:
   /**
    * @brief Set type filter
    */
-  void setTypeFilter(int typeIndex); // -1 = all, or NMSceneObjectType enum value
+  void
+  setTypeFilter(int typeIndex); // -1 = all, or NMSceneObjectType enum value
 
   /**
    * @brief Set tag filter

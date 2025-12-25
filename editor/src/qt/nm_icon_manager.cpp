@@ -232,7 +232,7 @@ void NMIconManager::initializeIcons() {
   // Edit Actions
   m_iconFilePaths["edit-rename"] = ":/icons/lucide/pencil.svg";
 
-// Total icons mapped: 150
+  // Total icons mapped: 150
 }
 
 QIcon NMIconManager::getIcon(const QString &iconName, int size,
@@ -308,10 +308,13 @@ QPixmap NMIconManager::renderSvg(const QString &svgData, int size,
   // Replace stroke and fill attributes with the requested color
   // Lucide icons use 'currentColor' or explicit stroke colors
   coloredSvg.replace("currentColor", color.name());
-  coloredSvg.replace("stroke=\"#000\"", QString("stroke=\"%1\"").arg(color.name()));
-  coloredSvg.replace("stroke=\"#000000\"", QString("stroke=\"%1\"").arg(color.name()));
+  coloredSvg.replace("stroke=\"#000\"",
+                     QString("stroke=\"%1\"").arg(color.name()));
+  coloredSvg.replace("stroke=\"#000000\"",
+                     QString("stroke=\"%1\"").arg(color.name()));
   coloredSvg.replace("stroke='#000'", QString("stroke='%1'").arg(color.name()));
-  coloredSvg.replace("stroke='#000000'", QString("stroke='%1'").arg(color.name()));
+  coloredSvg.replace("stroke='#000000'",
+                     QString("stroke='%1'").arg(color.name()));
 
   // Also handle the old %COLOR% placeholder for backward compatibility
   coloredSvg.replace("%COLOR%", color.name());

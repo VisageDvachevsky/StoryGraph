@@ -110,11 +110,10 @@ void NMProjectSettingsPanel::setupDisplayTab(QWidget *parent) {
   m_aspectRatioMode = new QComboBox(resolutionGroup);
   m_aspectRatioMode->addItems(
       {tr("Letterbox/Pillarbox"), tr("Stretch to Fill"), tr("Crop to Fill")});
-  m_aspectRatioMode->setToolTip(
-      tr("How to handle aspect ratio differences:\n"
-         "- Letterbox: Add black bars\n"
-         "- Stretch: May distort image\n"
-         "- Crop: May cut off edges"));
+  m_aspectRatioMode->setToolTip(tr("How to handle aspect ratio differences:\n"
+                                   "- Letterbox: Add black bars\n"
+                                   "- Stretch: May distort image\n"
+                                   "- Crop: May cut off edges"));
   resolutionLayout->addRow(tr("Aspect Ratio Mode:"), m_aspectRatioMode);
 
   layout->addWidget(resolutionGroup);
@@ -197,18 +196,21 @@ void NMProjectSettingsPanel::setupTextTab(QWidget *parent) {
   m_textSpeedSlider = new QSlider(Qt::Horizontal, speedRow);
   m_textSpeedSlider->setRange(1, 100);
   m_textSpeedSlider->setValue(50);
-  m_textSpeedSlider->setToolTip(tr("Characters per second for typewriter effect"));
+  m_textSpeedSlider->setToolTip(
+      tr("Characters per second for typewriter effect"));
 
   m_textSpeedLabel = new QLabel("50 cps", speedRow);
   m_textSpeedLabel->setMinimumWidth(60);
-  connect(m_textSpeedSlider, &QSlider::valueChanged, this,
-          [this](int value) { m_textSpeedLabel->setText(QString("%1 cps").arg(value)); });
+  connect(m_textSpeedSlider, &QSlider::valueChanged, this, [this](int value) {
+    m_textSpeedLabel->setText(QString("%1 cps").arg(value));
+  });
 
   speedRowLayout->addWidget(m_textSpeedSlider, 1);
   speedRowLayout->addWidget(m_textSpeedLabel);
   speedLayout->addRow(tr("Text Speed:"), speedRow);
 
-  m_enableTypewriter = new QCheckBox(tr("Enable Typewriter Effect"), speedGroup);
+  m_enableTypewriter =
+      new QCheckBox(tr("Enable Typewriter Effect"), speedGroup);
   m_enableTypewriter->setChecked(true);
   speedLayout->addRow("", m_enableTypewriter);
 
@@ -217,7 +219,8 @@ void NMProjectSettingsPanel::setupTextTab(QWidget *parent) {
   m_autoAdvanceDelay->setSingleStep(100);
   m_autoAdvanceDelay->setValue(2000);
   m_autoAdvanceDelay->setSuffix(" ms");
-  m_autoAdvanceDelay->setToolTip(tr("Delay before auto-advancing to next line"));
+  m_autoAdvanceDelay->setToolTip(
+      tr("Delay before auto-advancing to next line"));
   speedLayout->addRow(tr("Auto-Advance Delay:"), m_autoAdvanceDelay);
 
   layout->addWidget(speedGroup);
@@ -230,7 +233,8 @@ void NMProjectSettingsPanel::setupTextTab(QWidget *parent) {
   m_enableSkip->setChecked(true);
   skipLayout->addRow("", m_enableSkip);
 
-  m_skipOnlyRead = new QCheckBox(tr("Skip Only Previously Read Text"), skipGroup);
+  m_skipOnlyRead =
+      new QCheckBox(tr("Skip Only Previously Read Text"), skipGroup);
   m_skipOnlyRead->setChecked(true);
   m_skipOnlyRead->setToolTip(tr("When enabled, unread text cannot be skipped"));
   skipLayout->addRow("", m_skipOnlyRead);
@@ -239,7 +243,8 @@ void NMProjectSettingsPanel::setupTextTab(QWidget *parent) {
   m_historyLength->setRange(10, 500);
   m_historyLength->setValue(100);
   m_historyLength->setSuffix(tr(" entries"));
-  m_historyLength->setToolTip(tr("Maximum number of dialogue entries in backlog"));
+  m_historyLength->setToolTip(
+      tr("Maximum number of dialogue entries in backlog"));
   skipLayout->addRow(tr("History Length:"), m_historyLength);
 
   layout->addWidget(skipGroup);
@@ -284,7 +289,8 @@ void NMProjectSettingsPanel::setupLocalizationTab(QWidget *parent) {
   auto *uiGroup = new QGroupBox(tr("UI Options"), parent);
   auto *uiLayout = new QVBoxLayout(uiGroup);
 
-  m_showLanguageSelector = new QCheckBox(tr("Show Language Selector in Game Menu"), uiGroup);
+  m_showLanguageSelector =
+      new QCheckBox(tr("Show Language Selector in Game Menu"), uiGroup);
   m_showLanguageSelector->setChecked(true);
   uiLayout->addWidget(m_showLanguageSelector);
 
@@ -303,8 +309,8 @@ void NMProjectSettingsPanel::setupBuildProfilesTab(QWidget *parent) {
 
   auto *profileSelectRow = new QHBoxLayout();
   m_buildProfileCombo = new QComboBox(profileGroup);
-  m_buildProfileCombo->addItems({tr("Release"), tr("Debug"), tr("Demo"),
-                                  tr("Steam"), tr("itch.io")});
+  m_buildProfileCombo->addItems(
+      {tr("Release"), tr("Debug"), tr("Demo"), tr("Steam"), tr("itch.io")});
   m_buildProfileCombo->setToolTip(tr("Select a build profile to view/edit"));
   profileSelectRow->addWidget(m_buildProfileCombo, 1);
 
@@ -355,20 +361,18 @@ void NMProjectSettingsPanel::setupWorkflowTab(QWidget *parent) {
   auto *workflowLayout = new QFormLayout(workflowGroup);
 
   m_workflowCombo = new QComboBox(workflowGroup);
-  m_workflowCombo->addItems({
-      tr("Visual-First"),
-      tr("Code-First"),
-      tr("Hybrid")
-  });
+  m_workflowCombo->addItems(
+      {tr("Visual-First"), tr("Code-First"), tr("Hybrid")});
   m_workflowCombo->setToolTip(
       tr("Choose the primary development approach for scene creation"));
   workflowLayout->addRow(tr("Default Workflow:"), m_workflowCombo);
 
-  m_allowMixedWorkflows = new QCheckBox(
-      tr("Allow per-scene workflow override"), workflowGroup);
+  m_allowMixedWorkflows =
+      new QCheckBox(tr("Allow per-scene workflow override"), workflowGroup);
   m_allowMixedWorkflows->setChecked(true);
   m_allowMixedWorkflows->setToolTip(
-      tr("When enabled, individual scenes can use a different workflow than the default"));
+      tr("When enabled, individual scenes can use a different workflow than "
+         "the default"));
   workflowLayout->addRow("", m_allowMixedWorkflows);
 
   layout->addWidget(workflowGroup);
@@ -376,29 +380,32 @@ void NMProjectSettingsPanel::setupWorkflowTab(QWidget *parent) {
   // Workflow description
   m_workflowDescription = new QLabel(parent);
   m_workflowDescription->setWordWrap(true);
-  m_workflowDescription->setStyleSheet("color: #888; padding: 8px; background: #2a2a2a; border-radius: 4px;");
+  m_workflowDescription->setStyleSheet(
+      "color: #888; padding: 8px; background: #2a2a2a; border-radius: 4px;");
   updateWorkflowDescription();
   layout->addWidget(m_workflowDescription);
 
   // Connect workflow combo to update description
   connect(m_workflowCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
           this, [this]() {
-    updateWorkflowDescription();
-    onSettingChanged();
-  });
+            updateWorkflowDescription();
+            onSettingChanged();
+          });
 
   // Workflow help section
   auto *helpGroup = new QGroupBox(tr("Workflow Comparison"), parent);
   auto *helpLayout = new QVBoxLayout(helpGroup);
 
-  auto *helpLabel = new QLabel(
-      tr("<b>Visual-First:</b> Create scenes visually with embedded dialogue graphs. "
-         "Best for rapid prototyping and non-programmers.<br><br>"
-         "<b>Code-First:</b> Define scenes in NMScript with optional visual layout. "
-         "Best for version control and complex logic.<br><br>"
-         "<b>Hybrid:</b> Mix both approaches per scene. "
-         "Best for team collaboration and flexibility."),
-      helpGroup);
+  auto *helpLabel =
+      new QLabel(tr("<b>Visual-First:</b> Create scenes visually with embedded "
+                    "dialogue graphs. "
+                    "Best for rapid prototyping and non-programmers.<br><br>"
+                    "<b>Code-First:</b> Define scenes in NMScript with "
+                    "optional visual layout. "
+                    "Best for version control and complex logic.<br><br>"
+                    "<b>Hybrid:</b> Mix both approaches per scene. "
+                    "Best for team collaboration and flexibility."),
+                 helpGroup);
   helpLabel->setWordWrap(true);
   helpLabel->setTextFormat(Qt::RichText);
   helpLayout->addWidget(helpLabel);
@@ -408,29 +415,33 @@ void NMProjectSettingsPanel::setupWorkflowTab(QWidget *parent) {
 }
 
 void NMProjectSettingsPanel::updateWorkflowDescription() {
-  if (!m_workflowDescription || !m_workflowCombo) return;
+  if (!m_workflowDescription || !m_workflowCombo)
+    return;
 
   int idx = m_workflowCombo->currentIndex();
   QString desc;
   switch (idx) {
-    case 0: // Visual-First
-      desc = tr("Visual-First: Create scenes visually using the Scene View and "
-                "embedded dialogue graphs. Double-click a Scene Node to edit its "
-                "visual layout, or right-click and choose 'Edit Dialogue Flow' to "
-                "add dialogue sequences. No coding required.");
-      break;
-    case 1: // Code-First
-      desc = tr("Code-First: Define dialogue and game logic in NMScript (.nms) files. "
-                "Create Scene Nodes in the Story Graph to define structure, then "
-                "right-click and choose 'Open Script' to write the scene logic. "
-                "Optionally configure visual layout in Scene View.");
-      break;
-    case 2: // Hybrid
-      desc = tr("Hybrid: Use both Visual-First and Code-First approaches as needed. "
-                "Simple scenes can use embedded dialogue graphs, while complex "
-                "scenes with branching logic can use NMScript. Each scene can "
-                "choose its own workflow.");
-      break;
+  case 0: // Visual-First
+    desc =
+        tr("Visual-First: Create scenes visually using the Scene View and "
+           "embedded dialogue graphs. Double-click a Scene Node to edit its "
+           "visual layout, or right-click and choose 'Edit Dialogue Flow' to "
+           "add dialogue sequences. No coding required.");
+    break;
+  case 1: // Code-First
+    desc = tr(
+        "Code-First: Define dialogue and game logic in NMScript (.nms) files. "
+        "Create Scene Nodes in the Story Graph to define structure, then "
+        "right-click and choose 'Open Script' to write the scene logic. "
+        "Optionally configure visual layout in Scene View.");
+    break;
+  case 2: // Hybrid
+    desc =
+        tr("Hybrid: Use both Visual-First and Code-First approaches as needed. "
+           "Simple scenes can use embedded dialogue graphs, while complex "
+           "scenes with branching logic can use NMScript. Each scene can "
+           "choose its own workflow.");
+    break;
   }
   m_workflowDescription->setText(desc);
 }
@@ -465,7 +476,8 @@ void NMProjectSettingsPanel::connectSignals() {
     }
   };
 
-  // Workflow (note: m_workflowCombo is connected in setupWorkflowTab with description update)
+  // Workflow (note: m_workflowCombo is connected in setupWorkflowTab with
+  // description update)
   connectCheck(m_allowMixedWorkflows);
 
   // Display

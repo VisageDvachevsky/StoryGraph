@@ -1,12 +1,13 @@
-#include "NovelMind/editor/qt/nm_main_window.hpp"
 #include "NovelMind/editor/project_integrity.hpp"
 #include "NovelMind/editor/project_manager.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/editor/qt/nm_hotkeys_dialog.hpp"
+#include "NovelMind/editor/qt/nm_main_window.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp"
+#include "NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_build_settings_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_console_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_curve_editor_panel.hpp"
@@ -16,16 +17,15 @@
 #include "NovelMind/editor/qt/panels/nm_inspector_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_localization_panel.hpp"
+#include "NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_scene_palette_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_script_doc_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
-#include "NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_timeline_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp"
-#include "NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp"
 
 #include <QAction>
 #include <QApplication>
@@ -169,8 +169,9 @@ void NMMainWindow::setupConnections() {
 
   // Edit menu - Cut/Copy/Paste/Delete/SelectAll
   // These actions delegate to the currently focused widget that supports them
-  // Note: For scene objects, these are handled internally by the SceneView panel's
-  // keyboard shortcuts (Ctrl+C, Ctrl+V, etc.) since the methods are private
+  // Note: For scene objects, these are handled internally by the SceneView
+  // panel's keyboard shortcuts (Ctrl+C, Ctrl+V, etc.) since the methods are
+  // private
   connect(m_actionCut, &QAction::triggered, this, []() {
     if (QWidget *focused = QApplication::focusWidget()) {
       if (auto *lineEdit = qobject_cast<QLineEdit *>(focused)) {
@@ -274,46 +275,50 @@ void NMMainWindow::setupConnections() {
   connect(m_actionToggleDiagnostics, &QAction::toggled, m_diagnosticsPanel,
           &QDockWidget::setVisible);
   // D6: Audio/Voice panel connections
-  connect(m_actionToggleVoiceStudio, &QAction::toggled, this,
-          [this](bool checked) {
-            if (checked) {
-              // Re-dock if not currently docked
-              if (!m_voiceStudioPanel->isVisible() || m_voiceStudioPanel->isFloating()) {
-                QList<QDockWidget*> docks = this->findChildren<QDockWidget*>();
-                if (!docks.contains(m_voiceStudioPanel) || m_voiceStudioPanel->parent() != this) {
-                  addDockWidget(Qt::RightDockWidgetArea, m_voiceStudioPanel);
-                  if (m_inspectorPanel && m_inspectorPanel->parent() == this) {
-                    tabifyDockWidget(m_inspectorPanel, m_voiceStudioPanel);
-                  }
-                }
+  connect(
+      m_actionToggleVoiceStudio, &QAction::toggled, this, [this](bool checked) {
+        if (checked) {
+          // Re-dock if not currently docked
+          if (!m_voiceStudioPanel->isVisible() ||
+              m_voiceStudioPanel->isFloating()) {
+            QList<QDockWidget *> docks = this->findChildren<QDockWidget *>();
+            if (!docks.contains(m_voiceStudioPanel) ||
+                m_voiceStudioPanel->parent() != this) {
+              addDockWidget(Qt::RightDockWidgetArea, m_voiceStudioPanel);
+              if (m_inspectorPanel && m_inspectorPanel->parent() == this) {
+                tabifyDockWidget(m_inspectorPanel, m_voiceStudioPanel);
               }
-              m_voiceStudioPanel->show();
-              m_voiceStudioPanel->raise();
-            } else {
-              m_voiceStudioPanel->hide();
             }
-          });
+          }
+          m_voiceStudioPanel->show();
+          m_voiceStudioPanel->raise();
+        } else {
+          m_voiceStudioPanel->hide();
+        }
+      });
   connect(m_actionToggleVoiceManager, &QAction::toggled, m_voiceManagerPanel,
           &QDockWidget::setVisible);
-  connect(m_actionToggleAudioMixer, &QAction::toggled, this,
-          [this](bool checked) {
-            if (checked) {
-              // Re-dock if not currently docked
-              if (!m_audioMixerPanel->isVisible() || m_audioMixerPanel->isFloating()) {
-                QList<QDockWidget*> docks = this->findChildren<QDockWidget*>();
-                if (!docks.contains(m_audioMixerPanel) || m_audioMixerPanel->parent() != this) {
-                  addDockWidget(Qt::RightDockWidgetArea, m_audioMixerPanel);
-                  if (m_inspectorPanel && m_inspectorPanel->parent() == this) {
-                    tabifyDockWidget(m_inspectorPanel, m_audioMixerPanel);
-                  }
-                }
+  connect(
+      m_actionToggleAudioMixer, &QAction::toggled, this, [this](bool checked) {
+        if (checked) {
+          // Re-dock if not currently docked
+          if (!m_audioMixerPanel->isVisible() ||
+              m_audioMixerPanel->isFloating()) {
+            QList<QDockWidget *> docks = this->findChildren<QDockWidget *>();
+            if (!docks.contains(m_audioMixerPanel) ||
+                m_audioMixerPanel->parent() != this) {
+              addDockWidget(Qt::RightDockWidgetArea, m_audioMixerPanel);
+              if (m_inspectorPanel && m_inspectorPanel->parent() == this) {
+                tabifyDockWidget(m_inspectorPanel, m_audioMixerPanel);
               }
-              m_audioMixerPanel->show();
-              m_audioMixerPanel->raise();
-            } else {
-              m_audioMixerPanel->hide();
             }
-          });
+          }
+          m_audioMixerPanel->show();
+          m_audioMixerPanel->raise();
+        } else {
+          m_audioMixerPanel->hide();
+        }
+      });
   connect(m_actionToggleLocalization, &QAction::toggled, m_localizationPanel,
           &QDockWidget::setVisible);
   connect(m_actionToggleTimeline, &QAction::toggled, m_timelinePanel,
@@ -335,11 +340,10 @@ void NMMainWindow::setupConnections() {
   connect(m_actionToggleDebugOverlay, &QAction::toggled, m_debugOverlayPanel,
           &QDockWidget::setVisible);
   connect(m_issuesPanel, &QDockWidget::visibilityChanged, this,
-          [this](bool visible) {
-            Q_UNUSED(visible);
-          });
+          [this](bool visible) { Q_UNUSED(visible); });
 
-  // Sync panel visibility with menu actions - use smart sync to prevent feedback loops with tabbed docks
+  // Sync panel visibility with menu actions - use smart sync to prevent
+  // feedback loops with tabbed docks
   connect(m_sceneViewPanel, &QDockWidget::visibilityChanged, this,
           [this](bool visible) {
             if (m_actionToggleSceneView->isChecked() != visible) {
@@ -382,7 +386,8 @@ void NMMainWindow::setupConnections() {
               m_actionToggleDiagnostics->setChecked(visible);
             }
           });
-  // D6: Audio/Voice visibility sync - use smarter sync that doesn't break tabbed docks
+  // D6: Audio/Voice visibility sync - use smarter sync that doesn't break
+  // tabbed docks
   connect(m_voiceStudioPanel, &QDockWidget::visibilityChanged, this,
           [this](bool visible) {
             if (m_actionToggleVoiceStudio->isChecked() != visible) {
@@ -520,15 +525,12 @@ void NMMainWindow::setupConnections() {
     }
   };
 
-  connect(m_actionUiScaleCompact, &QAction::triggered, this, []() {
-    NMStyleManager::instance().setUiScale(0.9);
-  });
-  connect(m_actionUiScaleDefault, &QAction::triggered, this, []() {
-    NMStyleManager::instance().setUiScale(1.0);
-  });
-  connect(m_actionUiScaleComfort, &QAction::triggered, this, []() {
-    NMStyleManager::instance().setUiScale(1.1);
-  });
+  connect(m_actionUiScaleCompact, &QAction::triggered, this,
+          []() { NMStyleManager::instance().setUiScale(0.9); });
+  connect(m_actionUiScaleDefault, &QAction::triggered, this,
+          []() { NMStyleManager::instance().setUiScale(1.0); });
+  connect(m_actionUiScaleComfort, &QAction::triggered, this,
+          []() { NMStyleManager::instance().setUiScale(1.1); });
   connect(m_actionUiScaleDown, &QAction::triggered, this, []() {
     auto &manager = NMStyleManager::instance();
     manager.setUiScale(manager.uiScale() - 0.1);
@@ -537,9 +539,8 @@ void NMMainWindow::setupConnections() {
     auto &manager = NMStyleManager::instance();
     manager.setUiScale(manager.uiScale() + 0.1);
   });
-  connect(m_actionUiScaleReset, &QAction::triggered, this, []() {
-    NMStyleManager::instance().setUiScale(1.0);
-  });
+  connect(m_actionUiScaleReset, &QAction::triggered, this,
+          []() { NMStyleManager::instance().setUiScale(1.0); });
   connect(&styleManager, &NMStyleManager::scaleChanged, this,
           [updateScaleActions](double scale) { updateScaleActions(scale); });
   updateScaleActions(styleManager.uiScale());
@@ -576,30 +577,34 @@ void NMMainWindow::setupConnections() {
           &NMPlayModeController::stop);
   connect(m_actionStepFrame, &QAction::triggered, &playController,
           &NMPlayModeController::stepForward);
-  connect(m_actionSaveState, &QAction::triggered, this, [this, &playController]() {
-    if (!playController.saveSlot(0)) {
-      NMMessageDialog::showError(this, tr("Save Failed"),
-                                 tr("Failed to save runtime state."));
-    }
-  });
-  connect(m_actionLoadState, &QAction::triggered, this, [this, &playController]() {
-    if (!playController.loadSlot(0)) {
-      NMMessageDialog::showError(this, tr("Load Failed"),
-                                 tr("Failed to load runtime state."));
-    }
-  });
+  connect(m_actionSaveState, &QAction::triggered, this,
+          [this, &playController]() {
+            if (!playController.saveSlot(0)) {
+              NMMessageDialog::showError(this, tr("Save Failed"),
+                                         tr("Failed to save runtime state."));
+            }
+          });
+  connect(m_actionLoadState, &QAction::triggered, this,
+          [this, &playController]() {
+            if (!playController.loadSlot(0)) {
+              NMMessageDialog::showError(this, tr("Load Failed"),
+                                         tr("Failed to load runtime state."));
+            }
+          });
   connect(m_actionAutoSaveState, &QAction::triggered, this,
           [this, &playController]() {
             if (!playController.saveAuto()) {
-              NMMessageDialog::showError(this, tr("Auto-Save Failed"),
-                                         tr("Failed to auto-save runtime state."));
+              NMMessageDialog::showError(
+                  this, tr("Auto-Save Failed"),
+                  tr("Failed to auto-save runtime state."));
             }
           });
   connect(m_actionAutoLoadState, &QAction::triggered, this,
           [this, &playController]() {
             if (!playController.loadAuto()) {
-              NMMessageDialog::showError(this, tr("Auto-Load Failed"),
-                                         tr("Failed to auto-load runtime state."));
+              NMMessageDialog::showError(
+                  this, tr("Auto-Load Failed"),
+                  tr("Failed to auto-load runtime state."));
             }
           });
 
@@ -611,7 +616,8 @@ void NMMainWindow::setupConnections() {
     m_actionPause->setEnabled(isPlaying);
     m_actionStop->setEnabled(isPlaying || isPaused);
     m_actionStepFrame->setEnabled(!isPlaying);
-    const bool runtimeReady = NMPlayModeController::instance().isRuntimeLoaded();
+    const bool runtimeReady =
+        NMPlayModeController::instance().isRuntimeLoaded();
     const bool hasAutoSave = NMPlayModeController::instance().hasAutoSave();
     m_actionSaveState->setEnabled(runtimeReady);
     m_actionLoadState->setEnabled(runtimeReady);
@@ -636,7 +642,8 @@ void NMMainWindow::setupConnections() {
   connect(m_actionAbout, &QAction::triggered, this,
           &NMMainWindow::showAboutDialog);
   connect(m_actionDocumentation, &QAction::triggered, []() {
-    QDesktopServices::openUrl(QUrl("https://github.com/VisageDvachevsky/StoryGraph"));
+    QDesktopServices::openUrl(
+        QUrl("https://github.com/VisageDvachevsky/StoryGraph"));
   });
   connect(m_actionHotkeys, &QAction::triggered, this, [this]() {
     auto shortcutText = [](QAction *action) {
@@ -647,23 +654,23 @@ void NMMainWindow::setupConnections() {
     };
 
     QList<NMHotkeyEntry> entries;
-    auto addActionEntry = [&entries, &shortcutText](const QString &section,
-                                                    const QString &actionName,
-                                                    QAction *action,
-                                                    const QString &notes = QString()) {
-      const QString shortcut = shortcutText(action);
-      NMHotkeyEntry entry;
-      entry.id = action ? action->objectName() : actionName;
-      if (entry.id.isEmpty()) {
-        entry.id = actionName;
-      }
-      entry.section = section;
-      entry.action = actionName;
-      entry.shortcut = shortcut;
-      entry.defaultShortcut = shortcut;
-      entry.notes = notes;
-      entries.push_back(entry);
-    };
+    auto addActionEntry =
+        [&entries, &shortcutText](const QString &section,
+                                  const QString &actionName, QAction *action,
+                                  const QString &notes = QString()) {
+          const QString shortcut = shortcutText(action);
+          NMHotkeyEntry entry;
+          entry.id = action ? action->objectName() : actionName;
+          if (entry.id.isEmpty()) {
+            entry.id = actionName;
+          }
+          entry.section = section;
+          entry.action = actionName;
+          entry.shortcut = shortcut;
+          entry.defaultShortcut = shortcut;
+          entry.notes = notes;
+          entries.push_back(entry);
+        };
 
     addActionEntry(tr("File"), tr("New Project"), m_actionNewProject);
     addActionEntry(tr("File"), tr("Open Project"), m_actionOpenProject);
@@ -690,41 +697,48 @@ void NMMainWindow::setupConnections() {
     addActionEntry(tr("Play"), tr("Auto Load"), m_actionAutoLoadState);
 
     // D6: Audio/Voice actions
-    addActionEntry(tr("Audio / Voice"), tr("Voice Studio"), m_actionToggleVoiceStudio,
-                   tr("Record and edit voice lines with waveform visualization"));
+    addActionEntry(
+        tr("Audio / Voice"), tr("Voice Studio"), m_actionToggleVoiceStudio,
+        tr("Record and edit voice lines with waveform visualization"));
 
     // D2: New workspace presets
     addActionEntry(tr("Workspaces"), tr("Default"), m_actionLayoutDefault);
-    addActionEntry(tr("Workspaces"), tr("Story / Script"), m_actionLayoutStoryScript);
-    addActionEntry(tr("Workspaces"), tr("Scene / Animation"), m_actionLayoutSceneAnimation);
-    addActionEntry(tr("Workspaces"), tr("Audio / Voice"), m_actionLayoutAudioVoice);
+    addActionEntry(tr("Workspaces"), tr("Story / Script"),
+                   m_actionLayoutStoryScript);
+    addActionEntry(tr("Workspaces"), tr("Scene / Animation"),
+                   m_actionLayoutSceneAnimation);
+    addActionEntry(tr("Workspaces"), tr("Audio / Voice"),
+                   m_actionLayoutAudioVoice);
 
     // Legacy workspaces
     addActionEntry(tr("Workspaces"), tr("Story (Legacy)"), m_actionLayoutStory);
     addActionEntry(tr("Workspaces"), tr("Scene (Legacy)"), m_actionLayoutScene);
-    addActionEntry(tr("Workspaces"), tr("Script (Legacy)"), m_actionLayoutScript);
+    addActionEntry(tr("Workspaces"), tr("Script (Legacy)"),
+                   m_actionLayoutScript);
     addActionEntry(tr("Workspaces"), tr("Developer (Legacy)"),
                    m_actionLayoutDeveloper);
     addActionEntry(tr("Workspaces"), tr("Compact (Legacy)"),
                    m_actionLayoutCompact);
     addActionEntry(tr("Layout"), tr("Focus Mode"), m_actionFocusMode);
     addActionEntry(tr("Layout"), tr("Lock Layout"), m_actionLockLayout);
-    addActionEntry(tr("Layout"), tr("Tabbed Dock Only"), m_actionTabbedDockOnly);
+    addActionEntry(tr("Layout"), tr("Tabbed Dock Only"),
+                   m_actionTabbedDockOnly);
     addActionEntry(tr("UI Scale"), tr("Scale Down"), m_actionUiScaleDown);
     addActionEntry(tr("UI Scale"), tr("Scale Up"), m_actionUiScaleUp);
     addActionEntry(tr("UI Scale"), tr("Scale Reset"), m_actionUiScaleReset);
 
-    auto addStaticEntry = [&entries](const QString &section, const QString &action,
-                                     const QString &shortcut, const QString &notes) {
-      NMHotkeyEntry entry;
-      entry.id = section + "." + action;
-      entry.section = section;
-      entry.action = action;
-      entry.shortcut = shortcut;
-      entry.defaultShortcut = shortcut;
-      entry.notes = notes;
-      entries.push_back(entry);
-    };
+    auto addStaticEntry =
+        [&entries](const QString &section, const QString &action,
+                   const QString &shortcut, const QString &notes) {
+          NMHotkeyEntry entry;
+          entry.id = section + "." + action;
+          entry.section = section;
+          entry.action = action;
+          entry.shortcut = shortcut;
+          entry.defaultShortcut = shortcut;
+          entry.notes = notes;
+          entries.push_back(entry);
+        };
 
     addStaticEntry(tr("Script Editor"), tr("Completion"), tr("Ctrl+Space"),
                    tr("Trigger code suggestions"));
@@ -780,8 +794,7 @@ void NMMainWindow::setupConnections() {
               return;
             }
             if (auto *obj = m_sceneViewPanel->findObjectById(objectId)) {
-              const bool editable =
-                  !objectId.startsWith("runtime_");
+              const bool editable = !objectId.startsWith("runtime_");
               m_inspectorPanel->inspectSceneObject(obj, editable);
             }
             if (!objectId.isEmpty()) {
@@ -831,7 +844,7 @@ void NMMainWindow::setupConnections() {
               // Re-dock to right area
               addDockWidget(Qt::RightDockWidgetArea, m_inspectorPanel);
               // Re-tabify with other panels if needed
-              QList<QDockWidget*> rightDocks = findChildren<QDockWidget*>();
+              QList<QDockWidget *> rightDocks = findChildren<QDockWidget *>();
               for (QDockWidget *dock : rightDocks) {
                 if (dock != m_inspectorPanel &&
                     dockWidgetArea(dock) == Qt::RightDockWidgetArea &&
@@ -869,8 +882,7 @@ void NMMainWindow::setupConnections() {
                                                   node->choiceOptions());
               }
               if (m_sceneViewPanel &&
-                  node->nodeType().compare("Entry", Qt::CaseInsensitive) !=
-                      0) {
+                  node->nodeType().compare("Entry", Qt::CaseInsensitive) != 0) {
                 auto &playControllerRef = NMPlayModeController::instance();
                 if (!playControllerRef.isPlaying() &&
                     !playControllerRef.isPaused()) {
@@ -925,11 +937,14 @@ void NMMainWindow::setupConnections() {
             if (!m_sceneViewPanel || !m_timelinePanel) {
               return;
             }
-            qDebug() << "[MainWindow] Scene node double-clicked, opening Scene View and Timeline for:" << sceneId;
+            qDebug() << "[MainWindow] Scene node double-clicked, opening Scene "
+                        "View and Timeline for:"
+                     << sceneId;
 
             // Load scene in Scene View
             auto &playControllerRef = NMPlayModeController::instance();
-            if (!playControllerRef.isPlaying() && !playControllerRef.isPaused()) {
+            if (!playControllerRef.isPlaying() &&
+                !playControllerRef.isPaused()) {
               m_sceneViewPanel->loadSceneDocument(sceneId);
             }
 
@@ -944,16 +959,19 @@ void NMMainWindow::setupConnections() {
             // Enable animation preview mode in Scene View
             m_sceneViewPanel->setAnimationPreviewMode(true);
 
-            setStatusMessage(tr("Editing scene: %1 (Timeline and Scene View)").arg(sceneId), 3000);
+            setStatusMessage(
+                tr("Editing scene: %1 (Timeline and Scene View)").arg(sceneId),
+                3000);
           });
 
   // Scene Node → Dialogue Graph Panel integration
-  connect(m_storyGraphPanel, &NMStoryGraphPanel::editDialogueFlowRequested, this,
-          [this](const QString &sceneId) {
+  connect(m_storyGraphPanel, &NMStoryGraphPanel::editDialogueFlowRequested,
+          this, [this](const QString &sceneId) {
             if (!m_sceneDialogueGraphPanel) {
               return;
             }
-            qDebug() << "[MainWindow] Edit dialogue flow requested for scene:" << sceneId;
+            qDebug() << "[MainWindow] Edit dialogue flow requested for scene:"
+                     << sceneId;
 
             // Load dialogue graph for the scene
             m_sceneDialogueGraphPanel->loadSceneDialogue(sceneId);
@@ -962,11 +980,13 @@ void NMMainWindow::setupConnections() {
             m_sceneDialogueGraphPanel->show();
             m_sceneDialogueGraphPanel->raise();
 
-            setStatusMessage(tr("Editing dialogue flow: %1").arg(sceneId), 3000);
+            setStatusMessage(tr("Editing dialogue flow: %1").arg(sceneId),
+                             3000);
           });
 
   // Return to Story Graph from Dialogue Graph Panel
-  connect(m_sceneDialogueGraphPanel, &NMSceneDialogueGraphPanel::returnToStoryGraphRequested, this,
+  connect(m_sceneDialogueGraphPanel,
+          &NMSceneDialogueGraphPanel::returnToStoryGraphRequested, this,
           [this]() {
             if (!m_storyGraphPanel) {
               return;
@@ -980,20 +1000,24 @@ void NMMainWindow::setupConnections() {
           });
 
   // Update dialogue count badge when dialogue graph changes
-  connect(m_sceneDialogueGraphPanel, &NMSceneDialogueGraphPanel::dialogueCountChanged, this,
-          [this](const QString &sceneId, int count) {
-            qDebug() << "[MainWindow] Dialogue count changed for scene:" << sceneId << "count:" << count;
+  connect(
+      m_sceneDialogueGraphPanel,
+      &NMSceneDialogueGraphPanel::dialogueCountChanged, this,
+      [this](const QString &sceneId, int count) {
+        qDebug() << "[MainWindow] Dialogue count changed for scene:" << sceneId
+                 << "count:" << count;
 
-            // Update the scene node in the story graph panel
-            if (m_storyGraphPanel) {
-              auto *node = m_storyGraphPanel->findNodeByIdString(sceneId);
-              if (node) {
-                node->setDialogueCount(count);
-                node->setHasEmbeddedDialogue(count > 0);
-                qDebug() << "[MainWindow] Updated dialogue count badge for scene:" << sceneId;
-              }
-            }
-          });
+        // Update the scene node in the story graph panel
+        if (m_storyGraphPanel) {
+          auto *node = m_storyGraphPanel->findNodeByIdString(sceneId);
+          if (node) {
+            node->setDialogueCount(count);
+            node->setHasEmbeddedDialogue(count > 0);
+            qDebug() << "[MainWindow] Updated dialogue count badge for scene:"
+                     << sceneId;
+          }
+        }
+      });
 
   connect(m_scriptEditorPanel, &NMScriptEditorPanel::docHtmlChanged,
           m_scriptDocPanel, &NMScriptDocPanel::setDocHtml);
@@ -1016,10 +1040,9 @@ void NMMainWindow::setupConnections() {
           });
 
   // Diagnostics panel navigation
-  connect(m_diagnosticsPanel, &NMDiagnosticsPanel::diagnosticActivated, this,
-          [this](const QString &location) {
-            handleNavigationRequest(location);
-          });
+  connect(
+      m_diagnosticsPanel, &NMDiagnosticsPanel::diagnosticActivated, this,
+      [this](const QString &location) { handleNavigationRequest(location); });
 
   connect(m_assetBrowserPanel, &NMAssetBrowserPanel::assetDoubleClicked, this,
           [this](const QString &path) {
@@ -1030,9 +1053,9 @@ void NMMainWindow::setupConnections() {
 
             QFileInfo info(path);
             const QString ext = info.suffix().toLower();
-            const bool isImage = (ext == "png" || ext == "jpg" ||
-                                  ext == "jpeg" || ext == "bmp" ||
-                                  ext == "gif");
+            const bool isImage =
+                (ext == "png" || ext == "jpg" || ext == "jpeg" ||
+                 ext == "bmp" || ext == "gif");
             if (!isImage || !m_sceneViewPanel) {
               return;
             }
@@ -1048,8 +1071,8 @@ void NMMainWindow::setupConnections() {
             m_sceneViewPanel->addObjectFromAsset(path, QPointF(0, 0));
           });
 
-  auto createSnapshot =
-      [this](NMSceneObjectType type, const QPointF &pos) -> SceneObjectSnapshot {
+  auto createSnapshot = [this](NMSceneObjectType type,
+                               const QPointF &pos) -> SceneObjectSnapshot {
     SceneObjectSnapshot snapshot;
     const qint64 stamp = QDateTime::currentMSecsSinceEpoch();
     QString prefix;
@@ -1090,8 +1113,7 @@ void NMMainWindow::setupConnections() {
             if (!m_sceneViewPanel) {
               return;
             }
-            SceneObjectSnapshot snapshot =
-                createSnapshot(type, QPointF(0, 0));
+            SceneObjectSnapshot snapshot = createSnapshot(type, QPointF(0, 0));
             NMUndoManager::instance().pushCommand(
                 new AddObjectCommand(m_sceneViewPanel, snapshot));
           });
@@ -1118,176 +1140,171 @@ void NMMainWindow::setupConnections() {
             }
           });
 
-  connect(m_inspectorPanel, &NMInspectorPanel::propertyChanged, this,
-          [this](const QString &objectId, const QString &propertyName,
-                 const QString &newValue) {
-            if (objectId.isEmpty()) {
-              return;
-            }
+  connect(
+      m_inspectorPanel, &NMInspectorPanel::propertyChanged, this,
+      [this](const QString &objectId, const QString &propertyName,
+             const QString &newValue) {
+        if (objectId.isEmpty()) {
+          return;
+        }
 
-            auto applyProperty = [this](const QString &targetId,
-                                        const QString &key,
-                                        const QString &value) {
-              if (auto *obj = m_sceneViewPanel->findObjectById(targetId)) {
-                if (key == "name") {
-                  m_sceneViewPanel->renameObject(targetId, value);
-                  m_sceneViewPanel->selectObjectById(targetId);
-                } else if (key == "asset") {
-                  m_sceneViewPanel->setObjectAsset(targetId, value);
-                  m_sceneViewPanel->selectObjectById(targetId);
-                } else if (key == "position_x" || key == "position_y") {
-                  QPointF pos = obj->pos();
-                  if (key == "position_x") {
-                    pos.setX(value.toDouble());
-                  } else {
-                    pos.setY(value.toDouble());
-                  }
-                  m_sceneViewPanel->moveObject(targetId, pos);
-                } else if (key == "rotation") {
-                  m_sceneViewPanel->rotateObject(targetId, value.toDouble());
-                } else if (key == "scale_x" || key == "scale_y") {
-                  QPointF scale =
-                      m_sceneViewPanel->graphicsScene()->getObjectScale(
-                          targetId);
-                  if (key == "scale_x") {
-                    scale.setX(value.toDouble());
-                  } else {
-                    scale.setY(value.toDouble());
-                  }
-                  m_sceneViewPanel->scaleObject(targetId, scale.x(), scale.y());
-                } else if (key == "visible") {
-                  const bool newVisible =
-                      (value.toLower() == "true" || value == "1");
-                  const bool oldVisible = obj->isVisible();
-                  if (oldVisible != newVisible) {
-                    auto *cmd = new ToggleObjectVisibilityCommand(
-                        m_sceneViewPanel, targetId, oldVisible, newVisible);
-                    NMUndoManager::instance().pushCommand(cmd);
-                  }
-                } else if (key == "alpha") {
-                  m_sceneViewPanel->setObjectOpacity(targetId,
-                                                     value.toDouble());
-                } else if (key == "z") {
-                  m_sceneViewPanel->setObjectZOrder(targetId,
-                                                    value.toDouble());
-                } else if (key == "locked") {
-                  const bool newLocked =
-                      (value.toLower() == "true" || value == "1");
-                  const bool oldLocked = obj->isLocked();
-                  if (oldLocked != newLocked) {
-                    auto *cmd = new ToggleObjectLockedCommand(
-                        m_sceneViewPanel, targetId, oldLocked, newLocked);
-                    NMUndoManager::instance().pushCommand(cmd);
-                  }
-                }
-              } else if (m_storyGraphPanel->findNodeByIdString(targetId) !=
-                         nullptr) {
-                m_storyGraphPanel->applyNodePropertyChange(targetId, key,
-                                                           value);
-                if (key == "scriptPath" && m_scriptEditorPanel) {
-                  m_scriptEditorPanel->openScript(value);
-                }
-                if (m_sceneViewPanel) {
-                  if (auto *node =
-                          m_storyGraphPanel->findNodeByIdString(targetId)) {
-                    m_sceneViewPanel->setStoryPreview(
-                        node->dialogueSpeaker(), node->dialogueText(),
-                        node->choiceOptions());
-                  }
-                }
+        auto applyProperty = [this](const QString &targetId, const QString &key,
+                                    const QString &value) {
+          if (auto *obj = m_sceneViewPanel->findObjectById(targetId)) {
+            if (key == "name") {
+              m_sceneViewPanel->renameObject(targetId, value);
+              m_sceneViewPanel->selectObjectById(targetId);
+            } else if (key == "asset") {
+              m_sceneViewPanel->setObjectAsset(targetId, value);
+              m_sceneViewPanel->selectObjectById(targetId);
+            } else if (key == "position_x" || key == "position_y") {
+              QPointF pos = obj->pos();
+              if (key == "position_x") {
+                pos.setX(value.toDouble());
+              } else {
+                pos.setY(value.toDouble());
               }
-
-              if (m_inspectorPanel &&
-                  m_inspectorPanel->currentObjectId() == targetId) {
-                m_inspectorPanel->updatePropertyValue(key, value);
+              m_sceneViewPanel->moveObject(targetId, pos);
+            } else if (key == "rotation") {
+              m_sceneViewPanel->rotateObject(targetId, value.toDouble());
+            } else if (key == "scale_x" || key == "scale_y") {
+              QPointF scale =
+                  m_sceneViewPanel->graphicsScene()->getObjectScale(targetId);
+              if (key == "scale_x") {
+                scale.setX(value.toDouble());
+              } else {
+                scale.setY(value.toDouble());
               }
-            };
-
-            QString oldValue;
-            bool found = false;
-            if (auto *obj = m_sceneViewPanel->findObjectById(objectId)) {
-              if (propertyName == "name") {
-                oldValue = obj->name();
-                found = true;
-              } else if (propertyName == "position_x") {
-                oldValue = QString::number(obj->pos().x());
-                found = true;
-              } else if (propertyName == "position_y") {
-                oldValue = QString::number(obj->pos().y());
-                found = true;
-              } else if (propertyName == "rotation") {
-                oldValue = QString::number(obj->rotation());
-                found = true;
-              } else if (propertyName == "scale_x") {
-                oldValue = QString::number(obj->scaleX());
-                found = true;
-              } else if (propertyName == "scale_y") {
-                oldValue = QString::number(obj->scaleY());
-                found = true;
-              } else if (propertyName == "visible") {
-                oldValue = obj->isVisible() ? "true" : "false";
-                found = true;
-              } else if (propertyName == "asset") {
-                oldValue = obj->assetPath();
-                found = true;
-              } else if (propertyName == "alpha") {
-                oldValue = QString::number(obj->opacity());
-                found = true;
-              } else if (propertyName == "z") {
-                oldValue = QString::number(obj->zValue());
-                found = true;
-              } else if (propertyName == "locked") {
-                oldValue = obj->isLocked() ? "true" : "false";
-                found = true;
+              m_sceneViewPanel->scaleObject(targetId, scale.x(), scale.y());
+            } else if (key == "visible") {
+              const bool newVisible =
+                  (value.toLower() == "true" || value == "1");
+              const bool oldVisible = obj->isVisible();
+              if (oldVisible != newVisible) {
+                auto *cmd = new ToggleObjectVisibilityCommand(
+                    m_sceneViewPanel, targetId, oldVisible, newVisible);
+                NMUndoManager::instance().pushCommand(cmd);
               }
-            } else if (auto *node =
-                           m_storyGraphPanel->findNodeByIdString(objectId)) {
-              if (propertyName == "title") {
-                oldValue = node->title();
-                found = true;
-              } else if (propertyName == "type") {
-                oldValue = node->nodeType();
-                found = true;
-              } else if (propertyName == "scriptPath") {
-                oldValue = node->scriptPath();
-                found = true;
-              } else if (propertyName == "speaker") {
-                oldValue = node->dialogueSpeaker();
-                found = true;
-              } else if (propertyName == "text") {
-                oldValue = node->dialogueText();
-                found = true;
-              } else if (propertyName == "choices") {
-                oldValue = node->choiceOptions().join("\n");
-                found = true;
+            } else if (key == "alpha") {
+              m_sceneViewPanel->setObjectOpacity(targetId, value.toDouble());
+            } else if (key == "z") {
+              m_sceneViewPanel->setObjectZOrder(targetId, value.toDouble());
+            } else if (key == "locked") {
+              const bool newLocked =
+                  (value.toLower() == "true" || value == "1");
+              const bool oldLocked = obj->isLocked();
+              if (oldLocked != newLocked) {
+                auto *cmd = new ToggleObjectLockedCommand(
+                    m_sceneViewPanel, targetId, oldLocked, newLocked);
+                NMUndoManager::instance().pushCommand(cmd);
               }
-            } else {
-              return;
             }
-
-            if (!found) {
-              return;
+          } else if (m_storyGraphPanel->findNodeByIdString(targetId) !=
+                     nullptr) {
+            m_storyGraphPanel->applyNodePropertyChange(targetId, key, value);
+            if (key == "scriptPath" && m_scriptEditorPanel) {
+              m_scriptEditorPanel->openScript(value);
             }
-
-            if (oldValue == newValue) {
-              return;
+            if (m_sceneViewPanel) {
+              if (auto *node =
+                      m_storyGraphPanel->findNodeByIdString(targetId)) {
+                m_sceneViewPanel->setStoryPreview(node->dialogueSpeaker(),
+                                                  node->dialogueText(),
+                                                  node->choiceOptions());
+              }
             }
+          }
 
-            PropertyValue oldVariant = oldValue.toStdString();
-            PropertyValue newVariant = newValue.toStdString();
+          if (m_inspectorPanel &&
+              m_inspectorPanel->currentObjectId() == targetId) {
+            m_inspectorPanel->updatePropertyValue(key, value);
+          }
+        };
 
-            auto apply = [applyProperty, objectId,
-                          propertyName](const PropertyValue &value,
-                                        bool /*isUndo*/) {
-              const auto *stringValue = std::get_if<std::string>(&value);
-              const QString qValue =
-                  stringValue ? QString::fromStdString(*stringValue) : QString();
-              applyProperty(objectId, propertyName, qValue);
-            };
+        QString oldValue;
+        bool found = false;
+        if (auto *obj = m_sceneViewPanel->findObjectById(objectId)) {
+          if (propertyName == "name") {
+            oldValue = obj->name();
+            found = true;
+          } else if (propertyName == "position_x") {
+            oldValue = QString::number(obj->pos().x());
+            found = true;
+          } else if (propertyName == "position_y") {
+            oldValue = QString::number(obj->pos().y());
+            found = true;
+          } else if (propertyName == "rotation") {
+            oldValue = QString::number(obj->rotation());
+            found = true;
+          } else if (propertyName == "scale_x") {
+            oldValue = QString::number(obj->scaleX());
+            found = true;
+          } else if (propertyName == "scale_y") {
+            oldValue = QString::number(obj->scaleY());
+            found = true;
+          } else if (propertyName == "visible") {
+            oldValue = obj->isVisible() ? "true" : "false";
+            found = true;
+          } else if (propertyName == "asset") {
+            oldValue = obj->assetPath();
+            found = true;
+          } else if (propertyName == "alpha") {
+            oldValue = QString::number(obj->opacity());
+            found = true;
+          } else if (propertyName == "z") {
+            oldValue = QString::number(obj->zValue());
+            found = true;
+          } else if (propertyName == "locked") {
+            oldValue = obj->isLocked() ? "true" : "false";
+            found = true;
+          }
+        } else if (auto *node =
+                       m_storyGraphPanel->findNodeByIdString(objectId)) {
+          if (propertyName == "title") {
+            oldValue = node->title();
+            found = true;
+          } else if (propertyName == "type") {
+            oldValue = node->nodeType();
+            found = true;
+          } else if (propertyName == "scriptPath") {
+            oldValue = node->scriptPath();
+            found = true;
+          } else if (propertyName == "speaker") {
+            oldValue = node->dialogueSpeaker();
+            found = true;
+          } else if (propertyName == "text") {
+            oldValue = node->dialogueText();
+            found = true;
+          } else if (propertyName == "choices") {
+            oldValue = node->choiceOptions().join("\n");
+            found = true;
+          }
+        } else {
+          return;
+        }
 
-            NMUndoManager::instance().pushCommand(new PropertyChangeCommand(
-                objectId, propertyName, oldVariant, newVariant, apply));
-          });
+        if (!found) {
+          return;
+        }
+
+        if (oldValue == newValue) {
+          return;
+        }
+
+        PropertyValue oldVariant = oldValue.toStdString();
+        PropertyValue newVariant = newValue.toStdString();
+
+        auto apply = [applyProperty, objectId, propertyName](
+                         const PropertyValue &value, bool /*isUndo*/) {
+          const auto *stringValue = std::get_if<std::string>(&value);
+          const QString qValue =
+              stringValue ? QString::fromStdString(*stringValue) : QString();
+          applyProperty(objectId, propertyName, qValue);
+        };
+
+        NMUndoManager::instance().pushCommand(new PropertyChangeCommand(
+            objectId, propertyName, oldVariant, newVariant, apply));
+      });
 
   connect(m_sceneViewPanel, &NMSceneViewPanel::objectPositionChanged, this,
           [this](const QString &objectId, const QPointF &pos) {
@@ -1314,16 +1331,16 @@ void NMMainWindow::setupConnections() {
             if (m_inspectorPanel->currentObjectId() != objectId) {
               return;
             }
-            m_inspectorPanel->updatePropertyValue(
-                "position_x", QString::number(newPos.x()));
-            m_inspectorPanel->updatePropertyValue(
-                "position_y", QString::number(newPos.y()));
-            m_inspectorPanel->updatePropertyValue(
-                "rotation", QString::number(newRotation));
-            m_inspectorPanel->updatePropertyValue(
-                "scale_x", QString::number(newScaleX));
-            m_inspectorPanel->updatePropertyValue(
-                "scale_y", QString::number(newScaleY));
+            m_inspectorPanel->updatePropertyValue("position_x",
+                                                  QString::number(newPos.x()));
+            m_inspectorPanel->updatePropertyValue("position_y",
+                                                  QString::number(newPos.y()));
+            m_inspectorPanel->updatePropertyValue("rotation",
+                                                  QString::number(newRotation));
+            m_inspectorPanel->updatePropertyValue("scale_x",
+                                                  QString::number(newScaleX));
+            m_inspectorPanel->updatePropertyValue("scale_y",
+                                                  QString::number(newScaleY));
           });
 
   // Connect Inspector Curve property to Curve Editor panel
@@ -1335,9 +1352,8 @@ void NMMainWindow::setupConnections() {
             // Check if this is a curve editor open request
             if (propertyName.endsWith(":openCurveEditor")) {
               // Extract the actual property name
-              QString actualPropertyName =
-                  propertyName.left(propertyName.length() -
-                                    QString(":openCurveEditor").length());
+              QString actualPropertyName = propertyName.left(
+                  propertyName.length() - QString(":openCurveEditor").length());
               Q_UNUSED(actualPropertyName);
 
               // Show and raise the curve editor panel
@@ -1366,11 +1382,13 @@ void NMMainWindow::setupConnections() {
     // When Timeline frame changes, update Scene View preview
     connect(m_timelinePanel, &NMTimelinePanel::frameChanged, this,
             [this]([[maybe_unused]] int frame) {
-              if (!m_sceneViewPanel || !m_sceneViewPanel->isAnimationPreviewMode()) {
+              if (!m_sceneViewPanel ||
+                  !m_sceneViewPanel->isAnimationPreviewMode()) {
                 return;
               }
-              // Note: Animation adapter would apply interpolated values to scene objects
-              // For now, we just trigger a viewport update to redraw with current state
+              // Note: Animation adapter would apply interpolated values to
+              // scene objects For now, we just trigger a viewport update to
+              // redraw with current state
               if (auto *view = m_sceneViewPanel->graphicsView()) {
                 view->viewport()->update();
               }

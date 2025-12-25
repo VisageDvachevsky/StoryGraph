@@ -633,16 +633,14 @@ ProjectValidation ProjectManager::validateProject() const {
     }
 
     // Track missing assets and scripts
-    if (issue.category == IssueCategory::Asset &&
-        issue.code == "A002") {
+    if (issue.category == IssueCategory::Asset && issue.code == "A002") {
       // Extract asset name from message
       size_t pos = message.find("not found: ");
       if (pos != std::string::npos) {
         validation.missingAssets.push_back(message.substr(pos + 11));
       }
     }
-    if (issue.category == IssueCategory::Scene &&
-        issue.code == "S002") {
+    if (issue.category == IssueCategory::Scene && issue.code == "S002") {
       // Extract scene name from message
       size_t pos = message.find("undefined scene: ");
       if (pos != std::string::npos) {
@@ -671,11 +669,11 @@ std::vector<std::string> ProjectManager::getAvailableTemplates() {
   // Returns all available project templates
   // Templates are located in editor/templates/ directory
   return {
-    "empty",            // Minimal starting point
-    "kinetic_novel",    // Linear story without choices
-    "branching_story",  // Interactive story with multiple endings
-    "mobile_optimized", // Optimized for mobile devices (portrait)
-    "tutorial_project"  // Interactive learning tutorial
+      "empty",            // Minimal starting point
+      "kinetic_novel",    // Linear story without choices
+      "branching_story",  // Interactive story with multiple endings
+      "mobile_optimized", // Optimized for mobile devices (portrait)
+      "tutorial_project"  // Interactive learning tutorial
   };
 }
 
@@ -843,9 +841,11 @@ Result<void> ProjectManager::saveProjectFile() {
   fs::path projectFile = fs::path(m_projectPath) / "project.json";
 
   // Use atomic write with validation
-  auto result = ProjectJsonHandler::saveToFile(projectFile.string(), m_metadata);
+  auto result =
+      ProjectJsonHandler::saveToFile(projectFile.string(), m_metadata);
   if (result.isError()) {
-    return Result<void>::error("Failed to save project file: " + result.error());
+    return Result<void>::error("Failed to save project file: " +
+                               result.error());
   }
 
   return Result<void>::ok();
@@ -904,7 +904,8 @@ ProjectManager::createProjectFromTemplate(const std::string &templateName) {
     file << "    goto ending\n";
     file << "}\n\n";
     file << "scene ending {\n";
-    file << "    say \"This is the end of the demo. Expand it with your own scenes!\"\n";
+    file << "    say \"This is the end of the demo. Expand it with your own "
+            "scenes!\"\n";
     file << "}\n";
     m_metadata.startScene = "main";
   } else if (templateName == "mobile_optimized") {
@@ -916,7 +917,8 @@ ProjectManager::createProjectFromTemplate(const std::string &templateName) {
     file << "    show background \"mobile_bg.png\"\n";
     file << "    transition fade 1.0\n";
     file << "    say Narrator \"Welcome to your mobile visual novel!\"\n";
-    file << "    say Narrator \"This template is optimized for mobile devices.\"\n";
+    file << "    say Narrator \"This template is optimized for mobile "
+            "devices.\"\n";
     file << "    show Hero at center\n";
     file << "    Hero \"Let's create something amazing!\"\n";
     file << "}\n";

@@ -1,7 +1,7 @@
 #include "NovelMind/audio/audio_manager.hpp"
+#include "miniaudio/miniaudio.h"
 #include <algorithm>
 #include <cmath>
-#include "miniaudio/miniaudio.h"
 
 namespace NovelMind::audio {
 
@@ -303,9 +303,8 @@ AudioHandle AudioManager::playSound(const std::string &id,
       m_engineInitialized && m_engine) {
     ma_uint32 sampleRate = ma_engine_get_sample_rate(m_engine);
     if (sampleRate > 0) {
-      ma_uint64 startFrames =
-          static_cast<ma_uint64>(config.startTime *
-                                 static_cast<f32>(sampleRate));
+      ma_uint64 startFrames = static_cast<ma_uint64>(
+          config.startTime * static_cast<f32>(sampleRate));
       ma_sound_seek_to_pcm_frame(source->m_sound.get(), startFrames);
     }
   }
@@ -376,9 +375,8 @@ AudioHandle AudioManager::playMusic(const std::string &id,
       m_engineInitialized && m_engine) {
     ma_uint32 sampleRate = ma_engine_get_sample_rate(m_engine);
     if (sampleRate > 0) {
-      ma_uint64 startFrames =
-          static_cast<ma_uint64>(config.startTime *
-                                 static_cast<f32>(sampleRate));
+      ma_uint64 startFrames = static_cast<ma_uint64>(
+          config.startTime * static_cast<f32>(sampleRate));
       ma_sound_seek_to_pcm_frame(source->m_sound.get(), startFrames);
     }
   }
@@ -723,9 +721,9 @@ AudioHandle AudioManager::createSource(const std::string &trackId,
       if (ma_decoder_init_memory(source->m_memoryData.data(),
                                  source->m_memoryData.size(), &config,
                                  source->m_decoder.get()) == MA_SUCCESS) {
-        if (ma_sound_init_from_data_source(
-                m_engine, source->m_decoder.get(), flags, nullptr,
-                sound.get()) == MA_SUCCESS) {
+        if (ma_sound_init_from_data_source(m_engine, source->m_decoder.get(),
+                                           flags, nullptr,
+                                           sound.get()) == MA_SUCCESS) {
           loaded = true;
           source->m_decoderReady = true;
         } else {

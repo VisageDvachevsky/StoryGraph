@@ -1,11 +1,10 @@
 #include "NovelMind/editor/qt/panels/nm_timeline_panel.hpp"
-#include "NovelMind/editor/qt/panels/nm_keyframe_item.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
+#include "NovelMind/editor/qt/panels/nm_keyframe_item.hpp"
 #include "NovelMind/editor/qt/performance_metrics.hpp"
 
 #include <QBrush>
-#include <cmath>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QElapsedTimer>
@@ -23,6 +22,7 @@
 #include <QSpinBox>
 #include <QToolBar>
 #include <QVBoxLayout>
+#include <cmath>
 
 namespace NovelMind::editor::qt {
 
@@ -173,14 +173,20 @@ Keyframe TimelineTrack::interpolate(int frame) const {
     QColor startColor = prevKf->value.value<QColor>();
     QColor endColor = nextKf->value.value<QColor>();
     result.value = QColor(
-        static_cast<int>(static_cast<double>(startColor.red()) +
-                         static_cast<double>(endColor.red() - startColor.red()) * easedT),
-        static_cast<int>(static_cast<double>(startColor.green()) +
-                         static_cast<double>(endColor.green() - startColor.green()) * easedT),
-        static_cast<int>(static_cast<double>(startColor.blue()) +
-                         static_cast<double>(endColor.blue() - startColor.blue()) * easedT),
-        static_cast<int>(static_cast<double>(startColor.alpha()) +
-                         static_cast<double>(endColor.alpha() - startColor.alpha()) * easedT));
+        static_cast<int>(
+            static_cast<double>(startColor.red()) +
+            static_cast<double>(endColor.red() - startColor.red()) * easedT),
+        static_cast<int>(
+            static_cast<double>(startColor.green()) +
+            static_cast<double>(endColor.green() - startColor.green()) *
+                easedT),
+        static_cast<int>(
+            static_cast<double>(startColor.blue()) +
+            static_cast<double>(endColor.blue() - startColor.blue()) * easedT),
+        static_cast<int>(
+            static_cast<double>(startColor.alpha()) +
+            static_cast<double>(endColor.alpha() - startColor.alpha()) *
+                easedT));
   } else {
     // For unsupported types, use step interpolation (use prev value)
     result.value = prevKf->value;
@@ -219,9 +225,9 @@ static float applyEasingFunction(float t, EasingType easing) {
   }
 
   case EasingType::EaseInOutCubic:
-    return t < 0.5f ? 4.0f * t * t * t
-                    : 1.0f + (t - 1.0f) * (2.0f * (t - 1.0f)) *
-                                 (2.0f * (t - 1.0f));
+    return t < 0.5f
+               ? 4.0f * t * t * t
+               : 1.0f + (t - 1.0f) * (2.0f * (t - 1.0f)) * (2.0f * (t - 1.0f));
 
   case EasingType::EaseInElastic: {
     if (t == 0.0f || t == 1.0f)
@@ -306,7 +312,7 @@ NMTimelinePanel::NMTimelinePanel(QWidget *parent)
 
   // Initialize render cache with proper config
   TimelineRenderCacheConfig cacheConfig;
-  cacheConfig.maxMemoryBytes = 32 * 1024 * 1024;  // 32 MB
+  cacheConfig.maxMemoryBytes = 32 * 1024 * 1024; // 32 MB
   cacheConfig.tileWidth = 256;
   cacheConfig.tileHeight = TRACK_HEIGHT;
   cacheConfig.enableCache = true;
@@ -572,7 +578,9 @@ void NMTimelinePanel::copySelectedKeyframes() {}
 
 void NMTimelinePanel::pasteKeyframes() {}
 
-void NMTimelinePanel::onPlayModeFrameChanged(int frame) { setCurrentFrame(frame); }
+void NMTimelinePanel::onPlayModeFrameChanged(int frame) {
+  setCurrentFrame(frame);
+}
 
 void NMTimelinePanel::setSnapToGrid(bool enabled) {
   if (m_snapToGrid == enabled) {
@@ -728,7 +736,7 @@ void NMTimelinePanel::renderTracks() {
 
       // Set coordinate conversion functions
       kfItem->setFrameConverter([this](int x) { return this->xToFrame(x); },
-                                 [this](int f) { return this->frameToX(f); });
+                                [this](int f) { return this->frameToX(f); });
 
       // Connect signals
       connect(kfItem, &NMKeyframeItem::clicked, this,
@@ -850,7 +858,8 @@ void NMTimelinePanel::onKeyframeMoved(int oldFrame, int newFrame,
     return;
 
   // Create and push move command
-  auto *cmd = new TimelineKeyframeMoveCommand(this, targetTrack->name, oldFrame, newFrame);
+  auto *cmd = new TimelineKeyframeMoveCommand(this, targetTrack->name, oldFrame,
+                                              newFrame);
   NMUndoManager::instance().pushCommand(cmd);
 
   // Update selection to new position
@@ -949,7 +958,7 @@ void NMTimelinePanel::showEasingDialog(int trackIndex, int frame) {
       }
 
       emit keyframeEasingChanged(targetTrack->name, frame,
-                                  static_cast<EasingType>(newEasing));
+                                 static_cast<EasingType>(newEasing));
     }
   }
 }
@@ -1036,7 +1045,7 @@ bool NMTimelinePanel::eventFilter(QObject *obj, QEvent *event) {
 // Track Access Methods
 // =============================================================================
 
-TimelineTrack* NMTimelinePanel::getTrack(const QString& name) const {
+TimelineTrack *NMTimelinePanel::getTrack(const QString &name) const {
   auto it = m_tracks.find(name);
   if (it != m_tracks.end()) {
     return it.value();

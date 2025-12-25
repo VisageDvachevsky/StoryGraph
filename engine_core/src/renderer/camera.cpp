@@ -458,11 +458,9 @@ void Camera2D::updateTarget(f64 deltaTime) {
   // Estimate velocity for lookahead
   if (deltaTime > 0.0) {
     m_targetVelocity.x =
-        (targetPos->x - m_targetLastPosition.x) /
-        static_cast<f32>(deltaTime);
+        (targetPos->x - m_targetLastPosition.x) / static_cast<f32>(deltaTime);
     m_targetVelocity.y =
-        (targetPos->y - m_targetLastPosition.y) /
-        static_cast<f32>(deltaTime);
+        (targetPos->y - m_targetLastPosition.y) / static_cast<f32>(deltaTime);
   }
 
   desired.x += m_targetVelocity.x * m_target.lookaheadX;

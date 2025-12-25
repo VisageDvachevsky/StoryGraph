@@ -86,7 +86,8 @@ std::string formatFileSize(i64 bytes) {
   if (unitIndex == 0) {
     oss << bytes << " " << units[unitIndex];
   } else {
-    oss << std::fixed << std::setprecision(2) << size << " " << units[unitIndex];
+    oss << std::fixed << std::setprecision(2) << size << " "
+        << units[unitIndex];
   }
   return oss.str();
 }
@@ -130,7 +131,8 @@ Result<void> copyDirectory(const std::string &source,
                            const std::string &destination) {
   try {
     fs::copy(source, destination,
-             fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+             fs::copy_options::recursive |
+                 fs::copy_options::overwrite_existing);
     return Result<void>::ok();
   } catch (const fs::filesystem_error &e) {
     return Result<void>::error(std::string("Failed to copy directory: ") +
@@ -204,7 +206,8 @@ Result<void> BuildSystem::startBuild(const BuildConfig &config) {
 
   // Initialize build steps
   m_progress.steps = {
-      {"Preflight", "Validating project structure", 0.05f, false, true, "", 0.0},
+      {"Preflight", "Validating project structure", 0.05f, false, true, "",
+       0.0},
       {"Compile", "Compiling scripts", 0.15f, false, true, "", 0.0},
       {"Index", "Building resource index", 0.10f, false, true, "", 0.0},
       {"Pack", "Creating resource packs", 0.35f, false, true, "", 0.0},
@@ -212,7 +215,8 @@ Result<void> BuildSystem::startBuild(const BuildConfig &config) {
       {"Verify", "Verifying build", 0.10f, false, true, "", 0.0}};
 
   // Start build thread
-  m_buildThread = std::make_unique<std::thread>([this]() { runBuildPipeline(); });
+  m_buildThread =
+      std::make_unique<std::thread>([this]() { runBuildPipeline(); });
 
   return Result<void>::ok();
 }
@@ -418,22 +422,25 @@ void BuildSystem::runBuildPipeline() {
 
   // Calculate elapsed time
   auto endTime = std::chrono::steady_clock::now();
-  f64 elapsedMs = std::chrono::duration<f64, std::milli>(endTime - startTime).count();
+  f64 elapsedMs =
+      std::chrono::duration<f64, std::milli>(endTime - startTime).count();
 
   // Prepare result
   m_lastResult = BuildResult{};
   m_lastResult.success = success && !m_cancelRequested;
   m_lastResult.outputPath = m_config.outputPath;
-  m_lastResult.errorMessage = m_cancelRequested ? "Build cancelled" : errorMessage;
+  m_lastResult.errorMessage =
+      m_cancelRequested ? "Build cancelled" : errorMessage;
   m_lastResult.buildTimeMs = elapsedMs;
   m_lastResult.scriptsCompiled = static_cast<i32>(m_scriptFiles.size());
   m_lastResult.assetsProcessed = static_cast<i32>(m_assetFiles.size());
   m_lastResult.warnings = std::vector<std::string>(m_progress.warnings.begin(),
-                                                    m_progress.warnings.end());
+                                                   m_progress.warnings.end());
 
   // Calculate output size
   if (success && fs::exists(m_config.outputPath)) {
-    m_lastResult.totalSize = BuildUtils::calculateDirectorySize(m_config.outputPath);
+    m_lastResult.totalSize =
+        BuildUtils::calculateDirectorySize(m_config.outputPath);
   }
 
   // Update progress
@@ -549,9 +556,10 @@ Result<void> BuildSystem::compileScripts() {
       return Result<void>::error("Build cancelled");
     }
 
-    f32 progress = static_cast<f32>(compiled) /
-                   static_cast<f32>(m_scriptFiles.size());
-    updateProgress(progress, "Compiling: " + fs::path(scriptPath).filename().string());
+    f32 progress =
+        static_cast<f32>(compiled) / static_cast<f32>(m_scriptFiles.size());
+    updateProgress(progress,
+                   "Compiling: " + fs::path(scriptPath).filename().string());
 
     auto result = compileScript(scriptPath);
     results.push_back(result);
@@ -585,13 +593,15 @@ Result<void> BuildSystem::compileScripts() {
   }
 
   // Generate compiled bytecode bundle
-  auto bundleResult = compileBytecode((compiledDir / "compiled_scripts.bin").string());
+  auto bundleResult =
+      compileBytecode((compiledDir / "compiled_scripts.bin").string());
   if (bundleResult.isError()) {
     endStep(false, bundleResult.error());
     return bundleResult;
   }
 
-  logMessage("Compiled " + std::to_string(compiled) + " scripts successfully", false);
+  logMessage("Compiled " + std::to_string(compiled) + " scripts successfully",
+             false);
   endStep(true);
   return Result<void>::ok();
 }
@@ -618,9 +628,10 @@ Result<void> BuildSystem::processAssets() {
       return Result<void>::error("Build cancelled");
     }
 
-    f32 progress = static_cast<f32>(processed) /
-                   static_cast<f32>(m_assetFiles.size());
-    updateProgress(progress, "Processing: " + fs::path(assetPath).filename().string());
+    f32 progress =
+        static_cast<f32>(processed) / static_cast<f32>(m_assetFiles.size());
+    updateProgress(progress,
+                   "Processing: " + fs::path(assetPath).filename().string());
 
     // Determine asset type and process accordingly
     std::string ext = fs::path(assetPath).extension().string();
@@ -646,8 +657,8 @@ Result<void> BuildSystem::processAssets() {
     }
 
     if (!result.success) {
-      m_progress.warnings.push_back("Asset processing warning: " +
-                                    assetPath + " - " + result.errorMessage);
+      m_progress.warnings.push_back("Asset processing warning: " + assetPath +
+                                    " - " + result.errorMessage);
     }
 
     // Map original path to VFS path
@@ -727,10 +738,9 @@ Result<void> BuildSystem::packResources() {
     }
   }
 
-  auto baseResult =
-      buildPack((packsDir / "Base.nmres").string(), baseFiles,
-                m_config.encryptAssets,
-                m_config.compression != CompressionLevel::None);
+  auto baseResult = buildPack((packsDir / "Base.nmres").string(), baseFiles,
+                              m_config.encryptAssets,
+                              m_config.compression != CompressionLevel::None);
   if (baseResult.isError()) {
     endStep(false, baseResult.error());
     return baseResult;
@@ -744,8 +754,9 @@ Result<void> BuildSystem::packResources() {
       return Result<void>::error("Build cancelled");
     }
 
-    f32 progress = 0.3f + 0.6f * static_cast<f32>(langPacksBuilt) /
-                              static_cast<f32>(m_config.includedLanguages.size());
+    f32 progress =
+        0.3f + 0.6f * static_cast<f32>(langPacksBuilt) /
+                   static_cast<f32>(m_config.includedLanguages.size());
     updateProgress(progress, "Building language pack: " + lang);
 
     std::vector<std::string> langFiles;
@@ -763,10 +774,9 @@ Result<void> BuildSystem::packResources() {
 
     if (!langFiles.empty()) {
       std::string packName = "Lang_" + lang + ".nmres";
-      auto langResult =
-          buildPack((packsDir / packName).string(), langFiles,
-                    m_config.encryptAssets,
-                    m_config.compression != CompressionLevel::None);
+      auto langResult = buildPack(
+          (packsDir / packName).string(), langFiles, m_config.encryptAssets,
+          m_config.compression != CompressionLevel::None);
       if (langResult.isError()) {
         m_progress.warnings.push_back("Failed to create language pack for " +
                                       lang + ": " + langResult.error());
@@ -791,7 +801,8 @@ Result<void> BuildSystem::packResources() {
     indexFile << "      \"filename\": \"Base.nmres\",\n";
     indexFile << "      \"type\": \"Base\",\n";
     indexFile << "      \"priority\": 0,\n";
-    indexFile << "      \"encrypted\": " << (m_config.encryptAssets ? "true" : "false") << "\n";
+    indexFile << "      \"encrypted\": "
+              << (m_config.encryptAssets ? "true" : "false") << "\n";
     indexFile << "    }";
 
     for (const auto &lang : m_config.includedLanguages) {
@@ -804,13 +815,15 @@ Result<void> BuildSystem::packResources() {
         indexFile << "      \"type\": \"Language\",\n";
         indexFile << "      \"priority\": 3,\n";
         indexFile << "      \"locale\": \"" << lang << "\",\n";
-        indexFile << "      \"encrypted\": " << (m_config.encryptAssets ? "true" : "false") << "\n";
+        indexFile << "      \"encrypted\": "
+                  << (m_config.encryptAssets ? "true" : "false") << "\n";
         indexFile << "    }";
       }
     }
 
     indexFile << "\n  ],\n";
-    indexFile << "  \"default_locale\": \"" << m_config.defaultLanguage << "\"\n";
+    indexFile << "  \"default_locale\": \"" << m_config.defaultLanguage
+              << "\"\n";
     indexFile << "}\n";
     indexFile.close();
   }
@@ -874,7 +887,8 @@ Result<void> BuildSystem::generateExecutable() {
     configFile << "    \"version\": \"" << m_config.version << "\"\n";
     configFile << "  },\n";
     configFile << "  \"localization\": {\n";
-    configFile << "    \"default_locale\": \"" << m_config.defaultLanguage << "\",\n";
+    configFile << "    \"default_locale\": \"" << m_config.defaultLanguage
+               << "\",\n";
     configFile << "    \"available_locales\": [";
 
     bool first = true;
@@ -889,11 +903,14 @@ Result<void> BuildSystem::generateExecutable() {
     configFile << "  \"packs\": {\n";
     configFile << "    \"directory\": \"packs\",\n";
     configFile << "    \"index_file\": \"packs_index.json\",\n";
-    configFile << "    \"encrypted\": " << (m_config.encryptAssets ? "true" : "false") << "\n";
+    configFile << "    \"encrypted\": "
+               << (m_config.encryptAssets ? "true" : "false") << "\n";
     configFile << "  },\n";
     configFile << "  \"runtime\": {\n";
-    configFile << "    \"enable_logging\": " << (m_config.enableLogging ? "true" : "false") << ",\n";
-    configFile << "    \"enable_debug_console\": " << (m_config.includeDebugConsole ? "true" : "false") << "\n";
+    configFile << "    \"enable_logging\": "
+               << (m_config.enableLogging ? "true" : "false") << ",\n";
+    configFile << "    \"enable_debug_console\": "
+               << (m_config.includeDebugConsole ? "true" : "false") << "\n";
     configFile << "  }\n";
     configFile << "}\n";
     configFile.close();
@@ -1008,10 +1025,13 @@ void BuildSystem::updateProgress(f32 stepProgress, const std::string &task) {
     // Calculate overall progress
     f32 completedWeight = 0.0f;
     for (i32 i = 0; i < m_progress.currentStepIndex; i++) {
-      completedWeight += m_progress.steps[static_cast<std::size_t>(i)].progressWeight;
+      completedWeight +=
+          m_progress.steps[static_cast<std::size_t>(i)].progressWeight;
     }
 
-    f32 currentWeight = m_progress.steps[static_cast<std::size_t>(m_progress.currentStepIndex)].progressWeight;
+    f32 currentWeight =
+        m_progress.steps[static_cast<std::size_t>(m_progress.currentStepIndex)]
+            .progressWeight;
     m_progress.progress = completedWeight + (currentWeight * stepProgress);
   }
 
@@ -1053,7 +1073,8 @@ void BuildSystem::beginStep(const std::string &name,
 void BuildSystem::endStep(bool success, const std::string &errorMessage) {
   if (m_progress.currentStepIndex >= 0 &&
       m_progress.currentStepIndex < static_cast<i32>(m_progress.steps.size())) {
-    auto &step = m_progress.steps[static_cast<std::size_t>(m_progress.currentStepIndex)];
+    auto &step =
+        m_progress.steps[static_cast<std::size_t>(m_progress.currentStepIndex)];
     step.completed = true;
     step.success = success;
     step.errorMessage = errorMessage;
@@ -1140,7 +1161,8 @@ Result<void> BuildSystem::compileBytecode(const std::string &outputPath) {
     output.write(reinterpret_cast<const char *>(&version), sizeof(version));
 
     u32 scriptCount = static_cast<u32>(m_scriptFiles.size());
-    output.write(reinterpret_cast<const char *>(&scriptCount), sizeof(scriptCount));
+    output.write(reinterpret_cast<const char *>(&scriptCount),
+                 sizeof(scriptCount));
 
     // Write placeholder bytecode for each script
     for (const auto &scriptPath : m_scriptFiles) {
@@ -1153,7 +1175,8 @@ Result<void> BuildSystem::compileBytecode(const std::string &outputPath) {
 
         u32 size = static_cast<u32>(source.size());
         output.write(reinterpret_cast<const char *>(&size), sizeof(size));
-        output.write(source.data(), static_cast<std::streamsize>(source.size()));
+        output.write(source.data(),
+                     static_cast<std::streamsize>(source.size()));
       }
     }
 
@@ -1269,8 +1292,10 @@ Result<void> BuildSystem::buildPack(const std::string &outputPath,
 
     u16 versionMajor = 1;
     u16 versionMinor = 0;
-    output.write(reinterpret_cast<const char *>(&versionMajor), sizeof(versionMajor));
-    output.write(reinterpret_cast<const char *>(&versionMinor), sizeof(versionMinor));
+    output.write(reinterpret_cast<const char *>(&versionMajor),
+                 sizeof(versionMajor));
+    output.write(reinterpret_cast<const char *>(&versionMinor),
+                 sizeof(versionMinor));
 
     u32 flags = 0;
     if (encrypt)
@@ -1280,20 +1305,25 @@ Result<void> BuildSystem::buildPack(const std::string &outputPath,
     output.write(reinterpret_cast<const char *>(&flags), sizeof(flags));
 
     u32 resourceCount = static_cast<u32>(files.size());
-    output.write(reinterpret_cast<const char *>(&resourceCount), sizeof(resourceCount));
+    output.write(reinterpret_cast<const char *>(&resourceCount),
+                 sizeof(resourceCount));
 
     // Reserve space for table offsets (will be filled later)
     u64 resourceTableOffset = 0;
     u64 stringTableOffset = 0;
     u64 dataOffset = 0;
     auto headerPos = output.tellp();
-    output.write(reinterpret_cast<const char *>(&resourceTableOffset), sizeof(resourceTableOffset));
-    output.write(reinterpret_cast<const char *>(&stringTableOffset), sizeof(stringTableOffset));
-    output.write(reinterpret_cast<const char *>(&dataOffset), sizeof(dataOffset));
+    output.write(reinterpret_cast<const char *>(&resourceTableOffset),
+                 sizeof(resourceTableOffset));
+    output.write(reinterpret_cast<const char *>(&stringTableOffset),
+                 sizeof(stringTableOffset));
+    output.write(reinterpret_cast<const char *>(&dataOffset),
+                 sizeof(dataOffset));
 
     // Pad header to 64 bytes
     u64 totalFileSize = 0;
-    output.write(reinterpret_cast<const char *>(&totalFileSize), sizeof(totalFileSize));
+    output.write(reinterpret_cast<const char *>(&totalFileSize),
+                 sizeof(totalFileSize));
     char padding[16] = {0};
     output.write(padding, 16);
 
@@ -1310,7 +1340,8 @@ Result<void> BuildSystem::buildPack(const std::string &outputPath,
       std::string resourceId = p.filename().string();
       resourceIds.push_back(resourceId);
       stringOffsets.push_back(currentStringOffset);
-      currentStringOffset += static_cast<u32>(resourceId.size()) + 1; // +1 for null terminator
+      currentStringOffset +=
+          static_cast<u32>(resourceId.size()) + 1; // +1 for null terminator
     }
 
     // Write resource table entries (48 bytes each)
@@ -1319,23 +1350,29 @@ Result<void> BuildSystem::buildPack(const std::string &outputPath,
 
     for (size_t i = 0; i < files.size(); i++) {
       u32 stringIdOffset = stringOffsets[i];
-      output.write(reinterpret_cast<const char *>(&stringIdOffset), sizeof(stringIdOffset));
+      output.write(reinterpret_cast<const char *>(&stringIdOffset),
+                   sizeof(stringIdOffset));
 
       u32 resourceType = 0x08; // Data type
-      output.write(reinterpret_cast<const char *>(&resourceType), sizeof(resourceType));
+      output.write(reinterpret_cast<const char *>(&resourceType),
+                   sizeof(resourceType));
 
       u64 dataOffsetEntry = currentDataOffset;
-      output.write(reinterpret_cast<const char *>(&dataOffsetEntry), sizeof(dataOffsetEntry));
+      output.write(reinterpret_cast<const char *>(&dataOffsetEntry),
+                   sizeof(dataOffsetEntry));
 
       u64 fileSize = fs::file_size(files[i]);
       u64 compressedSize = fileSize; // No actual compression for now
       u64 uncompressedSize = fileSize;
 
-      output.write(reinterpret_cast<const char *>(&compressedSize), sizeof(compressedSize));
-      output.write(reinterpret_cast<const char *>(&uncompressedSize), sizeof(uncompressedSize));
+      output.write(reinterpret_cast<const char *>(&compressedSize),
+                   sizeof(compressedSize));
+      output.write(reinterpret_cast<const char *>(&uncompressedSize),
+                   sizeof(uncompressedSize));
 
       u32 resourceFlags = 0;
-      output.write(reinterpret_cast<const char *>(&resourceFlags), sizeof(resourceFlags));
+      output.write(reinterpret_cast<const char *>(&resourceFlags),
+                   sizeof(resourceFlags));
 
       u32 crc32 = 0; // Placeholder
       output.write(reinterpret_cast<const char *>(&crc32), sizeof(crc32));
@@ -1351,14 +1388,16 @@ Result<void> BuildSystem::buildPack(const std::string &outputPath,
     stringTableOffset = static_cast<u64>(output.tellp());
 
     u32 stringCount = static_cast<u32>(resourceIds.size());
-    output.write(reinterpret_cast<const char *>(&stringCount), sizeof(stringCount));
+    output.write(reinterpret_cast<const char *>(&stringCount),
+                 sizeof(stringCount));
 
     for (u32 offset : stringOffsets) {
       output.write(reinterpret_cast<const char *>(&offset), sizeof(offset));
     }
 
     for (const auto &id : resourceIds) {
-      output.write(id.c_str(), static_cast<std::streamsize>(id.size() + 1)); // Include null terminator
+      output.write(id.c_str(), static_cast<std::streamsize>(
+                                   id.size() + 1)); // Include null terminator
     }
 
     // Write resource data
@@ -1379,12 +1418,13 @@ Result<void> BuildSystem::buildPack(const std::string &outputPath,
     u32 tableCrc = 0; // Placeholder
     output.write(reinterpret_cast<const char *>(&tableCrc), sizeof(tableCrc));
 
-    u64 timestamp =
-        static_cast<u64>(std::chrono::system_clock::now().time_since_epoch().count());
+    u64 timestamp = static_cast<u64>(
+        std::chrono::system_clock::now().time_since_epoch().count());
     output.write(reinterpret_cast<const char *>(&timestamp), sizeof(timestamp));
 
     u32 buildNumber = 1;
-    output.write(reinterpret_cast<const char *>(&buildNumber), sizeof(buildNumber));
+    output.write(reinterpret_cast<const char *>(&buildNumber),
+                 sizeof(buildNumber));
 
     char footerPadding[12] = {0};
     output.write(footerPadding, 12);
@@ -1392,24 +1432,31 @@ Result<void> BuildSystem::buildPack(const std::string &outputPath,
     // Update header with correct offsets
     totalFileSize = static_cast<u64>(output.tellp());
     output.seekp(headerPos);
-    output.write(reinterpret_cast<const char *>(&resourceTableOffset), sizeof(resourceTableOffset));
-    output.write(reinterpret_cast<const char *>(&stringTableOffset), sizeof(stringTableOffset));
-    output.write(reinterpret_cast<const char *>(&dataOffset), sizeof(dataOffset));
-    output.write(reinterpret_cast<const char *>(&totalFileSize), sizeof(totalFileSize));
+    output.write(reinterpret_cast<const char *>(&resourceTableOffset),
+                 sizeof(resourceTableOffset));
+    output.write(reinterpret_cast<const char *>(&stringTableOffset),
+                 sizeof(stringTableOffset));
+    output.write(reinterpret_cast<const char *>(&dataOffset),
+                 sizeof(dataOffset));
+    output.write(reinterpret_cast<const char *>(&totalFileSize),
+                 sizeof(totalFileSize));
 
     output.close();
     return Result<void>::ok();
 
   } catch (const std::exception &e) {
-    return Result<void>::error(std::string("Pack creation failed: ") + e.what());
+    return Result<void>::error(std::string("Pack creation failed: ") +
+                               e.what());
   }
 }
 
-Result<void> BuildSystem::buildWindowsExecutable(const std::string &outputPath) {
+Result<void>
+BuildSystem::buildWindowsExecutable(const std::string &outputPath) {
   // Create a launcher script/placeholder for Windows
   fs::path exePath =
       fs::path(outputPath) /
-      (m_config.executableName + BuildUtils::getExecutableExtension(BuildPlatform::Windows));
+      (m_config.executableName +
+       BuildUtils::getExecutableExtension(BuildPlatform::Windows));
 
   // In a real implementation, this would copy the runtime executable
   // For now, create a placeholder batch file
@@ -1434,13 +1481,13 @@ Result<void> BuildSystem::buildWindowsExecutable(const std::string &outputPath) 
 Result<void> BuildSystem::buildLinuxExecutable(const std::string &outputPath) {
   // Create a launcher script/placeholder for Linux
   fs::path scriptPath =
-      fs::path(outputPath) /
-      (m_config.executableName + "_launcher.sh");
+      fs::path(outputPath) / (m_config.executableName + "_launcher.sh");
 
   std::ofstream script(scriptPath);
   if (script.is_open()) {
     script << "#!/bin/bash\n";
-    script << "echo \"NovelMind Runtime - " << m_config.executableName << "\"\n";
+    script << "echo \"NovelMind Runtime - " << m_config.executableName
+           << "\"\n";
     script << "echo \"Version: " << m_config.version << "\"\n";
     script << "echo \"\"\n";
     script << "echo \"This is a placeholder launcher.\"\n";
@@ -1448,8 +1495,9 @@ Result<void> BuildSystem::buildLinuxExecutable(const std::string &outputPath) {
     script.close();
 
     // Make executable
-    fs::permissions(scriptPath, fs::perms::owner_exec | fs::perms::group_exec |
-                                    fs::perms::others_exec,
+    fs::permissions(scriptPath,
+                    fs::perms::owner_exec | fs::perms::group_exec |
+                        fs::perms::others_exec,
                     fs::perm_options::add);
   }
 
@@ -1479,7 +1527,8 @@ Result<void> BuildSystem::buildMacOSBundle(const std::string &outputPath) {
     plist << "  <key>CFBundleExecutable</key>\n";
     plist << "  <string>" << m_config.executableName << "</string>\n";
     plist << "  <key>CFBundleIdentifier</key>\n";
-    plist << "  <string>com.novelmind." << m_config.executableName << "</string>\n";
+    plist << "  <string>com.novelmind." << m_config.executableName
+          << "</string>\n";
     plist << "  <key>CFBundleName</key>\n";
     plist << "  <string>" << m_config.executableName << "</string>\n";
     plist << "  <key>CFBundleShortVersionString</key>\n";
@@ -1502,8 +1551,9 @@ Result<void> BuildSystem::buildMacOSBundle(const std::string &outputPath) {
     exe << "echo \"Version: " << m_config.version << "\"\n";
     exe.close();
 
-    fs::permissions(exePath, fs::perms::owner_exec | fs::perms::group_exec |
-                                 fs::perms::others_exec,
+    fs::permissions(exePath,
+                    fs::perms::owner_exec | fs::perms::group_exec |
+                        fs::perms::others_exec,
                     fs::perm_options::add);
   }
 
@@ -1513,12 +1563,14 @@ Result<void> BuildSystem::buildMacOSBundle(const std::string &outputPath) {
 
   if (fs::exists(stagingPacks)) {
     fs::copy(stagingPacks, resourcesPath / "packs",
-             fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+             fs::copy_options::recursive |
+                 fs::copy_options::overwrite_existing);
   }
 
   if (fs::exists(stagingConfig)) {
     fs::copy(stagingConfig, resourcesPath / "config",
-             fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+             fs::copy_options::recursive |
+                 fs::copy_options::overwrite_existing);
   }
 
   return Result<void>::ok();
@@ -1610,7 +1662,8 @@ AssetProcessor::generateTextureAtlas(const std::vector<std::string> &images,
   (void)images;
   (void)outputPath;
   (void)maxSize;
-  return Result<std::string>::error("Texture atlas generation not yet implemented");
+  return Result<std::string>::error(
+      "Texture atlas generation not yet implemented");
 }
 
 std::string AssetProcessor::getAssetType(const std::string &path) {
@@ -1757,7 +1810,8 @@ Result<void> PackBuilder::finalizePack() {
     output.write(magic, 4);
 
     u32 entryCount = static_cast<u32>(m_entries.size());
-    output.write(reinterpret_cast<const char *>(&entryCount), sizeof(entryCount));
+    output.write(reinterpret_cast<const char *>(&entryCount),
+                 sizeof(entryCount));
 
     // Write entries
     for (const auto &entry : m_entries) {
@@ -1787,14 +1841,16 @@ Result<void> PackBuilder::finalizePack() {
 
       u64 dataSize = processedData.size();
       output.write(reinterpret_cast<const char *>(&dataSize), sizeof(dataSize));
-      output.write(reinterpret_cast<const char *>(processedData.data()), static_cast<std::streamsize>(dataSize));
+      output.write(reinterpret_cast<const char *>(processedData.data()),
+                   static_cast<std::streamsize>(dataSize));
     }
 
     output.close();
     return Result<void>::ok();
 
   } catch (const std::exception &e) {
-    return Result<void>::error(std::string("Pack finalization failed: ") + e.what());
+    return Result<void>::error(std::string("Pack finalization failed: ") +
+                               e.what());
   }
 }
 
@@ -1818,9 +1874,8 @@ PackBuilder::PackStats PackBuilder::getStats() const {
   }
 
   if (stats.uncompressedSize > 0) {
-    stats.compressionRatio =
-        static_cast<f32>(stats.compressedSize) /
-        static_cast<f32>(stats.uncompressedSize);
+    stats.compressionRatio = static_cast<f32>(stats.compressedSize) /
+                             static_cast<f32>(stats.uncompressedSize);
   } else {
     stats.compressionRatio = 1.0f;
   }

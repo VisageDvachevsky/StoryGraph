@@ -16,9 +16,9 @@
 #include "NovelMind/renderer/color.hpp"
 #include "NovelMind/renderer/renderer.hpp"
 #include "NovelMind/renderer/transform.hpp"
+#include "NovelMind/resource/resource_manager.hpp"
 #include "NovelMind/scene/animation.hpp"
 #include "NovelMind/scene/scene_manager.hpp" // For LayerType enum
-#include "NovelMind/resource/resource_manager.hpp"
 #include <functional>
 #include <memory>
 #include <optional>
@@ -552,7 +552,8 @@ public:
   }
 
   void setLocalizationManager(localization::LocalizationManager *localization);
-  [[nodiscard]] localization::LocalizationManager *getLocalizationManager() const {
+  [[nodiscard]] localization::LocalizationManager *
+  getLocalizationManager() const {
     return m_localization;
   }
 

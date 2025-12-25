@@ -776,9 +776,12 @@ VoiceManager::exportCSV(const std::string &path,
   file << "LineID,Scene,Character,Text,VoiceFile,Status\n";
 
   for (const auto *line : lines) {
-    file << "\"" << line->id << "\"," << "\"" << line->sceneId << "\"," << "\""
-         << line->characterId << "\"," << "\"" << line->text << "\"," << "\""
-         << line->voiceFile << "\"," << static_cast<int>(line->status) << "\n";
+    file << "\"" << line->id << "\","
+         << "\"" << line->sceneId << "\","
+         << "\"" << line->characterId << "\","
+         << "\"" << line->text << "\","
+         << "\"" << line->voiceFile << "\"," << static_cast<int>(line->status)
+         << "\n";
   }
 
   return {};
