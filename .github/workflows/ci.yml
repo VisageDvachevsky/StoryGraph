@@ -68,7 +68,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake ninja-build libsdl2-dev qt6-base-dev qt6-svg-dev qt6-multimedia-dev xvfb
+        sudo apt-get install -y cmake ninja-build libsdl2-dev qt6-base-dev qt6-svg-dev qt6-multimedia-dev xvfb pulseaudio
 
     - name: Configure CMake
       env:
@@ -87,6 +87,8 @@ jobs:
       env:
         QT_QPA_PLATFORM: offscreen
       run: |
+        # Start PulseAudio for Qt Multimedia audio tests
+        pulseaudio --start --exit-idle-time=-1 || true
         cd build
         xvfb-run --auto-servernum ctest --output-on-failure
 
