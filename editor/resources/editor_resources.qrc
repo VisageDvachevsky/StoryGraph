@@ -34,8 +34,10 @@
         <file>icons/lucide/diamond.svg</file>
         <file>icons/lucide/download.svg</file>
         <file>icons/lucide/external-link.svg</file>
+        <file>icons/lucide/fast-forward.svg</file>
         <file>icons/lucide/eye-off.svg</file>
         <file>icons/lucide/eye.svg</file>
+        <file>icons/lucide/file-audio.svg</file>
         <file>icons/lucide/file-code.svg</file>
         <file>icons/lucide/file-plus.svg</file>
         <file>icons/lucide/file.svg</file>
@@ -75,6 +77,7 @@
         <file>icons/lucide/music.svg</file>
         <file>icons/lucide/palette.svg</file>
         <file>icons/lucide/pause.svg</file>
+        <file>icons/lucide/pencil.svg</file>
         <file>icons/lucide/pin-off.svg</file>
         <file>icons/lucide/pin.svg</file>
         <file>icons/lucide/play.svg</file>
@@ -85,6 +88,7 @@
         <file>icons/lucide/rotate-ccw.svg</file>
         <file>icons/lucide/rotate-cw.svg</file>
         <file>icons/lucide/save.svg</file>
+        <file>icons/lucide/scan.svg</file>
         <file>icons/lucide/scissors.svg</file>
         <file>icons/lucide/search.svg</file>
         <file>icons/lucide/settings.svg</file>
