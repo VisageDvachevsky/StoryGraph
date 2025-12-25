@@ -186,6 +186,9 @@ void NMStoryGraphPanel::rebuildFromProjectScripts() {
             : sceneId;
     auto *node = m_scene->addNode(title, type, pos, 0, sceneId);
     if (node) {
+      // Always set sceneId from the parameter to ensure it's never empty
+      node->setSceneId(sceneId);
+
       if (sceneToFile.contains(sceneId)) {
         node->setScriptPath(sceneToFile.value(sceneId));
       } else if (layoutIt != m_layoutNodes.constEnd() &&
@@ -196,8 +199,10 @@ void NMStoryGraphPanel::rebuildFromProjectScripts() {
         node->setDialogueSpeaker(layoutIt->speaker);
         node->setDialogueText(layoutIt->dialogueText);
         node->setChoiceOptions(layoutIt->choices);
-        // Scene Node specific properties
-        node->setSceneId(layoutIt->sceneId);
+        // Scene Node specific properties - override with layout data if available
+        if (!layoutIt->sceneId.isEmpty()) {
+          node->setSceneId(layoutIt->sceneId);
+        }
         node->setHasEmbeddedDialogue(layoutIt->hasEmbeddedDialogue);
         node->setDialogueCount(layoutIt->dialogueCount);
         node->setThumbnailPath(layoutIt->thumbnailPath);
