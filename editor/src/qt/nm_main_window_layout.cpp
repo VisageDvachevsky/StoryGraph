@@ -11,6 +11,7 @@
 #include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_localization_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_play_toolbar_panel.hpp"
+#include "NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_scene_palette_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_script_doc_panel.hpp"
@@ -124,14 +125,28 @@ QStringList NMMainWindow::availableWorkspacePresets() const {
 }
 
 void NMMainWindow::focusNextDock(bool reverse) {
-  QList<QDockWidget *> docks = {
-      m_sceneViewPanel,     m_storyGraphPanel,   m_sceneDialogueGraphPanel,
-      m_inspectorPanel,     m_consolePanel,      m_assetBrowserPanel,
-      m_hierarchyPanel,     m_scenePalettePanel, m_scriptEditorPanel,
-      m_scriptDocPanel,     m_playToolbarPanel,  m_debugOverlayPanel,
-      m_voiceManagerPanel,  m_voiceStudioPanel,  m_audioMixerPanel,
-      m_localizationPanel,  m_timelinePanel,     m_curveEditorPanel,
-      m_buildSettingsPanel, m_issuesPanel,       m_diagnosticsPanel};
+  QList<QDockWidget *> docks;
+  docks.append(static_cast<QDockWidget *>(m_sceneViewPanel));
+  docks.append(static_cast<QDockWidget *>(m_storyGraphPanel));
+  docks.append(static_cast<QDockWidget *>(m_sceneDialogueGraphPanel));
+  docks.append(static_cast<QDockWidget *>(m_inspectorPanel));
+  docks.append(static_cast<QDockWidget *>(m_consolePanel));
+  docks.append(static_cast<QDockWidget *>(m_assetBrowserPanel));
+  docks.append(static_cast<QDockWidget *>(m_hierarchyPanel));
+  docks.append(static_cast<QDockWidget *>(m_scenePalettePanel));
+  docks.append(static_cast<QDockWidget *>(m_scriptEditorPanel));
+  docks.append(static_cast<QDockWidget *>(m_scriptDocPanel));
+  docks.append(static_cast<QDockWidget *>(m_playToolbarPanel));
+  docks.append(static_cast<QDockWidget *>(m_debugOverlayPanel));
+  docks.append(static_cast<QDockWidget *>(m_voiceManagerPanel));
+  docks.append(static_cast<QDockWidget *>(m_voiceStudioPanel));
+  docks.append(static_cast<QDockWidget *>(m_audioMixerPanel));
+  docks.append(static_cast<QDockWidget *>(m_localizationPanel));
+  docks.append(static_cast<QDockWidget *>(m_timelinePanel));
+  docks.append(static_cast<QDockWidget *>(m_curveEditorPanel));
+  docks.append(static_cast<QDockWidget *>(m_buildSettingsPanel));
+  docks.append(static_cast<QDockWidget *>(m_issuesPanel));
+  docks.append(static_cast<QDockWidget *>(m_diagnosticsPanel));
 
   QList<QDockWidget *> visible;
   for (auto *dock : docks) {
@@ -184,14 +199,28 @@ bool NMMainWindow::eventFilter(QObject *watched, QEvent *event) {
 }
 
 void NMMainWindow::applyLayoutPreset(LayoutPreset preset) {
-  QList<QDockWidget *> docks = {
-      m_sceneViewPanel,     m_storyGraphPanel,   m_sceneDialogueGraphPanel,
-      m_inspectorPanel,     m_consolePanel,      m_assetBrowserPanel,
-      m_hierarchyPanel,     m_scenePalettePanel, m_scriptEditorPanel,
-      m_scriptDocPanel,     m_playToolbarPanel,  m_debugOverlayPanel,
-      m_voiceManagerPanel,  m_voiceStudioPanel,  m_audioMixerPanel,
-      m_localizationPanel,  m_timelinePanel,     m_curveEditorPanel,
-      m_buildSettingsPanel, m_issuesPanel,       m_diagnosticsPanel};
+  QList<QDockWidget *> docks;
+  docks.append(static_cast<QDockWidget *>(m_sceneViewPanel));
+  docks.append(static_cast<QDockWidget *>(m_storyGraphPanel));
+  docks.append(static_cast<QDockWidget *>(m_sceneDialogueGraphPanel));
+  docks.append(static_cast<QDockWidget *>(m_inspectorPanel));
+  docks.append(static_cast<QDockWidget *>(m_consolePanel));
+  docks.append(static_cast<QDockWidget *>(m_assetBrowserPanel));
+  docks.append(static_cast<QDockWidget *>(m_hierarchyPanel));
+  docks.append(static_cast<QDockWidget *>(m_scenePalettePanel));
+  docks.append(static_cast<QDockWidget *>(m_scriptEditorPanel));
+  docks.append(static_cast<QDockWidget *>(m_scriptDocPanel));
+  docks.append(static_cast<QDockWidget *>(m_playToolbarPanel));
+  docks.append(static_cast<QDockWidget *>(m_debugOverlayPanel));
+  docks.append(static_cast<QDockWidget *>(m_voiceManagerPanel));
+  docks.append(static_cast<QDockWidget *>(m_voiceStudioPanel));
+  docks.append(static_cast<QDockWidget *>(m_audioMixerPanel));
+  docks.append(static_cast<QDockWidget *>(m_localizationPanel));
+  docks.append(static_cast<QDockWidget *>(m_timelinePanel));
+  docks.append(static_cast<QDockWidget *>(m_curveEditorPanel));
+  docks.append(static_cast<QDockWidget *>(m_buildSettingsPanel));
+  docks.append(static_cast<QDockWidget *>(m_issuesPanel));
+  docks.append(static_cast<QDockWidget *>(m_diagnosticsPanel));
 
   for (auto *dock : docks) {
     if (!dock) {
@@ -1006,14 +1035,28 @@ void NMMainWindow::toggleFocusMode(bool enabled) {
 }
 
 void NMMainWindow::applyFocusModeLayout() {
-  QList<QDockWidget *> docks = {
-      m_sceneViewPanel,     m_storyGraphPanel,   m_sceneDialogueGraphPanel,
-      m_inspectorPanel,     m_consolePanel,      m_assetBrowserPanel,
-      m_hierarchyPanel,     m_scenePalettePanel, m_scriptEditorPanel,
-      m_scriptDocPanel,     m_playToolbarPanel,  m_debugOverlayPanel,
-      m_voiceManagerPanel,  m_voiceStudioPanel,  m_audioMixerPanel,
-      m_localizationPanel,  m_timelinePanel,     m_curveEditorPanel,
-      m_buildSettingsPanel, m_issuesPanel,       m_diagnosticsPanel};
+  QList<QDockWidget *> docks;
+  docks.append(static_cast<QDockWidget *>(m_sceneViewPanel));
+  docks.append(static_cast<QDockWidget *>(m_storyGraphPanel));
+  docks.append(static_cast<QDockWidget *>(m_sceneDialogueGraphPanel));
+  docks.append(static_cast<QDockWidget *>(m_inspectorPanel));
+  docks.append(static_cast<QDockWidget *>(m_consolePanel));
+  docks.append(static_cast<QDockWidget *>(m_assetBrowserPanel));
+  docks.append(static_cast<QDockWidget *>(m_hierarchyPanel));
+  docks.append(static_cast<QDockWidget *>(m_scenePalettePanel));
+  docks.append(static_cast<QDockWidget *>(m_scriptEditorPanel));
+  docks.append(static_cast<QDockWidget *>(m_scriptDocPanel));
+  docks.append(static_cast<QDockWidget *>(m_playToolbarPanel));
+  docks.append(static_cast<QDockWidget *>(m_debugOverlayPanel));
+  docks.append(static_cast<QDockWidget *>(m_voiceManagerPanel));
+  docks.append(static_cast<QDockWidget *>(m_voiceStudioPanel));
+  docks.append(static_cast<QDockWidget *>(m_audioMixerPanel));
+  docks.append(static_cast<QDockWidget *>(m_localizationPanel));
+  docks.append(static_cast<QDockWidget *>(m_timelinePanel));
+  docks.append(static_cast<QDockWidget *>(m_curveEditorPanel));
+  docks.append(static_cast<QDockWidget *>(m_buildSettingsPanel));
+  docks.append(static_cast<QDockWidget *>(m_issuesPanel));
+  docks.append(static_cast<QDockWidget *>(m_diagnosticsPanel));
 
   for (auto *dock : docks) {
     if (!dock) {
@@ -1059,14 +1102,28 @@ void NMMainWindow::applyFocusModeLayout() {
 void NMMainWindow::applyDockLockState(bool locked) {
   m_layoutLocked = locked;
 
-  QList<QDockWidget *> docks = {
-      m_sceneViewPanel,     m_storyGraphPanel,   m_sceneDialogueGraphPanel,
-      m_inspectorPanel,     m_consolePanel,      m_assetBrowserPanel,
-      m_hierarchyPanel,     m_scenePalettePanel, m_scriptEditorPanel,
-      m_scriptDocPanel,     m_playToolbarPanel,  m_debugOverlayPanel,
-      m_voiceManagerPanel,  m_voiceStudioPanel,  m_audioMixerPanel,
-      m_localizationPanel,  m_timelinePanel,     m_curveEditorPanel,
-      m_buildSettingsPanel, m_issuesPanel,       m_diagnosticsPanel};
+  QList<QDockWidget *> docks;
+  docks.append(static_cast<QDockWidget *>(m_sceneViewPanel));
+  docks.append(static_cast<QDockWidget *>(m_storyGraphPanel));
+  docks.append(static_cast<QDockWidget *>(m_sceneDialogueGraphPanel));
+  docks.append(static_cast<QDockWidget *>(m_inspectorPanel));
+  docks.append(static_cast<QDockWidget *>(m_consolePanel));
+  docks.append(static_cast<QDockWidget *>(m_assetBrowserPanel));
+  docks.append(static_cast<QDockWidget *>(m_hierarchyPanel));
+  docks.append(static_cast<QDockWidget *>(m_scenePalettePanel));
+  docks.append(static_cast<QDockWidget *>(m_scriptEditorPanel));
+  docks.append(static_cast<QDockWidget *>(m_scriptDocPanel));
+  docks.append(static_cast<QDockWidget *>(m_playToolbarPanel));
+  docks.append(static_cast<QDockWidget *>(m_debugOverlayPanel));
+  docks.append(static_cast<QDockWidget *>(m_voiceManagerPanel));
+  docks.append(static_cast<QDockWidget *>(m_voiceStudioPanel));
+  docks.append(static_cast<QDockWidget *>(m_audioMixerPanel));
+  docks.append(static_cast<QDockWidget *>(m_localizationPanel));
+  docks.append(static_cast<QDockWidget *>(m_timelinePanel));
+  docks.append(static_cast<QDockWidget *>(m_curveEditorPanel));
+  docks.append(static_cast<QDockWidget *>(m_buildSettingsPanel));
+  docks.append(static_cast<QDockWidget *>(m_issuesPanel));
+  docks.append(static_cast<QDockWidget *>(m_diagnosticsPanel));
 
   for (auto *dock : docks) {
     if (!dock) {
@@ -1097,14 +1154,28 @@ void NMMainWindow::applyTabbedDockMode(bool enabled) {
     return;
   }
 
-  QList<QDockWidget *> docks = {
-      m_sceneViewPanel,     m_storyGraphPanel,   m_sceneDialogueGraphPanel,
-      m_inspectorPanel,     m_consolePanel,      m_assetBrowserPanel,
-      m_hierarchyPanel,     m_scenePalettePanel, m_scriptEditorPanel,
-      m_scriptDocPanel,     m_playToolbarPanel,  m_debugOverlayPanel,
-      m_voiceManagerPanel,  m_voiceStudioPanel,  m_audioMixerPanel,
-      m_localizationPanel,  m_timelinePanel,     m_curveEditorPanel,
-      m_buildSettingsPanel, m_issuesPanel,       m_diagnosticsPanel};
+  QList<QDockWidget *> docks;
+  docks.append(static_cast<QDockWidget *>(m_sceneViewPanel));
+  docks.append(static_cast<QDockWidget *>(m_storyGraphPanel));
+  docks.append(static_cast<QDockWidget *>(m_sceneDialogueGraphPanel));
+  docks.append(static_cast<QDockWidget *>(m_inspectorPanel));
+  docks.append(static_cast<QDockWidget *>(m_consolePanel));
+  docks.append(static_cast<QDockWidget *>(m_assetBrowserPanel));
+  docks.append(static_cast<QDockWidget *>(m_hierarchyPanel));
+  docks.append(static_cast<QDockWidget *>(m_scenePalettePanel));
+  docks.append(static_cast<QDockWidget *>(m_scriptEditorPanel));
+  docks.append(static_cast<QDockWidget *>(m_scriptDocPanel));
+  docks.append(static_cast<QDockWidget *>(m_playToolbarPanel));
+  docks.append(static_cast<QDockWidget *>(m_debugOverlayPanel));
+  docks.append(static_cast<QDockWidget *>(m_voiceManagerPanel));
+  docks.append(static_cast<QDockWidget *>(m_voiceStudioPanel));
+  docks.append(static_cast<QDockWidget *>(m_audioMixerPanel));
+  docks.append(static_cast<QDockWidget *>(m_localizationPanel));
+  docks.append(static_cast<QDockWidget *>(m_timelinePanel));
+  docks.append(static_cast<QDockWidget *>(m_curveEditorPanel));
+  docks.append(static_cast<QDockWidget *>(m_buildSettingsPanel));
+  docks.append(static_cast<QDockWidget *>(m_issuesPanel));
+  docks.append(static_cast<QDockWidget *>(m_diagnosticsPanel));
 
   QHash<Qt::DockWidgetArea, QDockWidget *> anchors;
   for (auto *dock : docks) {
