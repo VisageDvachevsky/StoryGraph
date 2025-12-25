@@ -604,7 +604,14 @@ void NMInspectorPanel::updatePropertyValue(const QString &propertyName,
   QWidget *widget = it.value();
   QSignalBlocker blocker(widget);
   if (auto *lineEdit = qobject_cast<QLineEdit *>(widget)) {
-    lineEdit->setText(newValue);
+    // Only update if value has changed and widget doesn't have focus
+    // to preserve undo history and cursor position during user editing
+    if (lineEdit->text() != newValue && !lineEdit->hasFocus()) {
+      int cursorPos = lineEdit->cursorPosition();
+      lineEdit->setText(newValue);
+      // Restore cursor position if still valid
+      lineEdit->setCursorPosition(qMin(cursorPos, newValue.length()));
+    }
   } else if (auto *spinBox = qobject_cast<QSpinBox *>(widget)) {
     spinBox->setValue(newValue.toInt());
   } else if (auto *doubleSpinBox = qobject_cast<QDoubleSpinBox *>(widget)) {
@@ -614,27 +621,22 @@ void NMInspectorPanel::updatePropertyValue(const QString &propertyName,
   } else if (auto *comboBox = qobject_cast<QComboBox *>(widget)) {
     comboBox->setCurrentText(newValue);
   } else if (auto *textEdit = qobject_cast<QPlainTextEdit *>(widget)) {
-    // Only update if the content actually changed to avoid cursor jump
-    if (textEdit->toPlainText() != newValue) {
-      // Save cursor position if this widget has focus
+    // Only update if value has changed and widget doesn't have focus
+    // to preserve undo history and cursor position during user editing
+    if (textEdit->toPlainText() != newValue && !textEdit->hasFocus()) {
+      // Save cursor position and selection
       QTextCursor cursor = textEdit->textCursor();
-      int cursorPosition = cursor.position();
-      int scrollPosition = textEdit->verticalScrollBar()
-                               ? textEdit->verticalScrollBar()->value()
-                               : 0;
+      int cursorPos = cursor.position();
+      int anchorPos = cursor.anchor();
 
       textEdit->setPlainText(newValue);
 
-      // Restore cursor position if widget still has focus
-      if (textEdit->hasFocus()) {
-        cursor = textEdit->textCursor();
-        cursor.setPosition(qMin(cursorPosition, newValue.length()));
+      // Restore cursor position if still valid
+      if (cursorPos <= newValue.length()) {
+        cursor.setPosition(qMin(anchorPos, newValue.length()));
+        cursor.setPosition(qMin(cursorPos, newValue.length()),
+                          QTextCursor::KeepAnchor);
         textEdit->setTextCursor(cursor);
-
-        // Restore scroll position
-        if (textEdit->verticalScrollBar()) {
-          textEdit->verticalScrollBar()->setValue(scrollPosition);
-        }
       }
     }
   } else if (auto *button = qobject_cast<QPushButton *>(widget)) {
