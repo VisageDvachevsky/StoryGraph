@@ -2,9 +2,9 @@
 
 #include "NovelMind/core/result.hpp"
 #include "NovelMind/core/types.hpp"
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 
 namespace NovelMind::platform {
 
@@ -16,8 +16,7 @@ public:
   readFile(const std::string &path) const = 0;
 
   [[nodiscard]] virtual Result<void>
-  writeFile(const std::string &path,
-            const std::vector<u8> &data) const = 0;
+  writeFile(const std::string &path, const std::vector<u8> &data) const = 0;
 
   [[nodiscard]] virtual bool exists(const std::string &path) const = 0;
   [[nodiscard]] virtual bool isFile(const std::string &path) const = 0;

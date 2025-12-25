@@ -31,10 +31,10 @@ enum class NMPropertyType {
   Color,
   Enum,
   Asset,
-  Curve,      // Animation curve editor
-  Vector2,    // 2D vector (x, y)
-  Vector3,    // 3D vector (x, y, z)
-  Range       // Min/max range slider
+  Curve,   // Animation curve editor
+  Vector2, // 2D vector (x, y)
+  Vector3, // 3D vector (x, y, z)
+  Range    // Min/max range slider
 };
 
 /**
@@ -71,8 +71,8 @@ public:
   /**
    * @brief Add an editable property
    */
-  QWidget *addEditableProperty(const QString &propertyName, const QString &label,
-                               NMPropertyType type,
+  QWidget *addEditableProperty(const QString &propertyName,
+                               const QString &label, NMPropertyType type,
                                const QString &currentValue,
                                const QStringList &enumValues = {});
   QWidget *addEditableProperty(const QString &name, NMPropertyType type,
@@ -83,14 +83,15 @@ public:
    * @brief Add an editable property with metadata
    */
   QWidget *addEditablePropertyWithMetadata(const QString &propertyName,
-                                            NMPropertyType type,
-                                            const QString &currentValue,
-                                            const NMPropertyMetadata &metadata);
+                                           NMPropertyType type,
+                                           const QString &currentValue,
+                                           const NMPropertyMetadata &metadata);
 
   /**
    * @brief Add a reset button for a property
    */
-  void addResetButton(const QString &propertyName, const QVariant &defaultValue);
+  void addResetButton(const QString &propertyName,
+                      const QVariant &defaultValue);
 
   void clearProperties();
 
@@ -140,14 +141,13 @@ public:
   void inspectObject(const QString &objectType, const QString &objectId,
                      bool editable = true);
   void inspectSceneObject(class NMSceneObject *object, bool editable = true);
-  void inspectStoryGraphNode(class NMGraphNodeItem *node,
-                             bool editable = true);
+  void inspectStoryGraphNode(class NMGraphNodeItem *node, bool editable = true);
 
   /**
    * @brief Inspect multiple objects for multi-edit
    */
   void inspectMultipleObjects(const QList<class NMSceneObject *> &objects,
-                               bool editable = true);
+                              bool editable = true);
 
   /**
    * @brief Copy all visible properties to clipboard
@@ -172,7 +172,9 @@ public:
   void updatePropertyValue(const QString &propertyName,
                            const QString &newValue);
   [[nodiscard]] QString currentObjectId() const { return m_currentObjectId; }
-  [[nodiscard]] QStringList currentObjectIds() const { return m_currentObjectIds; }
+  [[nodiscard]] QStringList currentObjectIds() const {
+    return m_currentObjectIds;
+  }
   [[nodiscard]] bool isMultiEditMode() const { return m_multiEditMode; }
 
   /**
@@ -194,6 +196,8 @@ public:
 signals:
   void propertyChanged(const QString &objectId, const QString &propertyName,
                        const QString &newValue);
+  /// ERR-1 fix: Signal emitted when property setting fails
+  void propertyError(const QString &propertyName, const QString &errorMessage);
 
 private slots:
   void onGroupPropertyChanged(const QString &propertyName,

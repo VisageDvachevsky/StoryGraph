@@ -91,8 +91,7 @@ public:
 
   [[nodiscard]] Result<std::vector<u8>> decrypt(const u8 *data, usize size,
                                                 const u8 *iv, usize ivSize,
-                                                const u8 *aad,
-                                                usize aadSize);
+                                                const u8 *aad, usize aadSize);
 
   [[nodiscard]] static Result<std::vector<u8>>
   deriveKey(const std::string &password, const u8 *salt, usize saltSize);

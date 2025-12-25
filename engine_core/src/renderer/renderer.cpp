@@ -171,14 +171,14 @@ public:
     if (!texture.isValid()) {
       return;
     }
-    drawTexturedQuad(texture, Rect{0, 0, static_cast<f32>(texture.getWidth()),
-                                   static_cast<f32>(texture.getHeight())},
+    drawTexturedQuad(texture,
+                     Rect{0, 0, static_cast<f32>(texture.getWidth()),
+                          static_cast<f32>(texture.getHeight())},
                      transform, tint);
   }
 
   void drawSprite(const Texture &texture, const Rect &sourceRect,
-                  const Transform2D &transform,
-                  const Color &tint) override {
+                  const Transform2D &transform, const Color &tint) override {
     if (!texture.isValid()) {
       return;
     }
@@ -233,8 +233,7 @@ public:
         continue;
       }
 
-      const auto *glyph =
-          atlas->getGlyph(static_cast<unsigned char>(c));
+      const auto *glyph = atlas->getGlyph(static_cast<unsigned char>(c));
       if (!glyph) {
         penX += static_cast<f32>(font.getSize()) * 0.5f;
         continue;
@@ -262,8 +261,7 @@ public:
 
   void setFade(f32 alpha, const Color &color) override {
     glDisable(GL_TEXTURE_2D);
-    glColor4f(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f,
-              alpha);
+    glColor4f(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, alpha);
     glBegin(GL_QUADS);
     glVertex2f(0, 0);
     glVertex2f(static_cast<f32>(m_width), 0);
@@ -296,8 +294,7 @@ private:
 
     auto buildResult = atlas->build(font, kDefaultCharset);
     if (buildResult.isError()) {
-      NOVELMIND_LOG_WARN("Failed to build font atlas: " +
-                         buildResult.error());
+      NOVELMIND_LOG_WARN("Failed to build font atlas: " + buildResult.error());
     }
 
     m_fontAtlases[key] = atlas;
@@ -306,8 +303,7 @@ private:
 
   void drawTexturedQuad(const Texture &texture, const Rect &sourceRect,
                         const Transform2D &transform, const Color &tint) {
-    const auto handle =
-        reinterpret_cast<uintptr_t>(texture.getNativeHandle());
+    const auto handle = reinterpret_cast<uintptr_t>(texture.getNativeHandle());
     if (handle > static_cast<uintptr_t>(std::numeric_limits<GLuint>::max())) {
       return;
     }
@@ -322,8 +318,8 @@ private:
 
     const f32 u0 = sourceRect.x / static_cast<f32>(texture.getWidth());
     const f32 v0 = sourceRect.y / static_cast<f32>(texture.getHeight());
-    const f32 u1 =
-        (sourceRect.x + sourceRect.width) / static_cast<f32>(texture.getWidth());
+    const f32 u1 = (sourceRect.x + sourceRect.width) /
+                   static_cast<f32>(texture.getWidth());
     const f32 v1 = (sourceRect.y + sourceRect.height) /
                    static_cast<f32>(texture.getHeight());
 

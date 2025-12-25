@@ -39,9 +39,8 @@ private:
   void touch(const std::string &resourceId) const;
   void evictIfNeeded() const;
 
-  mutable std::unordered_map<std::string,
-                             std::pair<CacheEntry,
-                                       std::list<std::string>::iterator>>
+  mutable std::unordered_map<
+      std::string, std::pair<CacheEntry, std::list<std::string>::iterator>>
       m_cache;
   mutable std::list<std::string> m_lru;
   mutable usize m_currentBytes = 0;

@@ -1,9 +1,9 @@
 #include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
+#include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QListWidgetItem>
-#include <QFileInfo>
 
 namespace NovelMind::editor::qt {
 

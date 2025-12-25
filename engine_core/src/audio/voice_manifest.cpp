@@ -20,15 +20,15 @@ namespace fs = std::filesystem;
 // ============================================================================
 
 std::string NamingConvention::generatePath(const std::string &locale,
-                                            const std::string &id,
-                                            const std::string &scene,
-                                            const std::string &speaker,
-                                            u32 take) const {
+                                           const std::string &id,
+                                           const std::string &scene,
+                                           const std::string &speaker,
+                                           u32 take) const {
   std::string result = pattern;
 
   // Replace placeholders
   auto replacePlaceholder = [&result](const std::string &placeholder,
-                                       const std::string &value) {
+                                      const std::string &value) {
     size_t pos = 0;
     while ((pos = result.find(placeholder, pos)) != std::string::npos) {
       result.replace(pos, placeholder.length(), value);
@@ -49,7 +49,9 @@ std::string NamingConvention::generatePath(const std::string &locale,
 // VoiceManifest Implementation
 // ============================================================================
 
-VoiceManifest::VoiceManifest() { m_namingConvention = NamingConvention::localeIdBased(); }
+VoiceManifest::VoiceManifest() {
+  m_namingConvention = NamingConvention::localeIdBased();
+}
 
 VoiceManifest::~VoiceManifest() = default;
 
@@ -60,7 +62,9 @@ VoiceManifest &VoiceManifest::operator=(VoiceManifest &&) noexcept = default;
 // Project Configuration
 // ============================================================================
 
-void VoiceManifest::setProjectName(const std::string &name) { m_projectName = name; }
+void VoiceManifest::setProjectName(const std::string &name) {
+  m_projectName = name;
+}
 
 void VoiceManifest::setDefaultLocale(const std::string &locale) {
   m_defaultLocale = locale;
@@ -82,7 +86,8 @@ void VoiceManifest::removeLocale(const std::string &locale) {
 }
 
 bool VoiceManifest::hasLocale(const std::string &locale) const {
-  return std::find(m_locales.begin(), m_locales.end(), locale) != m_locales.end();
+  return std::find(m_locales.begin(), m_locales.end(), locale) !=
+         m_locales.end();
 }
 
 void VoiceManifest::setNamingConvention(const NamingConvention &convention) {
@@ -101,7 +106,8 @@ Result<void> VoiceManifest::addLine(const VoiceManifestLine &line) {
   }
 
   if (hasLine(line.id)) {
-    return Result<void>::error("Voice line with ID '" + line.id + "' already exists");
+    return Result<void>::error("Voice line with ID '" + line.id +
+                               "' already exists");
   }
 
   m_lines.push_back(line);
@@ -114,7 +120,8 @@ Result<void> VoiceManifest::addLine(const VoiceManifestLine &line) {
 Result<void> VoiceManifest::updateLine(const VoiceManifestLine &line) {
   auto it = m_lineIdToIndex.find(line.id);
   if (it == m_lineIdToIndex.end()) {
-    return Result<void>::error("Voice line with ID '" + line.id + "' not found");
+    return Result<void>::error("Voice line with ID '" + line.id +
+                               "' not found");
   }
 
   m_lines[it->second] = line;
@@ -134,7 +141,8 @@ void VoiceManifest::removeLine(const std::string &lineId) {
   fireLineChanged(lineId);
 }
 
-const VoiceManifestLine *VoiceManifest::getLine(const std::string &lineId) const {
+const VoiceManifestLine *
+VoiceManifest::getLine(const std::string &lineId) const {
   auto it = m_lineIdToIndex.find(lineId);
   if (it != m_lineIdToIndex.end()) {
     return &m_lines[it->second];
@@ -173,7 +181,8 @@ VoiceManifest::getLinesByScene(const std::string &scene) const {
 }
 
 std::vector<const VoiceManifestLine *>
-VoiceManifest::getLinesByStatus(VoiceLineStatus status, const std::string &locale) const {
+VoiceManifest::getLinesByStatus(VoiceLineStatus status,
+                                const std::string &locale) const {
   std::vector<const VoiceManifestLine *> result;
   for (const auto &line : m_lines) {
     if (locale.empty()) {
@@ -246,7 +255,8 @@ void VoiceManifest::clearLines() {
 // Take Management
 // ============================================================================
 
-Result<void> VoiceManifest::addTake(const std::string &lineId, const std::string &locale,
+Result<void> VoiceManifest::addTake(const std::string &lineId,
+                                    const std::string &locale,
                                     const VoiceTake &take) {
   auto *line = getLineMutable(lineId);
   if (!line) {
@@ -270,7 +280,8 @@ Result<void> VoiceManifest::addTake(const std::string &lineId, const std::string
 }
 
 Result<void> VoiceManifest::setActiveTake(const std::string &lineId,
-                                          const std::string &locale, u32 takeIndex) {
+                                          const std::string &locale,
+                                          u32 takeIndex) {
   auto *line = getLineMutable(lineId);
   if (!line) {
     return Result<void>::error("Voice line not found: " + lineId);
@@ -301,8 +312,9 @@ Result<void> VoiceManifest::setActiveTake(const std::string &lineId,
   return {};
 }
 
-std::vector<VoiceTake> VoiceManifest::getTakes(const std::string &lineId,
-                                                const std::string &locale) const {
+std::vector<VoiceTake>
+VoiceManifest::getTakes(const std::string &lineId,
+                        const std::string &locale) const {
   const auto *line = getLine(lineId);
   if (!line) {
     return {};
@@ -316,11 +328,69 @@ std::vector<VoiceTake> VoiceManifest::getTakes(const std::string &lineId,
   return file->takes;
 }
 
+Result<void> VoiceManifest::removeTake(const std::string &lineId,
+                                       const std::string &locale,
+                                       u32 takeNumber) {
+  auto *line = getLineMutable(lineId);
+  if (!line) {
+    return Result<void>::error("Voice line not found: " + lineId);
+  }
+
+  auto it = line->files.find(locale);
+  if (it == line->files.end()) {
+    return Result<void>::error("Locale not found for line: " + locale);
+  }
+
+  auto &file = it->second;
+
+  // Find and remove the take with matching takeNumber
+  auto takeIt = std::find_if(file.takes.begin(), file.takes.end(),
+                             [takeNumber](const VoiceTake &take) {
+                               return take.takeNumber == takeNumber;
+                             });
+
+  if (takeIt == file.takes.end()) {
+    return Result<void>::error("Take not found: " + std::to_string(takeNumber));
+  }
+
+  bool wasActive = takeIt->isActive;
+  file.takes.erase(takeIt);
+
+  // If we removed the active take, clear the active index or activate another
+  if (wasActive) {
+    if (!file.takes.empty()) {
+      // Activate the first take
+      file.takes[0].isActive = true;
+      file.activeTakeIndex = 0;
+      file.filePath = file.takes[0].filePath;
+      file.duration = file.takes[0].duration;
+    } else {
+      file.activeTakeIndex = 0;
+      file.filePath.clear();
+      file.duration = 0.0f;
+      file.status = VoiceLineStatus::Missing;
+    }
+  } else if (file.activeTakeIndex > 0) {
+    // Adjust active index if needed
+    size_t removedIndex = 0;
+    for (size_t i = 0; i < file.takes.size(); ++i) {
+      if (file.takes[i].isActive) {
+        file.activeTakeIndex = static_cast<u32>(i);
+        break;
+      }
+    }
+  }
+
+  fireLineChanged(lineId);
+  return {};
+}
+
 // ============================================================================
 // Status Management
 // ============================================================================
 
-Result<void> VoiceManifest::setStatus(const std::string &lineId, const std::string &locale,
+Result<void> VoiceManifest::setStatus(const std::string &lineId,
+                                      const std::string &locale,
                                       VoiceLineStatus status) {
   auto *line = getLineMutable(lineId);
   if (!line) {
@@ -370,7 +440,8 @@ Result<void> VoiceManifest::markAsImported(const std::string &lineId,
 // Validation
 // ============================================================================
 
-std::vector<ManifestValidationError> VoiceManifest::validate(bool checkFiles) const {
+std::vector<ManifestValidationError>
+VoiceManifest::validate(bool checkFiles) const {
   std::vector<ManifestValidationError> errors;
   std::unordered_set<std::string> seenIds;
   std::unordered_set<std::string> seenPaths;
@@ -378,36 +449,39 @@ std::vector<ManifestValidationError> VoiceManifest::validate(bool checkFiles) co
   for (const auto &line : m_lines) {
     // Check for duplicate IDs
     if (seenIds.count(line.id) > 0) {
-      errors.push_back({ManifestValidationError::Type::DuplicateId, line.id, "id",
-                        "Duplicate voice line ID: " + line.id});
+      errors.push_back({ManifestValidationError::Type::DuplicateId, line.id,
+                        "id", "Duplicate voice line ID: " + line.id});
     }
     seenIds.insert(line.id);
 
     // Check required fields
     if (line.id.empty()) {
-      errors.push_back({ManifestValidationError::Type::MissingRequiredField, line.id,
-                        "id", "Voice line ID is required"});
+      errors.push_back({ManifestValidationError::Type::MissingRequiredField,
+                        line.id, "id", "Voice line ID is required"});
     }
 
     if (line.textKey.empty()) {
-      errors.push_back({ManifestValidationError::Type::MissingRequiredField, line.id,
-                        "textKey", "Text key is required for line: " + line.id});
+      errors.push_back({ManifestValidationError::Type::MissingRequiredField,
+                        line.id, "textKey",
+                        "Text key is required for line: " + line.id});
     }
 
     // Check file paths
     for (const auto &[locale, file] : line.files) {
       // Check if locale is in manifest's locale list
       if (!hasLocale(locale)) {
-        errors.push_back({ManifestValidationError::Type::InvalidLocale, line.id,
-                          "files." + locale,
-                          "Locale '" + locale + "' not in manifest locale list"});
+        errors.push_back(
+            {ManifestValidationError::Type::InvalidLocale, line.id,
+             "files." + locale,
+             "Locale '" + locale + "' not in manifest locale list"});
       }
 
       // Check for path conflicts
       if (!file.filePath.empty()) {
         if (seenPaths.count(file.filePath) > 0) {
           errors.push_back(
-              {ManifestValidationError::Type::PathConflict, line.id, "files." + locale,
+              {ManifestValidationError::Type::PathConflict, line.id,
+               "files." + locale,
                "Path conflict: " + file.filePath + " used by multiple lines"});
         }
         seenPaths.insert(file.filePath);
@@ -416,8 +490,9 @@ std::vector<ManifestValidationError> VoiceManifest::validate(bool checkFiles) co
         if (checkFiles && file.status != VoiceLineStatus::Missing) {
           std::string fullPath = m_basePath + "/" + file.filePath;
           if (!fs::exists(fullPath)) {
-            errors.push_back({ManifestValidationError::Type::FileNotFound, line.id,
-                              "files." + locale, "File not found: " + fullPath});
+            errors.push_back({ManifestValidationError::Type::FileNotFound,
+                              line.id, "files." + locale,
+                              "File not found: " + fullPath});
           }
         }
       }
@@ -479,7 +554,8 @@ VoiceManifest::getCoverageStats(const std::string &locale) const {
     u32 completed =
         stats.recordedLines + stats.importedLines + stats.approvedLines;
     stats.coveragePercent =
-        (static_cast<f32>(completed) / static_cast<f32>(stats.totalLines)) * 100.0f;
+        (static_cast<f32>(completed) / static_cast<f32>(stats.totalLines)) *
+        100.0f;
   }
 
   return stats;
@@ -496,9 +572,11 @@ class JsonWriter {
 public:
   JsonWriter() { m_ss << "{\n"; }
 
-  void addString(const std::string &key, const std::string &value, bool last = false) {
+  void addString(const std::string &key, const std::string &value,
+                 bool last = false) {
     indent();
-    m_ss << "\"" << escapeString(key) << "\": \"" << escapeString(value) << "\"";
+    m_ss << "\"" << escapeString(key) << "\": \"" << escapeString(value)
+         << "\"";
     if (!last)
       m_ss << ",";
     m_ss << "\n";
@@ -639,7 +717,7 @@ f32 extractJsonNumber(const std::string &json, const std::string &key) {
 
 // Extract JSON array of strings
 std::vector<std::string> extractJsonStringArray(const std::string &json,
-                                                  const std::string &key) {
+                                                const std::string &key) {
   std::vector<std::string> result;
   std::string pattern = "\"" + key + "\"\\s*:\\s*\\[([^\\]]*)\\]";
   std::regex re(pattern);
@@ -647,7 +725,8 @@ std::vector<std::string> extractJsonStringArray(const std::string &json,
   if (std::regex_search(json, match, re)) {
     std::string arrayContent = match[1].str();
     std::regex itemRe("\"([^\"]*)\"");
-    auto begin = std::sregex_iterator(arrayContent.begin(), arrayContent.end(), itemRe);
+    auto begin =
+        std::sregex_iterator(arrayContent.begin(), arrayContent.end(), itemRe);
     auto end = std::sregex_iterator();
     for (auto it = begin; it != end; ++it) {
       result.push_back((*it)[1].str());
@@ -713,11 +792,13 @@ Result<void> VoiceManifest::loadFromString(const std::string &jsonContent) {
     size_t arrayEnd = jsonContent.rfind(']');
 
     if (arrayStart != std::string::npos && arrayEnd != std::string::npos) {
-      std::string linesContent = jsonContent.substr(arrayStart, arrayEnd - arrayStart + 1);
+      std::string linesContent =
+          jsonContent.substr(arrayStart, arrayEnd - arrayStart + 1);
 
       // Parse each line object
       std::regex objRe("\\{([^\\{\\}]|\\{[^\\{\\}]*\\})*\\}");
-      auto begin = std::sregex_iterator(linesContent.begin(), linesContent.end(), objRe);
+      auto begin =
+          std::sregex_iterator(linesContent.begin(), linesContent.end(), objRe);
       auto end = std::sregex_iterator();
 
       for (auto it = begin; it != end; ++it) {
@@ -731,15 +812,18 @@ Result<void> VoiceManifest::loadFromString(const std::string &jsonContent) {
         line.notes = extractJsonString(lineJson, "notes");
         line.tags = extractJsonStringArray(lineJson, "tags");
         line.sourceScript = extractJsonString(lineJson, "source_script");
-        line.sourceLine = static_cast<u32>(extractJsonNumber(lineJson, "source_line"));
-        line.durationOverride = extractJsonNumber(lineJson, "duration_override");
+        line.sourceLine =
+            static_cast<u32>(extractJsonNumber(lineJson, "source_line"));
+        line.durationOverride =
+            extractJsonNumber(lineJson, "duration_override");
 
         // Parse files
         size_t filesStart = lineJson.find("\"files\"");
         if (filesStart != std::string::npos) {
           size_t filesObjStart = lineJson.find('{', filesStart);
           size_t filesObjEnd = lineJson.find('}', filesObjStart);
-          if (filesObjStart != std::string::npos && filesObjEnd != std::string::npos) {
+          if (filesObjStart != std::string::npos &&
+              filesObjEnd != std::string::npos) {
             std::string filesJson =
                 lineJson.substr(filesObjStart, filesObjEnd - filesObjStart + 1);
 
@@ -753,8 +837,9 @@ Result<void> VoiceManifest::loadFromString(const std::string &jsonContent) {
                 VoiceLocaleFile locFile;
                 locFile.locale = locale;
                 locFile.filePath = locMatch[1].str();
-                locFile.status = locFile.filePath.empty() ? VoiceLineStatus::Missing
-                                                           : VoiceLineStatus::Imported;
+                locFile.status = locFile.filePath.empty()
+                                     ? VoiceLineStatus::Missing
+                                     : VoiceLineStatus::Imported;
                 line.files[locale] = locFile;
               }
             }
@@ -936,7 +1021,8 @@ Result<void> VoiceManifest::exportToCsv(const std::string &csvPath,
                                         const std::string &locale) const {
   std::ofstream file(csvPath);
   if (!file.is_open()) {
-    return Result<void>::error("Failed to open CSV file for writing: " + csvPath);
+    return Result<void>::error("Failed to open CSV file for writing: " +
+                               csvPath);
   }
 
   // Header
@@ -1010,7 +1096,8 @@ Result<void> VoiceManifest::exportTemplate(const std::string &filePath) const {
 // Generation
 // ============================================================================
 
-u32 VoiceManifest::generateFilePaths(const std::string &locale, bool overwriteExisting) {
+u32 VoiceManifest::generateFilePaths(const std::string &locale,
+                                     bool overwriteExisting) {
   u32 count = 0;
 
   for (auto &line : m_lines) {
@@ -1020,8 +1107,8 @@ u32 VoiceManifest::generateFilePaths(const std::string &locale, bool overwriteEx
       continue;
     }
 
-    std::string path = m_namingConvention.generatePath(locale, line.id, line.scene,
-                                                        line.speaker, 1);
+    std::string path = m_namingConvention.generatePath(
+        locale, line.id, line.scene, line.speaker, 1);
     file.filePath = path;
     ++count;
   }
@@ -1030,7 +1117,8 @@ u32 VoiceManifest::generateFilePaths(const std::string &locale, bool overwriteEx
   return count;
 }
 
-Result<void> VoiceManifest::createOutputDirectories(const std::string &locale) const {
+Result<void>
+VoiceManifest::createOutputDirectories(const std::string &locale) const {
   std::unordered_set<std::string> directories;
 
   for (const auto &line : m_lines) {
@@ -1038,7 +1126,8 @@ Result<void> VoiceManifest::createOutputDirectories(const std::string &locale) c
     if (file && !file->filePath.empty()) {
       fs::path filePath = file->filePath;
       if (filePath.has_parent_path()) {
-        directories.insert((fs::path(m_basePath) / filePath.parent_path()).string());
+        directories.insert(
+            (fs::path(m_basePath) / filePath.parent_path()).string());
       }
     }
   }
@@ -1047,7 +1136,8 @@ Result<void> VoiceManifest::createOutputDirectories(const std::string &locale) c
     try {
       fs::create_directories(dir);
     } catch (const fs::filesystem_error &e) {
-      return Result<void>::error("Failed to create directory: " + dir + " - " + e.what());
+      return Result<void>::error("Failed to create directory: " + dir + " - " +
+                                 e.what());
     }
   }
 

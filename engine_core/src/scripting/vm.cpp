@@ -147,11 +147,13 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
 
   case OpCode::JUMP:
     // Use signed arithmetic to avoid underflow when operand is 0
-    // If operand is 0, m_ip becomes max value, but step() will detect end of program
+    // If operand is 0, m_ip becomes max value, but step() will detect end of
+    // program
     if (instr.operand > 0) {
       m_ip = instr.operand - 1; // -1 because we increment after
     } else {
-      // Jump to instruction 0 - set to max so after increment it wraps or we handle specially
+      // Jump to instruction 0 - set to max so after increment it wraps or we
+      // handle specially
       m_ip = static_cast<u32>(-1); // Will wrap to 0 after increment
     }
     break;
@@ -411,7 +413,8 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
       args.push_back(funcName);
       it->second(args);
     } else {
-      NOVELMIND_LOG_WARN("No callback registered for CALL opcode, function: " + funcName);
+      NOVELMIND_LOG_WARN("No callback registered for CALL opcode, function: " +
+                         funcName);
     }
     // Push null as return value for unhandled functions
     push(std::monostate{});

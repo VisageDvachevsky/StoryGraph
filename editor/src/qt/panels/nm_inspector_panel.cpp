@@ -1,36 +1,35 @@
 #include "NovelMind/editor/qt/panels/nm_inspector_panel.hpp"
+#include "NovelMind/core/property_system.hpp"
+#include "NovelMind/editor/inspector_binding.hpp"
+#include "NovelMind/editor/project_manager.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
-#include "NovelMind/editor/project_manager.hpp"
-#include "NovelMind/editor/qt/nm_style_manager.hpp"
-#include "NovelMind/editor/qt/nm_dialogs.hpp"
-#include "NovelMind/editor/inspector_binding.hpp"
-#include "NovelMind/core/property_system.hpp"
 
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialog>
 #include <QDialogButtonBox>
-#include <QDragEnterEvent>
+#include <QDir>
 #include <QDoubleSpinBox>
+#include <QDragEnterEvent>
+#include <QDropEvent>
 #include <QFile>
 #include <QFileInfo>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
-#include <QMouseEvent>
 #include <QMimeData>
+#include <QMouseEvent>
+#include <QPixmap>
 #include <QPlainTextEdit>
 #include <QPushButton>
-#include <QDropEvent>
-#include <QPixmap>
 #include <QSignalBlocker>
 #include <QSpinBox>
 #include <QTimer>
 #include <QVBoxLayout>
-#include <QDir>
-
 
 namespace NovelMind::editor::qt {
 
@@ -43,7 +42,8 @@ NMInspectorPanel::NMInspectorPanel(QWidget *parent)
   setPanelId("Inspector");
 
   // Inspector needs adequate width for property labels and edit controls
-  // and height to show at least a few property groups without excessive scrolling
+  // and height to show at least a few property groups without excessive
+  // scrolling
   setMinimumPanelSize(280, 200);
 
   setupContent();
@@ -196,8 +196,7 @@ void NMInspectorPanel::inspectSceneObject(NMSceneObject *object,
       trackPropertyWidget("name", nameEdit);
     }
     if (auto *assetEdit = generalGroup->addEditableProperty(
-            "asset", tr("Asset"), NMPropertyType::Asset,
-            object->assetPath())) {
+            "asset", tr("Asset"), NMPropertyType::Asset, object->assetPath())) {
       trackPropertyWidget("asset", assetEdit);
     }
   } else {
@@ -210,34 +209,29 @@ void NMInspectorPanel::inspectSceneObject(NMSceneObject *object,
   auto *transformGroup = addGroup(tr("Transform"));
   const QPointF pos = object->pos();
   if (m_editMode) {
-    if (auto *xEdit =
-            transformGroup->addEditableProperty("position_x", tr("Position X"),
-                                                 NMPropertyType::Float,
-                                                 QString::number(pos.x()))) {
+    if (auto *xEdit = transformGroup->addEditableProperty(
+            "position_x", tr("Position X"), NMPropertyType::Float,
+            QString::number(pos.x()))) {
       trackPropertyWidget("position_x", xEdit);
     }
-    if (auto *yEdit =
-            transformGroup->addEditableProperty("position_y", tr("Position Y"),
-                                                 NMPropertyType::Float,
-                                                 QString::number(pos.y()))) {
+    if (auto *yEdit = transformGroup->addEditableProperty(
+            "position_y", tr("Position Y"), NMPropertyType::Float,
+            QString::number(pos.y()))) {
       trackPropertyWidget("position_y", yEdit);
     }
-    if (auto *rotEdit =
-            transformGroup->addEditableProperty("rotation", tr("Rotation"),
-                                                 NMPropertyType::Float,
-                                                 QString::number(object->rotation()))) {
+    if (auto *rotEdit = transformGroup->addEditableProperty(
+            "rotation", tr("Rotation"), NMPropertyType::Float,
+            QString::number(object->rotation()))) {
       trackPropertyWidget("rotation", rotEdit);
     }
-    if (auto *sxEdit =
-            transformGroup->addEditableProperty("scale_x", tr("Scale X"),
-                                                 NMPropertyType::Float,
-                                                 QString::number(object->scaleX()))) {
+    if (auto *sxEdit = transformGroup->addEditableProperty(
+            "scale_x", tr("Scale X"), NMPropertyType::Float,
+            QString::number(object->scaleX()))) {
       trackPropertyWidget("scale_x", sxEdit);
     }
-    if (auto *syEdit =
-            transformGroup->addEditableProperty("scale_y", tr("Scale Y"),
-                                                 NMPropertyType::Float,
-                                                 QString::number(object->scaleY()))) {
+    if (auto *syEdit = transformGroup->addEditableProperty(
+            "scale_y", tr("Scale Y"), NMPropertyType::Float,
+            QString::number(object->scaleY()))) {
       trackPropertyWidget("scale_y", syEdit);
     }
   } else {
@@ -255,38 +249,31 @@ void NMInspectorPanel::inspectSceneObject(NMSceneObject *object,
 
   auto *renderGroup = addGroup(tr("Rendering"));
   if (m_editMode) {
-    if (auto *visibleEdit =
-            renderGroup->addEditableProperty("visible", tr("Visible"),
-                                             NMPropertyType::Boolean,
-                                             object->isVisible() ? "true"
-                                                                 : "false")) {
+    if (auto *visibleEdit = renderGroup->addEditableProperty(
+            "visible", tr("Visible"), NMPropertyType::Boolean,
+            object->isVisible() ? "true" : "false")) {
       trackPropertyWidget("visible", visibleEdit);
     }
-    if (auto *alphaEdit =
-            renderGroup->addEditableProperty("alpha", tr("Alpha"),
-                                             NMPropertyType::Float,
-                                             QString::number(object->opacity()))) {
+    if (auto *alphaEdit = renderGroup->addEditableProperty(
+            "alpha", tr("Alpha"), NMPropertyType::Float,
+            QString::number(object->opacity()))) {
       trackPropertyWidget("alpha", alphaEdit);
     }
-    if (auto *zEdit =
-            renderGroup->addEditableProperty("z", tr("Z-Order"),
-                                             NMPropertyType::Integer,
-                                             QString::number(object->zValue()))) {
+    if (auto *zEdit = renderGroup->addEditableProperty(
+            "z", tr("Z-Order"), NMPropertyType::Integer,
+            QString::number(object->zValue()))) {
       trackPropertyWidget("z", zEdit);
     }
-    if (auto *lockEdit =
-            renderGroup->addEditableProperty("locked", tr("Locked"),
-                                             NMPropertyType::Boolean,
-                                             object->isLocked() ? "true"
-                                                                : "false")) {
+    if (auto *lockEdit = renderGroup->addEditableProperty(
+            "locked", tr("Locked"), NMPropertyType::Boolean,
+            object->isLocked() ? "true" : "false")) {
       trackPropertyWidget("locked", lockEdit);
     }
   } else {
     renderGroup->addProperty(tr("Visible"),
                              object->isVisible() ? "true" : "false");
     renderGroup->addProperty(tr("Alpha"), QString::number(object->opacity()));
-    renderGroup->addProperty(tr("Z-Order"),
-                             QString::number(object->zValue()));
+    renderGroup->addProperty(tr("Z-Order"), QString::number(object->zValue()));
     renderGroup->addProperty(tr("Locked"),
                              object->isLocked() ? "true" : "false");
   }
@@ -303,7 +290,8 @@ void NMInspectorPanel::inspectSceneObject(NMSceneObject *object,
 
     // Display current tags
     const QStringList tags = object->tags();
-    auto *tagsListLabel = new QLabel(tags.isEmpty() ? tr("(no tags)") : tags.join(", "), tagsWidget);
+    auto *tagsListLabel = new QLabel(
+        tags.isEmpty() ? tr("(no tags)") : tags.join(", "), tagsWidget);
     tagsListLabel->setWordWrap(true);
     tagsLayout->addWidget(tagsListLabel);
 
@@ -347,7 +335,8 @@ void NMInspectorPanel::inspectSceneObject(NMSceneObject *object,
     tagsGroup->addProperty(tr("Tag Editor"), tagsWidget);
   } else {
     const QStringList tags = object->tags();
-    tagsGroup->addProperty(tr("Tags"), tags.isEmpty() ? tr("(no tags)") : tags.join(", "));
+    tagsGroup->addProperty(tr("Tags"),
+                           tags.isEmpty() ? tr("(no tags)") : tags.join(", "));
   }
 
   m_mainLayout->addStretch();
@@ -376,16 +365,12 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
   auto *generalGroup = addGroup(tr("General"));
   generalGroup->addProperty(tr("ID"), node->nodeIdString());
   if (m_editMode) {
-    if (auto *titleEdit =
-            generalGroup->addEditableProperty("title", tr("Title"),
-                                              NMPropertyType::String,
-                                              node->title())) {
+    if (auto *titleEdit = generalGroup->addEditableProperty(
+            "title", tr("Title"), NMPropertyType::String, node->title())) {
       trackPropertyWidget("title", titleEdit);
     }
-    if (auto *typeEdit =
-            generalGroup->addEditableProperty("type", tr("Type"),
-                                              NMPropertyType::String,
-                                              node->nodeType())) {
+    if (auto *typeEdit = generalGroup->addEditableProperty(
+            "type", tr("Type"), NMPropertyType::String, node->nodeType())) {
       trackPropertyWidget("type", typeEdit);
     }
   } else {
@@ -403,30 +388,25 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
     const QString choicesValue = node->choiceOptions().join("\n");
 
     if (m_editMode) {
-      if (auto *speakerEdit =
-              contentGroup->addEditableProperty("speaker", tr("Speaker"),
-                                                NMPropertyType::String,
-                                                speakerValue)) {
+      if (auto *speakerEdit = contentGroup->addEditableProperty(
+              "speaker", tr("Speaker"), NMPropertyType::String, speakerValue)) {
         trackPropertyWidget("speaker", speakerEdit);
       }
-      if (auto *textEdit =
-              contentGroup->addEditableProperty("text", tr("Text"),
-                                                NMPropertyType::MultiLine,
-                                                textValue)) {
+      if (auto *textEdit = contentGroup->addEditableProperty(
+              "text", tr("Text"), NMPropertyType::MultiLine, textValue)) {
         trackPropertyWidget("text", textEdit);
       }
       if (node->nodeType().contains("Choice", Qt::CaseInsensitive)) {
-        if (auto *choicesEdit =
-                contentGroup->addEditableProperty("choices", tr("Choices"),
-                                                  NMPropertyType::MultiLine,
-                                                  choicesValue)) {
+        if (auto *choicesEdit = contentGroup->addEditableProperty(
+                "choices", tr("Choices"), NMPropertyType::MultiLine,
+                choicesValue)) {
           trackPropertyWidget("choices", choicesEdit);
         }
       }
     } else {
-      contentGroup->addProperty(tr("Speaker"),
-                                speakerValue.isEmpty() ? tr("Narrator")
-                                                      : speakerValue);
+      contentGroup->addProperty(tr("Speaker"), speakerValue.isEmpty()
+                                                   ? tr("Narrator")
+                                                   : speakerValue);
       contentGroup->addProperty(tr("Text"), textValue);
       if (node->nodeType().contains("Choice", Qt::CaseInsensitive)) {
         contentGroup->addProperty(tr("Choices"), choicesValue);
@@ -440,10 +420,9 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
     auto *scriptGroup = addGroup(tr("Script"));
     scriptGroup->addProperty(tr("File"), node->scriptPath());
     if (m_editMode) {
-      if (auto *scriptEdit =
-              scriptGroup->addEditableProperty("scriptPath", tr("Path"),
-                                               NMPropertyType::Asset,
-                                               node->scriptPath())) {
+      if (auto *scriptEdit = scriptGroup->addEditableProperty(
+              "scriptPath", tr("Path"), NMPropertyType::Asset,
+              node->scriptPath())) {
         trackPropertyWidget("scriptPath", scriptEdit);
       }
     }
@@ -475,8 +454,8 @@ void NMInspectorPanel::inspectMultipleObjects(
   }
 
   // Set header showing multi-selection
-  m_headerLabel->setText(QString("<b>%1 Objects Selected</b>")
-                             .arg(objects.size()));
+  m_headerLabel->setText(
+      QString("<b>%1 Objects Selected</b>").arg(objects.size()));
   m_headerLabel->show();
 
   // Use InspectorBindingManager to handle multi-object editing
@@ -508,8 +487,7 @@ void NMInspectorPanel::inspectMultipleObjects(
       const auto &meta = prop->getMeta();
 
       // Skip hidden or ID properties
-      if (hasFlag(meta.flags, PropertyFlags::Hidden) ||
-          meta.name == "id") {
+      if (hasFlag(meta.flags, PropertyFlags::Hidden) || meta.name == "id") {
         continue;
       }
 
@@ -600,9 +578,12 @@ void NMInspectorPanel::onGroupPropertyChanged(const QString &propertyName,
         propertyName.toStdString(), newValue.toStdString());
 
     if (error.has_value()) {
-      // TODO: Show error message to user
+      // ERR-1 fix: Show error to user via status bar instead of just logging
+      QString errorMsg = QString::fromStdString(error.value());
       qWarning() << "Failed to set property:" << propertyName
-                 << "Error:" << QString::fromStdString(error.value());
+                 << "Error:" << errorMsg;
+      // Emit signal for status bar or use inline notification
+      emit propertyError(propertyName, errorMsg);
     }
     return;
   }
@@ -642,7 +623,8 @@ void NMInspectorPanel::updatePropertyValue(const QString &propertyName,
   } else {
     // Handle vector widgets (Vector2/Vector3)
     // Vector widgets are container QWidgets with child spinboxes
-    QList<QDoubleSpinBox *> spinBoxes = widget->findChildren<QDoubleSpinBox *>();
+    QList<QDoubleSpinBox *> spinBoxes =
+        widget->findChildren<QDoubleSpinBox *>();
     if (!spinBoxes.isEmpty()) {
       QStringList components = newValue.split(',');
       for (int i = 0; i < spinBoxes.size() && i < components.size(); ++i) {
@@ -718,6 +700,5 @@ void NMInspectorPanel::setupContent() {
 
   setContentWidget(container);
 }
-
 
 } // namespace NovelMind::editor::qt

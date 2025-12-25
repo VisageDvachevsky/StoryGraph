@@ -1,14 +1,14 @@
 #include "NovelMind/editor/asset_preview.hpp"
+#include <QFont>
+#include <QFontDatabase>
+#include <QImage>
+#include <QPainter>
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <limits>
-#include <QFont>
-#include <QFontDatabase>
-#include <QImage>
-#include <QPainter>
 
 namespace NovelMind::editor {
 
@@ -74,11 +74,9 @@ AssetPreviewManager::generateImageThumbnail(const std::string &imagePath,
   thumbnail.height = height;
 
   const int widthInt = static_cast<int>(
-      std::min<u32>(width,
-                    static_cast<u32>(std::numeric_limits<int>::max())));
+      std::min<u32>(width, static_cast<u32>(std::numeric_limits<int>::max())));
   const int heightInt = static_cast<int>(
-      std::min<u32>(height,
-                    static_cast<u32>(std::numeric_limits<int>::max())));
+      std::min<u32>(height, static_cast<u32>(std::numeric_limits<int>::max())));
 
   QImage image(QString::fromStdString(imagePath));
   if (!image.isNull()) {
@@ -126,9 +124,8 @@ AssetPreviewManager::generateAudioWaveform(const std::string &audioPath,
                                        audioPath);
   }
 
-  std::vector<unsigned char> bytes(
-      (std::istreambuf_iterator<char>(file)),
-      std::istreambuf_iterator<char>());
+  std::vector<unsigned char> bytes((std::istreambuf_iterator<char>(file)),
+                                   std::istreambuf_iterator<char>());
   if (bytes.empty()) {
     return Result<WaveformData>::error("Audio file is empty: " + audioPath);
   }
@@ -178,9 +175,8 @@ AssetPreviewManager::generateFontPreview(const std::string &fontPath,
   }
   preview.isMonospace = QFontDatabase::isFixedPitch(family);
 
-  const int sizeInt = static_cast<int>(
-      std::min<u32>(thumbnailSize,
-                    static_cast<u32>(std::numeric_limits<int>::max())));
+  const int sizeInt = static_cast<int>(std::min<u32>(
+      thumbnailSize, static_cast<u32>(std::numeric_limits<int>::max())));
   QImage image(sizeInt, sizeInt, QImage::Format_RGBA8888);
   image.fill(Qt::transparent);
   QPainter painter(&image);

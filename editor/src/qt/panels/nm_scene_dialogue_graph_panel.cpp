@@ -1,11 +1,11 @@
 #include "NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp"
-#include "NovelMind/editor/qt/panels/nm_story_graph_minimap.hpp"
+#include "NovelMind/editor/project_manager.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
-#include "NovelMind/editor/project_manager.hpp"
+#include "NovelMind/editor/qt/panels/nm_story_graph_minimap.hpp"
 
 #include <QAction>
 #include <QDebug>
@@ -51,8 +51,8 @@ NMSceneDialogueNodePalette::NMSceneDialogueNodePalette(QWidget *parent)
 
 void NMSceneDialogueNodePalette::createNodeButton(const QString &nodeType,
                                                   const QString &icon) {
-  auto *btn = new QPushButton(
-      NMIconManager::instance().getIcon(icon, 16), nodeType, this);
+  auto *btn = new QPushButton(NMIconManager::instance().getIcon(icon, 16),
+                              nodeType, this);
   btn->setFlat(true);
   btn->setStyleSheet("QPushButton { text-align: left; padding: 6px; } "
                      "QPushButton:hover { background: #3a3a3a; }");
@@ -71,18 +71,17 @@ NMSceneDialogueGraphScene::NMSceneDialogueGraphScene(QObject *parent)
 bool NMSceneDialogueGraphScene::isAllowedNodeType(const QString &nodeType) {
   // Allow dialogue-related nodes, but not Scene nodes
   static const QStringList allowedTypes = {
-      "Dialogue",       "Choice",     "ChoiceOption", "Wait",
-      "SetVariable",    "GetVariable", "PlaySound",    "ShowCharacter",
-      "HideCharacter",  "ShowBackground", "Transition", "PlayMusic",
-      "StopMusic",      "Expression", "SceneStart",   "SceneEnd",
+      "Dialogue",      "Choice",         "ChoiceOption", "Wait",
+      "SetVariable",   "GetVariable",    "PlaySound",    "ShowCharacter",
+      "HideCharacter", "ShowBackground", "Transition",   "PlayMusic",
+      "StopMusic",     "Expression",     "SceneStart",   "SceneEnd",
       "Comment"};
   return allowedTypes.contains(nodeType, Qt::CaseInsensitive);
 }
 
-NMGraphNodeItem *
-NMSceneDialogueGraphScene::addNode(const QString &title, const QString &nodeType,
-                                   const QPointF &pos, uint64_t nodeId,
-                                   const QString &nodeIdString) {
+NMGraphNodeItem *NMSceneDialogueGraphScene::addNode(
+    const QString &title, const QString &nodeType, const QPointF &pos,
+    uint64_t nodeId, const QString &nodeIdString) {
   // Prevent Scene nodes in embedded dialogue graphs
   if (nodeType.compare("Scene", Qt::CaseInsensitive) == 0) {
     qWarning() << "[SceneDialogueGraph] Cannot add Scene nodes to embedded "
@@ -157,15 +156,14 @@ void NMSceneDialogueGraphPanel::loadSceneDialogue(const QString &sceneId) {
     auto reply = NMMessageDialog::showQuestion(
         this, tr("Unsaved Changes"),
         tr("The current dialogue graph has unsaved changes. Discard them?"),
-        {NMDialogButton::Yes, NMDialogButton::No},
-        NMDialogButton::No);
+        {NMDialogButton::Yes, NMDialogButton::No}, NMDialogButton::No);
     if (reply == NMDialogButton::No) {
       return;
     }
   }
 
   m_currentSceneId = sceneId;
-  m_hasUnsavedChanges = false;
+  m_hasUnsavedChanges.store(false, std::memory_order_relaxed);
 
   updateBreadcrumb();
   loadDialogueGraphFromScene();
@@ -180,7 +178,7 @@ void NMSceneDialogueGraphPanel::clear() {
     m_dialogueScene->clearGraph();
   }
   m_currentSceneId.clear();
-  m_hasUnsavedChanges = false;
+  m_hasUnsavedChanges.store(false, std::memory_order_relaxed);
   m_nodeIdToString.clear();
   updateBreadcrumb();
 }
@@ -192,8 +190,8 @@ void NMSceneDialogueGraphPanel::setupToolBar() {
 
   auto &iconMgr = NMIconManager::instance();
 
-  QAction *actionConnect = m_toolBar->addAction(
-      iconMgr.getIcon("connection", 16), tr("Connect"));
+  QAction *actionConnect =
+      m_toolBar->addAction(iconMgr.getIcon("connection", 16), tr("Connect"));
   actionConnect->setToolTip(tr("Connection mode"));
   actionConnect->setCheckable(true);
   connect(actionConnect, &QAction::toggled, this, [this](bool enabled) {
@@ -226,8 +224,8 @@ void NMSceneDialogueGraphPanel::setupToolBar() {
 
   m_toolBar->addSeparator();
 
-  QAction *actionAutoLayout =
-      m_toolBar->addAction(iconMgr.getIcon("layout-auto", 16), tr("Auto Layout"));
+  QAction *actionAutoLayout = m_toolBar->addAction(
+      iconMgr.getIcon("layout-auto", 16), tr("Auto Layout"));
   connect(actionAutoLayout, &QAction::triggered, this,
           &NMSceneDialogueGraphPanel::onAutoLayout);
 
@@ -333,13 +331,15 @@ void NMSceneDialogueGraphPanel::createNode(const QString &nodeType) {
   }
 
   if (m_currentSceneId.isEmpty()) {
-    NMMessageDialog::showWarning(this, tr("No Scene Loaded"),
-                                 tr("Please load a scene first before adding nodes."));
+    NMMessageDialog::showWarning(
+        this, tr("No Scene Loaded"),
+        tr("Please load a scene first before adding nodes."));
     return;
   }
 
   // Get center of view
-  const QPointF sceneCenter = m_view->mapToScene(m_view->viewport()->rect().center());
+  const QPointF sceneCenter =
+      m_view->mapToScene(m_view->viewport()->rect().center());
 
   // Create node with auto-generated title
   const QString title = QString("%1 Node").arg(nodeType);
@@ -357,7 +357,8 @@ void NMSceneDialogueGraphPanel::saveDialogueGraphToScene() {
 
   QJsonArray nodesArray;
   for (const auto *node : m_dialogueScene->nodes()) {
-    if (!node) continue;
+    if (!node)
+      continue;
 
     QJsonObject nodeObj;
     nodeObj["id"] = QString::number(node->nodeId());
@@ -379,7 +380,8 @@ void NMSceneDialogueGraphPanel::saveDialogueGraphToScene() {
 
   QJsonArray connectionsArray;
   for (const auto *conn : m_dialogueScene->connections()) {
-    if (!conn || !conn->startNode() || !conn->endNode()) continue;
+    if (!conn || !conn->startNode() || !conn->endNode())
+      continue;
 
     QJsonObject connObj;
     connObj["from"] = QString::number(conn->startNode()->nodeId());
@@ -389,8 +391,8 @@ void NMSceneDialogueGraphPanel::saveDialogueGraphToScene() {
   graphData["connections"] = connectionsArray;
 
   // Save to project folder: .novelmind/scenes/{sceneId}_dialogue.json
-  const QString projectPath = QString::fromStdString(
-      ProjectManager::instance().getProjectPath());
+  const QString projectPath =
+      QString::fromStdString(ProjectManager::instance().getProjectPath());
   const QString scenesDir = projectPath + "/.novelmind/scenes";
 
   std::filesystem::create_directories(scenesDir.toStdString());
@@ -402,7 +404,7 @@ void NMSceneDialogueGraphPanel::saveDialogueGraphToScene() {
   if (file.open(QIODevice::WriteOnly)) {
     file.write(QJsonDocument(graphData).toJson(QJsonDocument::Indented));
     file.close();
-    m_hasUnsavedChanges = false;
+    m_hasUnsavedChanges.store(false, std::memory_order_relaxed);
     qDebug() << "[SceneDialogueGraph] Saved dialogue graph to:" << filePath;
   } else {
     qWarning() << "[SceneDialogueGraph] Failed to save dialogue graph:"
@@ -422,8 +424,8 @@ void NMSceneDialogueGraphPanel::loadDialogueGraphFromScene() {
   m_nodeIdToString.clear();
 
   // Load from: .novelmind/scenes/{sceneId}_dialogue.json
-  const QString projectPath = QString::fromStdString(
-      ProjectManager::instance().getProjectPath());
+  const QString projectPath =
+      QString::fromStdString(ProjectManager::instance().getProjectPath());
   const QString filePath = QString("%1/.novelmind/scenes/%2_dialogue.json")
                                .arg(projectPath, m_currentSceneId);
 
@@ -462,7 +464,8 @@ void NMSceneDialogueGraphPanel::loadDialogueGraphFromScene() {
     const QPointF pos(nodeObj["x"].toDouble(), nodeObj["y"].toDouble());
     const uint64_t nodeId = nodeObj["id"].toString().toULongLong();
 
-    auto *node = m_dialogueScene->addNode(title, nodeType, pos, nodeId, idString);
+    auto *node =
+        m_dialogueScene->addNode(title, nodeType, pos, nodeId, idString);
     if (node) {
       // Set dialogue-specific properties
       if (node->isDialogueNode()) {
@@ -508,9 +511,10 @@ void NMSceneDialogueGraphPanel::updateDialogueCount() {
 }
 
 void NMSceneDialogueGraphPanel::markAsModified() {
-  if (!m_hasUnsavedChanges) {
-    m_hasUnsavedChanges = true;
-    // Auto-save on modification
+  bool expected = false;
+  if (m_hasUnsavedChanges.compare_exchange_strong(expected, true,
+                                                  std::memory_order_relaxed)) {
+    // First modification - trigger auto-save
     saveDialogueGraphToScene();
   }
 }
@@ -544,8 +548,113 @@ void NMSceneDialogueGraphPanel::onFitToGraph() {
 }
 
 void NMSceneDialogueGraphPanel::onAutoLayout() {
-  // TODO: Implement auto-layout algorithm
-  qDebug() << "[SceneDialogueGraph] Auto-layout not yet implemented";
+  if (!m_dialogueScene || m_dialogueScene->nodes().isEmpty()) {
+    qDebug() << "[SceneDialogueGraph] No nodes to layout";
+    return;
+  }
+
+  qDebug() << "[SceneDialogueGraph] Running hierarchical auto-layout";
+
+  // Hierarchical layered graph layout algorithm (Sugiyama-style)
+  const qreal LAYER_SPACING = 200.0;
+  const qreal NODE_SPACING = 80.0;
+  const qreal START_X = 100.0;
+  const qreal START_Y = 100.0;
+
+  // Step 1: Find entry nodes (nodes with no incoming connections)
+  QList<NMGraphNodeItem *> entryNodes;
+  QHash<NMGraphNodeItem *, int> inDegree;
+  QHash<NMGraphNodeItem *, QList<NMGraphNodeItem *>> children;
+
+  // Initialize in-degree map
+  for (auto *node : m_dialogueScene->nodes()) {
+    inDegree[node] = 0;
+  }
+
+  // Count in-degrees and build children map
+  for (auto *conn : m_dialogueScene->connections()) {
+    auto *startNode = conn->startNode();
+    auto *endNode = conn->endNode();
+    if (startNode && endNode) {
+      inDegree[endNode]++;
+      children[startNode].append(endNode);
+    }
+  }
+
+  // Find entry nodes
+  for (auto *node : m_dialogueScene->nodes()) {
+    if (inDegree[node] == 0) {
+      entryNodes.append(node);
+    }
+  }
+
+  // If no entry nodes found, use the first node
+  if (entryNodes.isEmpty() && !m_dialogueScene->nodes().isEmpty()) {
+    entryNodes.append(m_dialogueScene->nodes().first());
+  }
+
+  // Step 2: Assign nodes to layers using BFS from entry nodes
+  QHash<NMGraphNodeItem *, int> nodeLayer;
+  QHash<int, QList<NMGraphNodeItem *>> layers;
+  QSet<NMGraphNodeItem *> visited;
+  QList<NMGraphNodeItem *> queue;
+
+  // Start BFS from all entry nodes
+  for (auto *entry : entryNodes) {
+    nodeLayer[entry] = 0;
+    layers[0].append(entry);
+    queue.append(entry);
+    visited.insert(entry);
+  }
+
+  while (!queue.isEmpty()) {
+    auto *current = queue.takeFirst();
+    int currentLayer = nodeLayer[current];
+
+    // Process all children
+    for (auto *child : children[current]) {
+      if (!visited.contains(child)) {
+        int childLayer = currentLayer + 1;
+        nodeLayer[child] = childLayer;
+        layers[childLayer].append(child);
+        queue.append(child);
+        visited.insert(child);
+      }
+    }
+  }
+
+  // Handle any disconnected nodes
+  for (auto *node : m_dialogueScene->nodes()) {
+    if (!visited.contains(node)) {
+      int layer = layers.keys().isEmpty() ? 0 : layers.keys().last() + 1;
+      nodeLayer[node] = layer;
+      layers[layer].append(node);
+    }
+  }
+
+  // Step 3: Position nodes based on their layer
+  for (int layer : layers.keys()) {
+    const QList<NMGraphNodeItem *> &nodesInLayer = layers[layer];
+    const qreal layerY = START_Y + layer * LAYER_SPACING;
+    const qreal totalWidth =
+        (static_cast<qreal>(nodesInLayer.size()) - 1.0) * NODE_SPACING;
+    const qreal startX = START_X - totalWidth / 2.0;
+
+    for (int i = 0; i < nodesInLayer.size(); ++i) {
+      auto *node = nodesInLayer[i];
+      const qreal x = startX + i * NODE_SPACING;
+      node->setPos(x, layerY);
+    }
+  }
+
+  // Step 4: Center the view on the laid out graph
+  if (m_view) {
+    m_view->centerOnGraph();
+  }
+
+  markAsModified();
+  qDebug() << "[SceneDialogueGraph] Auto-layout complete:" << layers.size()
+           << "layers," << m_dialogueScene->nodes().size() << "nodes";
 }
 
 void NMSceneDialogueGraphPanel::onReturnToStoryGraph() {

@@ -34,11 +34,9 @@ public:
   void unloadFont(const std::string &id, i32 size);
 
   [[nodiscard]] Result<FontAtlasHandle>
-  loadFontAtlas(const std::string &id, i32 size,
-                const std::string &charset);
+  loadFontAtlas(const std::string &id, i32 size, const std::string &charset);
 
-  [[nodiscard]] Result<std::vector<u8>>
-  readData(const std::string &id) const;
+  [[nodiscard]] Result<std::vector<u8>> readData(const std::string &id) const;
 
   void clearCache();
 
@@ -54,13 +52,10 @@ private:
   std::string m_basePath;
 
   std::unordered_map<std::string, TextureHandle> m_textures;
-  std::unordered_map<std::string,
-                     std::unordered_map<i32, FontHandle>>
-      m_fonts;
-  std::unordered_map<std::string,
-                     std::unordered_map<i32,
-                                        std::unordered_map<std::string,
-                                                           FontAtlasHandle>>>
+  std::unordered_map<std::string, std::unordered_map<i32, FontHandle>> m_fonts;
+  std::unordered_map<
+      std::string,
+      std::unordered_map<i32, std::unordered_map<std::string, FontAtlasHandle>>>
       m_fontAtlases;
 };
 

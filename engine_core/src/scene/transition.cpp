@@ -441,9 +441,7 @@ void WipeTransition::setOnComplete(CompletionCallback callback) {
   m_onComplete = std::move(callback);
 }
 
-TransitionType WipeTransition::getType() const {
-  return TransitionType::Wipe;
-}
+TransitionType WipeTransition::getType() const { return TransitionType::Wipe; }
 
 void WipeTransition::setDirection(Direction direction) {
   m_direction = direction;
@@ -498,9 +496,13 @@ void ZoomTransition::render(renderer::IRenderer &renderer) {
 
   renderer::Color color = m_maskColor;
   renderer.fillRect(renderer::Rect{0.0f, 0.0f, width, insetY}, color);
-  renderer.fillRect(renderer::Rect{0.0f, height - insetY, width, insetY}, color);
-  renderer.fillRect(renderer::Rect{0.0f, insetY, insetX, height - insetY * 2.0f}, color);
-  renderer.fillRect(renderer::Rect{width - insetX, insetY, insetX, height - insetY * 2.0f}, color);
+  renderer.fillRect(renderer::Rect{0.0f, height - insetY, width, insetY},
+                    color);
+  renderer.fillRect(
+      renderer::Rect{0.0f, insetY, insetX, height - insetY * 2.0f}, color);
+  renderer.fillRect(
+      renderer::Rect{width - insetX, insetY, insetX, height - insetY * 2.0f},
+      color);
 }
 
 bool ZoomTransition::isComplete() const { return m_complete; }

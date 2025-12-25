@@ -251,17 +251,33 @@ Result<void> AudioRecorder::startMetering() {
   if (!m_captureDevice) {
     m_captureDevice = std::make_unique<ma_device>();
 
-    ma_device_config deviceConfig = ma_device_config_init(ma_device_type_capture);
+    ma_device_config deviceConfig =
+        ma_device_config_init(ma_device_type_capture);
     deviceConfig.capture.format = ma_format_f32;
     deviceConfig.capture.channels = m_format.channels;
     deviceConfig.sampleRate = m_format.sampleRate;
     deviceConfig.dataCallback = &AudioRecorder::audioCallback;
     deviceConfig.pUserData = this;
 
-    // Set device ID if specified
+    // Set device ID if specified - find matching device
     if (!m_currentInputDeviceId.empty()) {
-      // Note: In production, we'd need to properly set the device ID
-      // For now, use default
+      // Find the device in our list and get its index for miniaudio
+      for (ma_uint32 i = 0; i < static_cast<ma_uint32>(m_inputDevices.size());
+           ++i) {
+        if (m_inputDevices[i].id == m_currentInputDeviceId) {
+          // Get device info array from context
+          ma_device_info *captureInfos = nullptr;
+          ma_uint32 captureCount = 0;
+          if (ma_context_get_devices(m_context.get(), nullptr, nullptr,
+                                     &captureInfos,
+                                     &captureCount) == MA_SUCCESS) {
+            if (i < captureCount) {
+              deviceConfig.capture.pDeviceID = &captureInfos[i].id;
+            }
+          }
+          break;
+        }
+      }
     }
 
     if (ma_device_init(m_context.get(), &deviceConfig, m_captureDevice.get()) !=
@@ -317,7 +333,7 @@ Result<void> AudioRecorder::startRecording(const std::string &outputPath) {
       fs::create_directories(outPath.parent_path());
     } catch (const fs::filesystem_error &e) {
       return Result<void>::error("Failed to create output directory: " +
-                                  std::string(e.what()));
+                                 std::string(e.what()));
     }
   }
 
@@ -330,11 +346,12 @@ Result<void> AudioRecorder::startRecording(const std::string &outputPath) {
   // Initialize encoder
   m_encoder = std::make_unique<ma_encoder>();
 
-  ma_encoder_config encoderConfig = ma_encoder_config_init(
-      ma_encoding_format_wav, ma_format_f32, m_format.channels, m_format.sampleRate);
+  ma_encoder_config encoderConfig =
+      ma_encoder_config_init(ma_encoding_format_wav, ma_format_f32,
+                             m_format.channels, m_format.sampleRate);
 
-  if (ma_encoder_init_file(outputPath.c_str(), &encoderConfig, m_encoder.get()) !=
-      MA_SUCCESS) {
+  if (ma_encoder_init_file(outputPath.c_str(), &encoderConfig,
+                           m_encoder.get()) != MA_SUCCESS) {
     m_encoder.reset();
     setState(RecordingState::Error);
     if (m_onRecordingError) {
@@ -430,7 +447,8 @@ void AudioRecorder::setOnLevelUpdate(OnLevelUpdate callback) {
   m_onLevelUpdate = std::move(callback);
 }
 
-void AudioRecorder::setOnRecordingStateChanged(OnRecordingStateChanged callback) {
+void AudioRecorder::setOnRecordingStateChanged(
+    OnRecordingStateChanged callback) {
   m_onStateChanged = std::move(callback);
 }
 
@@ -453,16 +471,14 @@ f32 AudioRecorder::linearToDb(f32 linear) {
   return 20.0f * std::log10(linear);
 }
 
-f32 AudioRecorder::dbToLinear(f32 db) {
-  return std::pow(10.0f, db / 20.0f);
-}
+f32 AudioRecorder::dbToLinear(f32 db) { return std::pow(10.0f, db / 20.0f); }
 
 // ============================================================================
 // Internal Methods
 // ============================================================================
 
 void AudioRecorder::audioCallback(ma_device *device, void *output,
-                                   const void *input, u32 frameCount) {
+                                  const void *input, u32 frameCount) {
   (void)output;
 
   auto *recorder = static_cast<AudioRecorder *>(device->pUserData);
@@ -527,8 +543,8 @@ void AudioRecorder::writeToFile(const f32 *samples, u32 sampleCount) {
     return;
   }
 
-  ma_encoder_write_pcm_frames(m_encoder.get(), samples, sampleCount / m_format.channels,
-                              nullptr);
+  ma_encoder_write_pcm_frames(m_encoder.get(), samples,
+                              sampleCount / m_format.channels, nullptr);
   m_samplesRecorded += sampleCount;
 }
 

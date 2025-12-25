@@ -36,10 +36,10 @@ class NMTimelinePanel;
 enum class AnimatedProperty {
   PositionX,
   PositionY,
-  Position,  // Both X and Y
+  Position, // Both X and Y
   ScaleX,
   ScaleY,
-  Scale,     // Uniform scale
+  Scale, // Uniform scale
   Rotation,
   Alpha,
   Color,
@@ -53,14 +53,12 @@ enum class AnimatedProperty {
  * Maps a Timeline track to a specific object property in the scene.
  */
 struct AnimationBinding {
-  QString trackId;              // Timeline track ID
-  QString objectId;             // Scene object ID
-  AnimatedProperty property;    // Which property to animate
-  QString customPropertyName;   // For custom properties
+  QString trackId;            // Timeline track ID
+  QString objectId;           // Scene object ID
+  AnimatedProperty property;  // Which property to animate
+  QString customPropertyName; // For custom properties
 
-  bool isValid() const {
-    return !trackId.isEmpty() && !objectId.isEmpty();
-  }
+  bool isValid() const { return !trackId.isEmpty() && !objectId.isEmpty(); }
 };
 
 /**
@@ -74,11 +72,11 @@ struct AnimationPlaybackState {
   f64 duration = 0.0;
 
   AnimationPlaybackState() = default;
-  AnimationPlaybackState(AnimationPlaybackState&&) = default;
-  AnimationPlaybackState& operator=(AnimationPlaybackState&&) = default;
+  AnimationPlaybackState(AnimationPlaybackState &&) = default;
+  AnimationPlaybackState &operator=(AnimationPlaybackState &&) = default;
   // Prevent copying due to unique_ptr
-  AnimationPlaybackState(const AnimationPlaybackState&) = delete;
-  AnimationPlaybackState& operator=(const AnimationPlaybackState&) = delete;
+  AnimationPlaybackState(const AnimationPlaybackState &) = delete;
+  AnimationPlaybackState &operator=(const AnimationPlaybackState &) = delete;
 };
 
 /**
@@ -104,8 +102,8 @@ public:
    * @param sceneManager Reference to scene manager for object access
    * @param parent Parent QObject
    */
-  explicit NMAnimationAdapter(scene::SceneManager* sceneManager,
-                             QObject* parent = nullptr);
+  explicit NMAnimationAdapter(scene::SceneManager *sceneManager,
+                              QObject *parent = nullptr);
 
   /**
    * @brief Destructor - ensures clean shutdown
@@ -116,13 +114,13 @@ public:
    * @brief Connect to Timeline panel for synchronization
    * @param timeline Timeline panel to sync with
    */
-  void connectTimeline(NMTimelinePanel* timeline);
+  void connectTimeline(NMTimelinePanel *timeline);
 
   /**
    * @brief Connect to Scene View panel for preview rendering
    * @param sceneView Scene view panel to sync with
    */
-  void connectSceneView(NMSceneViewPanel* sceneView);
+  void connectSceneView(NMSceneViewPanel *sceneView);
 
   /**
    * @brief Create animation binding for a track
@@ -131,15 +129,14 @@ public:
    * @param property Property to animate
    * @return true if binding created successfully
    */
-  bool createBinding(const QString& trackId,
-                    const QString& objectId,
-                    AnimatedProperty property);
+  bool createBinding(const QString &trackId, const QString &objectId,
+                     AnimatedProperty property);
 
   /**
    * @brief Remove animation binding
    * @param trackId Timeline track ID
    */
-  void removeBinding(const QString& trackId);
+  void removeBinding(const QString &trackId);
 
   /**
    * @brief Get all current bindings
@@ -195,7 +192,7 @@ signals:
   /**
    * @brief Emitted when an error occurs
    */
-  void errorOccurred(const QString& message);
+  void errorOccurred(const QString &message);
 
 public slots:
   /**
@@ -215,7 +212,7 @@ public slots:
    * @param trackName Track name/ID
    * @param frame Frame number
    */
-  void onKeyframeModified(const QString& trackName, int frame);
+  void onKeyframeModified(const QString &trackName, int frame);
 
   /**
    * @brief Rebuild animations from timeline data
@@ -230,7 +227,8 @@ private:
    * @return Constructed animation timeline, or nullptr on error
    */
   [[nodiscard]] std::unique_ptr<scene::AnimationTimeline>
-  buildAnimationFromTrack(TimelineTrack* track, const AnimationBinding& binding);
+  buildAnimationFromTrack(TimelineTrack *track,
+                          const AnimationBinding &binding);
 
   /**
    * @brief Create a tween for a specific property and keyframe segment
@@ -241,17 +239,15 @@ private:
    * @return Created tween, or nullptr on error
    */
   [[nodiscard]] std::unique_ptr<scene::Tween>
-  createTweenForProperty(const AnimationBinding& binding,
-                        const Keyframe& kf1,
-                        const Keyframe& kf2,
-                        f32 duration);
+  createTweenForProperty(const AnimationBinding &binding, const Keyframe &kf1,
+                         const Keyframe &kf2, f32 duration);
 
   /**
    * @brief Apply animation state to scene object at current time
    * @param binding Animation binding
    * @param time Current time in seconds
    */
-  void applyAnimationToScene(const AnimationBinding& binding, f64 time);
+  void applyAnimationToScene(const AnimationBinding &binding, f64 time);
 
   /**
    * @brief Get interpolated value from track at specific time
@@ -259,7 +255,7 @@ private:
    * @param time Time in seconds
    * @return Interpolated value
    */
-  [[nodiscard]] QVariant interpolateTrackValue(TimelineTrack* track, f64 time);
+  [[nodiscard]] QVariant interpolateTrackValue(TimelineTrack *track, f64 time);
 
   /**
    * @brief Seek all animations to a specific time
@@ -273,9 +269,9 @@ private:
   void cleanupAnimations();
 
   // Dependencies
-  scene::SceneManager* m_sceneManager = nullptr;
-  NMTimelinePanel* m_timeline = nullptr;
-  NMSceneViewPanel* m_sceneView = nullptr;
+  scene::SceneManager *m_sceneManager = nullptr;
+  NMTimelinePanel *m_timeline = nullptr;
+  NMSceneViewPanel *m_sceneView = nullptr;
 
   // Animation state
   std::unordered_map<QString, AnimationPlaybackState> m_animationStates;

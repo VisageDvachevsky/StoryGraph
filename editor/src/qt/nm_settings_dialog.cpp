@@ -4,9 +4,8 @@
  */
 
 #include "NovelMind/editor/qt/nm_settings_dialog.hpp"
-#include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/core/logger.hpp"
-#include <set>
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDoubleSpinBox>
@@ -23,6 +22,7 @@
 #include <QStackedWidget>
 #include <QTreeWidget>
 #include <QVBoxLayout>
+#include <set>
 
 namespace NovelMind::editor {
 
@@ -30,18 +30,17 @@ namespace NovelMind::editor {
 // NMSettingWidget Base Class
 // ============================================================================
 
-NMSettingWidget::NMSettingWidget(const SettingDefinition& def,
-                                 QWidget* parent)
+NMSettingWidget::NMSettingWidget(const SettingDefinition &def, QWidget *parent)
     : QWidget(parent), m_definition(def) {}
 
 // ============================================================================
 // NMBoolSettingWidget
 // ============================================================================
 
-NMBoolSettingWidget::NMBoolSettingWidget(const SettingDefinition& def,
-                                         QWidget* parent)
+NMBoolSettingWidget::NMBoolSettingWidget(const SettingDefinition &def,
+                                         QWidget *parent)
     : NMSettingWidget(def, parent) {
-  auto* layout = new QHBoxLayout(this);
+  auto *layout = new QHBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
 
   m_checkbox = new QCheckBox(QString::fromStdString(def.displayName), this);
@@ -50,18 +49,20 @@ NMBoolSettingWidget::NMBoolSettingWidget(const SettingDefinition& def,
   layout->addWidget(m_checkbox);
   layout->addStretch();
 
-  connect(m_checkbox, &QCheckBox::toggled, this, &NMSettingWidget::valueChanged);
+  connect(m_checkbox, &QCheckBox::toggled, this,
+          &NMSettingWidget::valueChanged);
 }
 
 SettingValue NMBoolSettingWidget::getValue() const {
   return m_checkbox->isChecked();
 }
 
-void NMBoolSettingWidget::setValue(const SettingValue& value) {
+void NMBoolSettingWidget::setValue(const SettingValue &value) {
   try {
     m_checkbox->setChecked(std::get<bool>(value));
   } catch (...) {
-    NOVELMIND_LOG_ERROR(std::string("Failed to set bool value for ") + m_definition.key);
+    NOVELMIND_LOG_ERROR(std::string("Failed to set bool value for ") +
+                        m_definition.key);
   }
 }
 
@@ -69,13 +70,13 @@ void NMBoolSettingWidget::setValue(const SettingValue& value) {
 // NMIntSettingWidget
 // ============================================================================
 
-NMIntSettingWidget::NMIntSettingWidget(const SettingDefinition& def,
-                                       QWidget* parent)
+NMIntSettingWidget::NMIntSettingWidget(const SettingDefinition &def,
+                                       QWidget *parent)
     : NMSettingWidget(def, parent) {
-  auto* layout = new QHBoxLayout(this);
+  auto *layout = new QHBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
 
-  auto* label = new QLabel(QString::fromStdString(def.displayName), this);
+  auto *label = new QLabel(QString::fromStdString(def.displayName), this);
   label->setToolTip(QString::fromStdString(def.description));
   layout->addWidget(label);
 
@@ -122,7 +123,7 @@ SettingValue NMIntSettingWidget::getValue() const {
   return 0;
 }
 
-void NMIntSettingWidget::setValue(const SettingValue& value) {
+void NMIntSettingWidget::setValue(const SettingValue &value) {
   try {
     i32 intValue = std::get<i32>(value);
     if (m_slider) {
@@ -132,7 +133,8 @@ void NMIntSettingWidget::setValue(const SettingValue& value) {
       m_spinBox->setValue(intValue);
     }
   } catch (...) {
-    NOVELMIND_LOG_ERROR(std::string("Failed to set int value for ") + m_definition.key);
+    NOVELMIND_LOG_ERROR(std::string("Failed to set int value for ") +
+                        m_definition.key);
   }
 }
 
@@ -140,13 +142,13 @@ void NMIntSettingWidget::setValue(const SettingValue& value) {
 // NMFloatSettingWidget
 // ============================================================================
 
-NMFloatSettingWidget::NMFloatSettingWidget(const SettingDefinition& def,
-                                           QWidget* parent)
+NMFloatSettingWidget::NMFloatSettingWidget(const SettingDefinition &def,
+                                           QWidget *parent)
     : NMSettingWidget(def, parent) {
-  auto* layout = new QHBoxLayout(this);
+  auto *layout = new QHBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
 
-  auto* label = new QLabel(QString::fromStdString(def.displayName), this);
+  auto *label = new QLabel(QString::fromStdString(def.displayName), this);
   label->setToolTip(QString::fromStdString(def.description));
   layout->addWidget(label);
 
@@ -165,7 +167,8 @@ NMFloatSettingWidget::NMFloatSettingWidget(const SettingDefinition& def,
     layout->addWidget(m_valueLabel);
 
     connect(m_slider, &QSlider::valueChanged, this, [this, def](int value) {
-      f32 realValue = def.minValue + (static_cast<f32>(value) / 1000.0f) * (def.maxValue - def.minValue);
+      f32 realValue = def.minValue + (static_cast<f32>(value) / 1000.0f) *
+                                         (def.maxValue - def.minValue);
       m_valueLabel->setText(QString::number(realValue, 'f', 2));
       emit valueChanged();
     });
@@ -189,27 +192,29 @@ NMFloatSettingWidget::NMFloatSettingWidget(const SettingDefinition& def,
 SettingValue NMFloatSettingWidget::getValue() const {
   if (m_slider) {
     f32 range = m_definition.maxValue - m_definition.minValue;
-    return m_definition.minValue + (static_cast<f32>(m_slider->value()) / 1000.0f) * range;
+    return m_definition.minValue +
+           (static_cast<f32>(m_slider->value()) / 1000.0f) * range;
   } else if (m_spinBox) {
     return static_cast<f32>(m_spinBox->value());
   }
   return 0.0f;
 }
 
-void NMFloatSettingWidget::setValue(const SettingValue& value) {
+void NMFloatSettingWidget::setValue(const SettingValue &value) {
   try {
     f32 floatValue = std::get<f32>(value);
     if (m_slider) {
       f32 range = m_definition.maxValue - m_definition.minValue;
-      int sliderValue =
-          static_cast<int>((floatValue - m_definition.minValue) / range * 1000.0f);
+      int sliderValue = static_cast<int>((floatValue - m_definition.minValue) /
+                                         range * 1000.0f);
       m_slider->setValue(sliderValue);
       m_valueLabel->setText(QString::number(floatValue, 'f', 2));
     } else if (m_spinBox) {
       m_spinBox->setValue(floatValue);
     }
   } catch (...) {
-    NOVELMIND_LOG_ERROR(std::string("Failed to set float value for ") + m_definition.key);
+    NOVELMIND_LOG_ERROR(std::string("Failed to set float value for ") +
+                        m_definition.key);
   }
 }
 
@@ -217,13 +222,13 @@ void NMFloatSettingWidget::setValue(const SettingValue& value) {
 // NMStringSettingWidget
 // ============================================================================
 
-NMStringSettingWidget::NMStringSettingWidget(const SettingDefinition& def,
-                                             QWidget* parent)
+NMStringSettingWidget::NMStringSettingWidget(const SettingDefinition &def,
+                                             QWidget *parent)
     : NMSettingWidget(def, parent) {
-  auto* layout = new QHBoxLayout(this);
+  auto *layout = new QHBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
 
-  auto* label = new QLabel(QString::fromStdString(def.displayName), this);
+  auto *label = new QLabel(QString::fromStdString(def.displayName), this);
   label->setToolTip(QString::fromStdString(def.description));
   layout->addWidget(label);
 
@@ -239,11 +244,12 @@ SettingValue NMStringSettingWidget::getValue() const {
   return m_lineEdit->text().toStdString();
 }
 
-void NMStringSettingWidget::setValue(const SettingValue& value) {
+void NMStringSettingWidget::setValue(const SettingValue &value) {
   try {
     m_lineEdit->setText(QString::fromStdString(std::get<std::string>(value)));
   } catch (...) {
-    NOVELMIND_LOG_ERROR(std::string("Failed to set string value for ") + m_definition.key);
+    NOVELMIND_LOG_ERROR(std::string("Failed to set string value for ") +
+                        m_definition.key);
   }
 }
 
@@ -251,13 +257,13 @@ void NMStringSettingWidget::setValue(const SettingValue& value) {
 // NMEnumSettingWidget
 // ============================================================================
 
-NMEnumSettingWidget::NMEnumSettingWidget(const SettingDefinition& def,
-                                         QWidget* parent)
+NMEnumSettingWidget::NMEnumSettingWidget(const SettingDefinition &def,
+                                         QWidget *parent)
     : NMSettingWidget(def, parent) {
-  auto* layout = new QHBoxLayout(this);
+  auto *layout = new QHBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
 
-  auto* label = new QLabel(QString::fromStdString(def.displayName), this);
+  auto *label = new QLabel(QString::fromStdString(def.displayName), this);
   label->setToolTip(QString::fromStdString(def.description));
   layout->addWidget(label);
 
@@ -265,22 +271,22 @@ NMEnumSettingWidget::NMEnumSettingWidget(const SettingDefinition& def,
   m_comboBox->setToolTip(QString::fromStdString(def.description));
 
   // Add enum options
-  for (const auto& option : def.enumOptions) {
+  for (const auto &option : def.enumOptions) {
     m_comboBox->addItem(QString::fromStdString(option));
   }
 
   layout->addWidget(m_comboBox, 1);
   layout->addStretch();
 
-  connect(m_comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-          this, &NMSettingWidget::valueChanged);
+  connect(m_comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &NMSettingWidget::valueChanged);
 }
 
 SettingValue NMEnumSettingWidget::getValue() const {
   return m_comboBox->currentText().toStdString();
 }
 
-void NMEnumSettingWidget::setValue(const SettingValue& value) {
+void NMEnumSettingWidget::setValue(const SettingValue &value) {
   try {
     QString valueStr = QString::fromStdString(std::get<std::string>(value));
     int index = m_comboBox->findText(valueStr);
@@ -288,7 +294,8 @@ void NMEnumSettingWidget::setValue(const SettingValue& value) {
       m_comboBox->setCurrentIndex(index);
     }
   } catch (...) {
-    NOVELMIND_LOG_ERROR(std::string("Failed to set enum value for ") + m_definition.key);
+    NOVELMIND_LOG_ERROR(std::string("Failed to set enum value for ") +
+                        m_definition.key);
   }
 }
 
@@ -296,13 +303,13 @@ void NMEnumSettingWidget::setValue(const SettingValue& value) {
 // NMPathSettingWidget
 // ============================================================================
 
-NMPathSettingWidget::NMPathSettingWidget(const SettingDefinition& def,
-                                         QWidget* parent)
+NMPathSettingWidget::NMPathSettingWidget(const SettingDefinition &def,
+                                         QWidget *parent)
     : NMSettingWidget(def, parent) {
-  auto* layout = new QHBoxLayout(this);
+  auto *layout = new QHBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
 
-  auto* label = new QLabel(QString::fromStdString(def.displayName), this);
+  auto *label = new QLabel(QString::fromStdString(def.displayName), this);
   label->setToolTip(QString::fromStdString(def.description));
   layout->addWidget(label);
 
@@ -323,11 +330,12 @@ SettingValue NMPathSettingWidget::getValue() const {
   return m_lineEdit->text().toStdString();
 }
 
-void NMPathSettingWidget::setValue(const SettingValue& value) {
+void NMPathSettingWidget::setValue(const SettingValue &value) {
   try {
     m_lineEdit->setText(QString::fromStdString(std::get<std::string>(value)));
   } catch (...) {
-    NOVELMIND_LOG_ERROR(std::string("Failed to set path value for ") + m_definition.key);
+    NOVELMIND_LOG_ERROR(std::string("Failed to set path value for ") +
+                        m_definition.key);
   }
 }
 
@@ -344,9 +352,9 @@ void NMPathSettingWidget::onBrowseClicked() {
 // NMSettingsCategoryPage
 // ============================================================================
 
-NMSettingsCategoryPage::NMSettingsCategoryPage(const std::string& category,
-                                                NMSettingsRegistry* registry,
-                                                QWidget* parent)
+NMSettingsCategoryPage::NMSettingsCategoryPage(const std::string &category,
+                                               NMSettingsRegistry *registry,
+                                               QWidget *parent)
     : QWidget(parent), m_category(category), m_registry(registry) {
   m_layout = new QVBoxLayout(this);
   m_layout->setContentsMargins(16, 16, 16, 16);
@@ -357,7 +365,7 @@ NMSettingsCategoryPage::NMSettingsCategoryPage(const std::string& category,
 
 void NMSettingsCategoryPage::rebuild() {
   // Clear existing widgets
-  for (auto* widget : m_widgets) {
+  for (auto *widget : m_widgets) {
     widget->deleteLater();
   }
   m_widgets.clear();
@@ -366,8 +374,7 @@ void NMSettingsCategoryPage::rebuild() {
   auto settings = m_registry->getByCategory(m_category);
 
   if (settings.empty()) {
-    auto* emptyLabel =
-        new QLabel("No settings found in this category.", this);
+    auto *emptyLabel = new QLabel("No settings found in this category.", this);
     emptyLabel->setAlignment(Qt::AlignCenter);
     m_layout->addWidget(emptyLabel);
     m_layout->addStretch();
@@ -376,8 +383,8 @@ void NMSettingsCategoryPage::rebuild() {
 
   // Group settings by subcategory (if any)
   // For simplicity, we'll just list them all
-  for (const auto& def : settings) {
-    auto* widget = createWidgetForSetting(def);
+  for (const auto &def : settings) {
+    auto *widget = createWidgetForSetting(def);
     if (widget) {
       m_widgets.push_back(widget);
       m_layout->addWidget(widget);
@@ -398,17 +405,18 @@ void NMSettingsCategoryPage::rebuild() {
 }
 
 void NMSettingsCategoryPage::applyValues() {
-  for (auto* widget : m_widgets) {
+  for (auto *widget : m_widgets) {
     auto value = widget->getValue();
     std::string error = m_registry->setValue(widget->getKey(), value);
     if (!error.empty()) {
-      NOVELMIND_LOG_ERROR(std::string("Failed to set ") + widget->getKey() + ": " + error);
+      NOVELMIND_LOG_ERROR(std::string("Failed to set ") + widget->getKey() +
+                          ": " + error);
     }
   }
 }
 
 void NMSettingsCategoryPage::revertValues() {
-  for (auto* widget : m_widgets) {
+  for (auto *widget : m_widgets) {
     auto value = m_registry->getValue(widget->getKey());
     if (value) {
       widget->setValue(*value);
@@ -420,7 +428,7 @@ void NMSettingsCategoryPage::resetToDefaults() {
   m_registry->resetCategoryToDefaults(m_category);
 
   // Update widgets
-  for (auto* widget : m_widgets) {
+  for (auto *widget : m_widgets) {
     auto value = m_registry->getValue(widget->getKey());
     if (value) {
       widget->setValue(*value);
@@ -428,8 +436,8 @@ void NMSettingsCategoryPage::resetToDefaults() {
   }
 }
 
-NMSettingWidget*
-NMSettingsCategoryPage::createWidgetForSetting(const SettingDefinition& def) {
+NMSettingWidget *
+NMSettingsCategoryPage::createWidgetForSetting(const SettingDefinition &def) {
   switch (def.type) {
   case SettingType::Bool:
     return new NMBoolSettingWidget(def, this);
@@ -455,8 +463,8 @@ NMSettingsCategoryPage::createWidgetForSetting(const SettingDefinition& def) {
 // NMSettingsDialog
 // ============================================================================
 
-NMSettingsDialog::NMSettingsDialog(NMSettingsRegistry* registry,
-                                   QWidget* parent)
+NMSettingsDialog::NMSettingsDialog(NMSettingsRegistry *registry,
+                                   QWidget *parent)
     : QDialog(parent), m_registry(registry) {
   setupUI();
   buildCategoryTree();
@@ -470,13 +478,13 @@ void NMSettingsDialog::setupUI() {
   setWindowTitle("Settings");
   resize(900, 600);
 
-  auto* mainLayout = new QVBoxLayout(this);
+  auto *mainLayout = new QVBoxLayout(this);
   mainLayout->setContentsMargins(0, 0, 0, 0);
   mainLayout->setSpacing(0);
 
   // Search bar
-  auto* searchWidget = new QWidget(this);
-  auto* searchLayout = new QHBoxLayout(searchWidget);
+  auto *searchWidget = new QWidget(this);
+  auto *searchLayout = new QHBoxLayout(searchWidget);
   searchLayout->setContentsMargins(8, 8, 8, 8);
 
   m_searchEdit = new QLineEdit(this);
@@ -486,7 +494,7 @@ void NMSettingsDialog::setupUI() {
   mainLayout->addWidget(searchWidget);
 
   // Splitter with tree and content
-  auto* splitter = new QSplitter(Qt::Horizontal, this);
+  auto *splitter = new QSplitter(Qt::Horizontal, this);
 
   // Category tree
   m_categoryTree = new QTreeWidget(this);
@@ -496,7 +504,7 @@ void NMSettingsDialog::setupUI() {
   splitter->addWidget(m_categoryTree);
 
   // Content stack (with scroll area)
-  auto* scrollArea = new QScrollArea(this);
+  auto *scrollArea = new QScrollArea(this);
   scrollArea->setWidgetResizable(true);
   scrollArea->setFrameShape(QFrame::NoFrame);
 
@@ -510,8 +518,8 @@ void NMSettingsDialog::setupUI() {
   mainLayout->addWidget(splitter, 1);
 
   // Button bar
-  auto* buttonWidget = new QWidget(this);
-  auto* buttonLayout = new QHBoxLayout(buttonWidget);
+  auto *buttonWidget = new QWidget(this);
+  auto *buttonLayout = new QHBoxLayout(buttonWidget);
   buttonLayout->setContentsMargins(8, 8, 8, 8);
 
   m_resetButton = new QPushButton("Reset to Defaults", this);
@@ -532,9 +540,9 @@ void NMSettingsDialog::setupUI() {
   mainLayout->addWidget(buttonWidget);
 
   // Connect signals
-  connect(m_searchEdit, &QLineEdit::textChanged, this, [this](const QString& text) {
-    onSearchTextChanged(text.toStdString());
-  });
+  connect(
+      m_searchEdit, &QLineEdit::textChanged, this,
+      [this](const QString &text) { onSearchTextChanged(text.toStdString()); });
 
   connect(m_categoryTree, &QTreeWidget::itemClicked, this,
           &NMSettingsDialog::onCategorySelected);
@@ -556,16 +564,16 @@ void NMSettingsDialog::buildCategoryTree() {
   m_treeItems.clear();
 
   // Build tree from all setting definitions
-  const auto& definitions = m_registry->getAllDefinitions();
+  const auto &definitions = m_registry->getAllDefinitions();
 
   // Collect unique categories
   std::set<std::string> categories;
-  for (const auto& [key, def] : definitions) {
+  for (const auto &[key, def] : definitions) {
     categories.insert(def.category);
   }
 
   // Create tree items for each category
-  for (const auto& category : categories) {
+  for (const auto &category : categories) {
     findOrCreateCategoryItem(category);
   }
 
@@ -580,16 +588,16 @@ void NMSettingsDialog::buildCategoryTree() {
 
 void NMSettingsDialog::buildCategoryPages() {
   // Get all categories from the tree
-  const auto& definitions = m_registry->getAllDefinitions();
+  const auto &definitions = m_registry->getAllDefinitions();
 
   std::set<std::string> categories;
-  for (const auto& [key, def] : definitions) {
+  for (const auto &[key, def] : definitions) {
     categories.insert(def.category);
   }
 
   // Create a page for each category
-  for (const auto& category : categories) {
-    auto* page = new NMSettingsCategoryPage(category, m_registry, this);
+  for (const auto &category : categories) {
+    auto *page = new NMSettingsCategoryPage(category, m_registry, this);
     m_pages[QString::fromStdString(category)] = page;
     m_contentStack->addWidget(page);
 
@@ -605,8 +613,8 @@ void NMSettingsDialog::updateButtonStates() {
   m_revertButton->setEnabled(hasDirty);
 }
 
-QTreeWidgetItem*
-NMSettingsDialog::findOrCreateCategoryItem(const std::string& categoryPath) {
+QTreeWidgetItem *
+NMSettingsDialog::findOrCreateCategoryItem(const std::string &categoryPath) {
   QString qCategoryPath = QString::fromStdString(categoryPath);
 
   // Check if already exists
@@ -617,7 +625,7 @@ NMSettingsDialog::findOrCreateCategoryItem(const std::string& categoryPath) {
   // Split category path (e.g. "Editor/General" -> ["Editor", "General"])
   QStringList parts = qCategoryPath.split('/');
 
-  QTreeWidgetItem* parentItem = nullptr;
+  QTreeWidgetItem *parentItem = nullptr;
   QString currentPath;
 
   for (int i = 0; i < parts.size(); ++i) {
@@ -628,7 +636,7 @@ NMSettingsDialog::findOrCreateCategoryItem(const std::string& categoryPath) {
     if (m_treeItems.contains(currentPath)) {
       parentItem = m_treeItems[currentPath];
     } else {
-      QTreeWidgetItem* item;
+      QTreeWidgetItem *item;
       if (parentItem) {
         item = new QTreeWidgetItem(parentItem);
       } else {
@@ -645,7 +653,7 @@ NMSettingsDialog::findOrCreateCategoryItem(const std::string& categoryPath) {
   return parentItem;
 }
 
-void NMSettingsDialog::showCategory(const std::string& category) {
+void NMSettingsDialog::showCategory(const std::string &category) {
   QString qCategory = QString::fromStdString(category);
   if (m_pages.contains(qCategory)) {
     m_contentStack->setCurrentWidget(m_pages[qCategory]);
@@ -657,14 +665,14 @@ void NMSettingsDialog::showCategory(const std::string& category) {
   }
 }
 
-void NMSettingsDialog::showSetting(const std::string& key) {
+void NMSettingsDialog::showSetting(const std::string &key) {
   auto def = m_registry->getDefinition(key);
   if (def) {
     showCategory(def->category);
   }
 }
 
-void NMSettingsDialog::onSearchTextChanged(const std::string& text) {
+void NMSettingsDialog::onSearchTextChanged(const std::string &text) {
   if (text.empty()) {
     // Show all categories
     buildCategoryTree();
@@ -681,18 +689,18 @@ void NMSettingsDialog::onSearchTextChanged(const std::string& text) {
 
   // Show matching categories
   std::set<std::string> matchingCategories;
-  for (const auto& def : results) {
+  for (const auto &def : results) {
     matchingCategories.insert(def.category);
   }
 
-  for (const auto& category : matchingCategories) {
+  for (const auto &category : matchingCategories) {
     QString qCategory = QString::fromStdString(category);
     if (m_treeItems.contains(qCategory)) {
-      auto* item = m_treeItems[qCategory];
+      auto *item = m_treeItems[qCategory];
       item->setHidden(false);
 
       // Show all parents
-      auto* parent = item->parent();
+      auto *parent = item->parent();
       while (parent) {
         parent->setHidden(false);
         parent = parent->parent();
@@ -701,7 +709,7 @@ void NMSettingsDialog::onSearchTextChanged(const std::string& text) {
   }
 }
 
-void NMSettingsDialog::onCategorySelected(QTreeWidgetItem* item, int column) {
+void NMSettingsDialog::onCategorySelected(QTreeWidgetItem *item, int column) {
   (void)column;
 
   if (!item)
@@ -713,7 +721,7 @@ void NMSettingsDialog::onCategorySelected(QTreeWidgetItem* item, int column) {
 
 void NMSettingsDialog::onApplyClicked() {
   // Apply all page values to registry
-  for (auto* page : m_pages.values()) {
+  for (auto *page : m_pages.values()) {
     page->applyValues();
   }
 
@@ -726,7 +734,7 @@ void NMSettingsDialog::onApplyClicked() {
 
 void NMSettingsDialog::onRevertClicked() {
   // Revert all pages
-  for (auto* page : m_pages.values()) {
+  for (auto *page : m_pages.values()) {
     page->revertValues();
   }
 
@@ -739,14 +747,15 @@ void NMSettingsDialog::onRevertClicked() {
 
 void NMSettingsDialog::onResetClicked() {
   // Get current page
-  auto* currentPage = qobject_cast<NMSettingsCategoryPage*>(
-      m_contentStack->currentWidget());
+  auto *currentPage =
+      qobject_cast<NMSettingsCategoryPage *>(m_contentStack->currentWidget());
   if (currentPage) {
     currentPage->resetToDefaults();
     m_hasUnsavedChanges = true;
     updateButtonStates();
 
-    NOVELMIND_LOG_INFO(std::string("Category reset to defaults: ") + currentPage->getCategory());
+    NOVELMIND_LOG_INFO(std::string("Category reset to defaults: ") +
+                       currentPage->getCategory());
   }
 }
 

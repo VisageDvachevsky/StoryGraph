@@ -21,31 +21,16 @@ class QSortFilterProxyModel;
 
 namespace NovelMind::editor::qt {
 
-enum class NMDialogButton {
-  None,
-  Ok,
-  Cancel,
-  Yes,
-  No,
-  Save,
-  Discard,
-  Close
-};
+enum class NMDialogButton { None, Ok, Cancel, Yes, No, Save, Discard, Close };
 
-enum class NMMessageType {
-  Info,
-  Warning,
-  Error,
-  Question
-};
+enum class NMMessageType { Info, Warning, Error, Question };
 
 class NMMessageDialog final : public QDialog {
   Q_OBJECT
 
 public:
   NMMessageDialog(QWidget *parent, const QString &title, const QString &message,
-                  NMMessageType type,
-                  const QList<NMDialogButton> &buttons,
+                  NMMessageType type, const QList<NMDialogButton> &buttons,
                   NMDialogButton defaultButton = NMDialogButton::Ok);
 
   [[nodiscard]] NMDialogButton choice() const { return m_choice; }
@@ -85,9 +70,8 @@ public:
 
   static double getDouble(QWidget *parent, const QString &title,
                           const QString &label, double value = 0.0,
-                          double minValue = -1.0e308,
-                          double maxValue = 1.0e308, int decimals = 2,
-                          bool *ok = nullptr);
+                          double minValue = -1.0e308, double maxValue = 1.0e308,
+                          int decimals = 2, bool *ok = nullptr);
 
   static QString getItem(QWidget *parent, const QString &title,
                          const QString &label, const QStringList &items,

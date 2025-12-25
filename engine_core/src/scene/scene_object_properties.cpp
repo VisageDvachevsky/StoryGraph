@@ -17,17 +17,15 @@ namespace NovelMind::scene {
 // ============================================================================
 
 static Color toPropertyColor(const renderer::Color &rc) {
-  return Color(static_cast<f32>(rc.r) / 255.0f,
-               static_cast<f32>(rc.g) / 255.0f,
+  return Color(static_cast<f32>(rc.r) / 255.0f, static_cast<f32>(rc.g) / 255.0f,
                static_cast<f32>(rc.b) / 255.0f,
                static_cast<f32>(rc.a) / 255.0f);
 }
 
 static renderer::Color fromPropertyColor(const Color &c) {
-  return renderer::Color(static_cast<u8>(c.r * 255.0f),
-                         static_cast<u8>(c.g * 255.0f),
-                         static_cast<u8>(c.b * 255.0f),
-                         static_cast<u8>(c.a * 255.0f));
+  return renderer::Color(
+      static_cast<u8>(c.r * 255.0f), static_cast<u8>(c.g * 255.0f),
+      static_cast<u8>(c.b * 255.0f), static_cast<u8>(c.a * 255.0f));
 }
 
 // ============================================================================
@@ -87,27 +85,40 @@ void registerSceneObjectBaseProperties() {
   TypeInfoBuilder<SceneObjectBase>("SceneObjectBase")
       .property<f32>(
           xMeta, [](const SceneObjectBase &obj) { return obj.getX(); },
-          [](SceneObjectBase &obj, const f32 &val) { obj.setPosition(val, obj.getY()); })
+          [](SceneObjectBase &obj, const f32 &val) {
+            obj.setPosition(val, obj.getY());
+          })
       .property<f32>(
           yMeta, [](const SceneObjectBase &obj) { return obj.getY(); },
-          [](SceneObjectBase &obj, const f32 &val) { obj.setPosition(obj.getX(), val); })
+          [](SceneObjectBase &obj, const f32 &val) {
+            obj.setPosition(obj.getX(), val);
+          })
       .property<f32>(
-          scaleXMeta, [](const SceneObjectBase &obj) { return obj.getScaleX(); },
-          [](SceneObjectBase &obj, const f32 &val) { obj.setScale(val, obj.getScaleY()); })
+          scaleXMeta,
+          [](const SceneObjectBase &obj) { return obj.getScaleX(); },
+          [](SceneObjectBase &obj, const f32 &val) {
+            obj.setScale(val, obj.getScaleY());
+          })
       .property<f32>(
-          scaleYMeta, [](const SceneObjectBase &obj) { return obj.getScaleY(); },
-          [](SceneObjectBase &obj, const f32 &val) { obj.setScale(obj.getScaleX(), val); })
+          scaleYMeta,
+          [](const SceneObjectBase &obj) { return obj.getScaleY(); },
+          [](SceneObjectBase &obj, const f32 &val) {
+            obj.setScale(obj.getScaleX(), val);
+          })
       .property<f32>(
-          rotationMeta, [](const SceneObjectBase &obj) { return obj.getRotation(); },
+          rotationMeta,
+          [](const SceneObjectBase &obj) { return obj.getRotation(); },
           [](SceneObjectBase &obj, const f32 &val) { obj.setRotation(val); })
       .property<f32>(
           alphaMeta, [](const SceneObjectBase &obj) { return obj.getAlpha(); },
           [](SceneObjectBase &obj, const f32 &val) { obj.setAlpha(val); })
       .property<bool>(
-          visibleMeta, [](const SceneObjectBase &obj) { return obj.isVisible(); },
+          visibleMeta,
+          [](const SceneObjectBase &obj) { return obj.isVisible(); },
           [](SceneObjectBase &obj, const bool &val) { obj.setVisible(val); })
       .property<i32>(
-          zOrderMeta, [](const SceneObjectBase &obj) { return obj.getZOrder(); },
+          zOrderMeta,
+          [](const SceneObjectBase &obj) { return obj.getZOrder(); },
           [](SceneObjectBase &obj, const i32 &val) { obj.setZOrder(val); })
       .build();
 }
@@ -156,13 +167,15 @@ void registerBackgroundObjectProperties() {
 // ============================================================================
 
 void registerCharacterObjectProperties() {
-  PropertyMeta characterIdMeta{"characterId", "Character ID", PropertyType::String};
+  PropertyMeta characterIdMeta{"characterId", "Character ID",
+                               PropertyType::String};
   characterIdMeta.category = "Character";
   characterIdMeta.tooltip = "Unique character identifier";
   characterIdMeta.flags = PropertyFlags::ReadOnly;
   characterIdMeta.order = 1;
 
-  PropertyMeta displayNameMeta{"displayName", "Display Name", PropertyType::String};
+  PropertyMeta displayNameMeta{"displayName", "Display Name",
+                               PropertyType::String};
   displayNameMeta.category = "Character";
   displayNameMeta.tooltip = "Character name shown in dialogue";
   displayNameMeta.order = 2;
@@ -177,14 +190,16 @@ void registerCharacterObjectProperties() {
   poseMeta.tooltip = "Current character pose/outfit";
   poseMeta.order = 4;
 
-  PropertyMeta slotPositionMeta{"slotPosition", "Slot Position", PropertyType::Enum};
+  PropertyMeta slotPositionMeta{"slotPosition", "Slot Position",
+                                PropertyType::Enum};
   slotPositionMeta.category = "Position";
   slotPositionMeta.tooltip = "Pre-defined screen position slot";
   slotPositionMeta.enumOptions = {
       {0, "Left"}, {1, "Center"}, {2, "Right"}, {3, "Custom"}};
   slotPositionMeta.order = 1;
 
-  PropertyMeta highlightedMeta{"highlighted", "Highlighted", PropertyType::Bool};
+  PropertyMeta highlightedMeta{"highlighted", "Highlighted",
+                               PropertyType::Bool};
   highlightedMeta.category = "Appearance";
   highlightedMeta.tooltip = "Whether the character is highlighted (speaking)";
   highlightedMeta.defaultValue = false;
@@ -217,21 +232,25 @@ void registerCharacterObjectProperties() {
             obj.setExpression(val);
           })
       .property<std::string>(
-          poseMeta,
-          [](const CharacterObject &obj) { return obj.getPose(); },
-          [](CharacterObject &obj, const std::string &val) { obj.setPose(val); })
+          poseMeta, [](const CharacterObject &obj) { return obj.getPose(); },
+          [](CharacterObject &obj, const std::string &val) {
+            obj.setPose(val);
+          })
       .property<EnumValue>(
           slotPositionMeta,
           [](const CharacterObject &obj) {
             return EnumValue(static_cast<i32>(obj.getSlotPosition()), "");
           },
           [](CharacterObject &obj, const EnumValue &val) {
-            obj.setSlotPosition(static_cast<CharacterObject::Position>(val.value));
+            obj.setSlotPosition(
+                static_cast<CharacterObject::Position>(val.value));
           })
       .property<bool>(
           highlightedMeta,
           [](const CharacterObject &obj) { return obj.isHighlighted(); },
-          [](CharacterObject &obj, const bool &val) { obj.setHighlighted(val); })
+          [](CharacterObject &obj, const bool &val) {
+            obj.setHighlighted(val);
+          })
       .property<Color>(
           nameColorMeta,
           [](const CharacterObject &obj) {
@@ -259,7 +278,8 @@ void registerDialogueUIObjectProperties() {
   textMeta.flags = PropertyFlags::MultiLine;
   textMeta.order = 2;
 
-  PropertyMeta speakerColorMeta{"speakerColor", "Speaker Color", PropertyType::Color};
+  PropertyMeta speakerColorMeta{"speakerColor", "Speaker Color",
+                                PropertyType::Color};
   speakerColorMeta.category = "Appearance";
   speakerColorMeta.tooltip = "Color of the speaker name";
   speakerColorMeta.flags = PropertyFlags::ColorPicker;
@@ -299,7 +319,9 @@ void registerDialogueUIObjectProperties() {
           })
       .property<std::string>(
           textMeta, [](const DialogueUIObject &obj) { return obj.getText(); },
-          [](DialogueUIObject &obj, const std::string &val) { obj.setText(val); })
+          [](DialogueUIObject &obj, const std::string &val) {
+            obj.setText(val);
+          })
       .property<Color>(
           speakerColorMeta,
           [](const DialogueUIObject &obj) {
@@ -339,8 +361,8 @@ void registerEffectOverlayObjectProperties() {
   PropertyMeta effectTypeMeta{"effectType", "Effect Type", PropertyType::Enum};
   effectTypeMeta.category = "Effect";
   effectTypeMeta.tooltip = "Type of visual effect";
-  effectTypeMeta.enumOptions = {{0, "None"},   {1, "Fade"},  {2, "Flash"},
-                                {3, "Shake"},  {4, "Rain"},  {5, "Snow"},
+  effectTypeMeta.enumOptions = {{0, "None"},  {1, "Fade"}, {2, "Flash"},
+                                {3, "Shake"}, {4, "Rain"}, {5, "Snow"},
                                 {6, "Custom"}};
   effectTypeMeta.order = 1;
 

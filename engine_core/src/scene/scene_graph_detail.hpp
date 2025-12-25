@@ -18,8 +18,7 @@ bool parseBool(const std::optional<std::string> &value, bool fallback);
 [[maybe_unused]] NovelMind::renderer::Color
 parseColor(const std::optional<std::string> &value,
            const NovelMind::renderer::Color &fallback);
-std::string getTextProperty(const SceneObjectBase &obj,
-                            const std::string &key,
+std::string getTextProperty(const SceneObjectBase &obj, const std::string &key,
                             const std::string &fallback);
 std::string defaultFontPath();
 

@@ -1,6 +1,6 @@
+#include <NovelMind/editor/qt/nm_dialogs.hpp>
 #include <NovelMind/editor/qt/nm_icon_manager.hpp>
 #include <NovelMind/editor/qt/nm_play_mode_controller.hpp>
-#include <NovelMind/editor/qt/nm_dialogs.hpp>
 #include <NovelMind/editor/qt/panels/nm_debug_overlay_panel.hpp>
 #include <QButtonGroup>
 #include <QFrame>
@@ -41,8 +41,7 @@ void NMDebugOverlayPanel::onInitialize() {
           &NMDebugOverlayPanel::onPlayModeChanged);
 
   // Initial update
-  updateVariablesTab(controller.currentVariables(),
-                     controller.currentFlags());
+  updateVariablesTab(controller.currentVariables(), controller.currentFlags());
   updateCallStackTab(controller.callStack());
   updateStackFrames(controller.currentStackFrames());
   onCurrentNodeChanged(controller.currentNodeId());
@@ -168,7 +167,8 @@ void NMDebugOverlayPanel::setupUI() {
     instrLayout->addWidget(stackHeader, 4, 0, Qt::AlignTop);
 
     m_stackFramesTree = new QTreeWidget;
-    m_stackFramesTree->setHeaderLabels({"#", "Scene", "Func", "IP", "File:Line"});
+    m_stackFramesTree->setHeaderLabels(
+        {"#", "Scene", "Func", "IP", "File:Line"});
     m_stackFramesTree->setAlternatingRowColors(true);
     m_stackFramesTree->setMinimumHeight(120);
     m_stackFramesTree->header()->setSectionResizeMode(
@@ -194,8 +194,7 @@ void NMDebugOverlayPanel::setupUI() {
     m_animationsTree = new QTreeWidget;
     m_animationsTree->setHeaderLabels({"Animation", "Progress", "Target"});
     m_animationsTree->setAlternatingRowColors(true);
-    new QTreeWidgetItem(m_animationsTree,
-                        {"(No active animations)", "", ""});
+    new QTreeWidgetItem(m_animationsTree, {"(No active animations)", "", ""});
 
     animLayout->addWidget(m_animationsTree);
 
@@ -229,8 +228,8 @@ void NMDebugOverlayPanel::setupUI() {
     m_performanceTree->setAlternatingRowColors(true);
     m_performanceTree->header()->setStretchLastSection(true);
 
-    m_frameTimeItem = new QTreeWidgetItem(m_performanceTree,
-                                          {"Frame Time", "-"});
+    m_frameTimeItem =
+        new QTreeWidgetItem(m_performanceTree, {"Frame Time", "-"});
     m_fpsItem = new QTreeWidgetItem(m_performanceTree, {"FPS", "-"});
     m_memoryItem =
         new QTreeWidgetItem(m_performanceTree, {"Memory Usage", "-"});
@@ -268,8 +267,7 @@ void NMDebugOverlayPanel::updateVariablesTab(const QVariantMap &variables,
   localGroup->setExpanded(true);
   localGroup->setForeground(0, QBrush(QColor("#0078d4")));
 
-  auto *flagsGroup =
-      new QTreeWidgetItem(m_variablesTree, {"📁 Flags", "", ""});
+  auto *flagsGroup = new QTreeWidgetItem(m_variablesTree, {"📁 Flags", "", ""});
   flagsGroup->setExpanded(true);
   flagsGroup->setForeground(0, QBrush(QColor("#d48c00")));
 
@@ -315,8 +313,8 @@ void NMDebugOverlayPanel::updateVariablesTab(const QVariantMap &variables,
     const bool value = it.value().toBool();
     auto *item = new QTreeWidgetItem(flagsGroup,
                                      {name, value ? "true" : "false", "Flag"});
-    item->setForeground(1, QBrush(value ? QColor("#4caf50")
-                                        : QColor("#f44336")));
+    item->setForeground(1,
+                        QBrush(value ? QColor("#4caf50") : QColor("#f44336")));
     item->setData(0, Qt::UserRole, QString()); // not editable
   }
   if (flags.isEmpty()) {
@@ -544,14 +542,12 @@ void NMDebugOverlayPanel::updateCurrentInstructionTab() {
     m_currentNodeLabel->setText(nodeLabel);
     const QString indexText =
         (m_totalSteps > 0 && m_currentStepIndex >= 0)
-            ? QString("%1 / %2")
-                  .arg(m_currentStepIndex + 1)
-                  .arg(m_totalSteps)
+            ? QString("%1 / %2").arg(m_currentStepIndex + 1).arg(m_totalSteps)
             : "- / -";
     m_instructionIndexLabel->setText(indexText);
-    m_instructionCodeLabel->setText(
-        m_currentInstruction.isEmpty() ? "(No active instruction)"
-                                       : m_currentInstruction);
+    m_instructionCodeLabel->setText(m_currentInstruction.isEmpty()
+                                        ? "(No active instruction)"
+                                        : m_currentInstruction);
     updateStackFrames(m_currentStackFrames);
   } else {
     m_currentNodeLabel->setText("(Not running)");
@@ -582,20 +578,21 @@ void NMDebugOverlayPanel::updateStackFrames(const QVariantList &frames) {
     const QString file = frame.value("file").toString();
     QString fileLine;
     if (!file.isEmpty() || line > 0) {
-      fileLine = QString("%1:%2:%3").arg(file.isEmpty() ? "?" : file).arg(line).arg(col);
+      fileLine = QString("%1:%2:%3")
+                     .arg(file.isEmpty() ? "?" : file)
+                     .arg(line)
+                     .arg(col);
     }
-    auto *item =
-        new QTreeWidgetItem(m_stackFramesTree,
-                            {QString::number(++idx), scene,
-                             func.isEmpty() ? "(scene)" : func,
-                             QString::number(ip), fileLine});
+    auto *item = new QTreeWidgetItem(m_stackFramesTree,
+                                     {QString::number(++idx), scene,
+                                      func.isEmpty() ? "(scene)" : func,
+                                      QString::number(ip), fileLine});
     item->setForeground(1, QBrush(QColor("#4caf50")));
     item->setForeground(3, QBrush(QColor("#b5cea8")));
   }
 
   if (frames.isEmpty()) {
-    new QTreeWidgetItem(m_stackFramesTree,
-                        {"", "(No frames)", "", "", ""});
+    new QTreeWidgetItem(m_stackFramesTree, {"", "(No frames)", "", "", ""});
   }
 }
 

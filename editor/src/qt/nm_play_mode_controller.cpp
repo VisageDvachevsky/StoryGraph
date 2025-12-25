@@ -1,11 +1,11 @@
-#include <NovelMind/editor/qt/nm_play_mode_controller.hpp>
 #include <NovelMind/editor/project_manager.hpp>
+#include <NovelMind/editor/qt/nm_play_mode_controller.hpp>
 #include <QDebug>
-#include <algorithm>
-#include <QFileInfo>
 #include <QDir>
+#include <QFileInfo>
 #include <QSettings>
 #include <QVariant>
+#include <algorithm>
 #include <variant>
 
 namespace NovelMind::editor::qt {
@@ -225,8 +225,8 @@ bool NMPlayModeController::loadProject(const QString &projectPath,
 
   m_runtimeLoaded = true;
   m_lastSnapshot = m_runtimeHost.getSceneSnapshot();
-  m_totalSteps = static_cast<int>(
-      std::max<size_t>(1, m_runtimeHost.getScenes().size()));
+  m_totalSteps =
+      static_cast<int>(std::max<size_t>(1, m_runtimeHost.getScenes().size()));
   emit sceneSnapshotUpdated();
   emit projectLoaded(projectPath);
   return true;
@@ -239,13 +239,12 @@ bool NMPlayModeController::loadCurrentProject() {
     return false;
   }
 
-  return loadProject(
-      QString::fromStdString(pm.getProjectPath()),
-      QString::fromStdString(
-          pm.getFolderPath(NovelMind::editor::ProjectFolder::Scripts)),
-      QString::fromStdString(
-          pm.getFolderPath(NovelMind::editor::ProjectFolder::Assets)),
-      QString::fromStdString(pm.getStartScene()));
+  return loadProject(QString::fromStdString(pm.getProjectPath()),
+                     QString::fromStdString(pm.getFolderPath(
+                         NovelMind::editor::ProjectFolder::Scripts)),
+                     QString::fromStdString(pm.getFolderPath(
+                         NovelMind::editor::ProjectFolder::Assets)),
+                     QString::fromStdString(pm.getStartScene()));
 }
 
 bool NMPlayModeController::ensureRuntimeLoaded() {
@@ -262,19 +261,18 @@ bool NMPlayModeController::ensureRuntimeLoaded() {
       pm.getFolderPath(NovelMind::editor::ProjectFolder::Assets);
   const std::string startScene = pm.getStartScene();
 
-  const bool needsReload =
-      !m_runtimeLoaded || proj.path != projectPath ||
-      proj.scriptsPath != scriptsPath || proj.assetsPath != assetsPath ||
-      proj.startScene != startScene;
+  const bool needsReload = !m_runtimeLoaded || proj.path != projectPath ||
+                           proj.scriptsPath != scriptsPath ||
+                           proj.assetsPath != assetsPath ||
+                           proj.startScene != startScene;
 
   if (!needsReload) {
     return true;
   }
 
-  return loadProject(QString::fromStdString(projectPath),
-                     QString::fromStdString(scriptsPath),
-                     QString::fromStdString(assetsPath),
-                     QString::fromStdString(startScene));
+  return loadProject(
+      QString::fromStdString(projectPath), QString::fromStdString(scriptsPath),
+      QString::fromStdString(assetsPath), QString::fromStdString(startScene));
 }
 
 void NMPlayModeController::stepForward() {
@@ -639,8 +637,8 @@ void NMPlayModeController::simulateStep() {
   // Emit lightweight execution marker for debug overlay
   m_lastStepIndex++;
   if (m_totalSteps <= 0) {
-    m_totalSteps = static_cast<int>(
-        std::max<size_t>(1, m_runtimeHost.getScenes().size()));
+    m_totalSteps =
+        static_cast<int>(std::max<size_t>(1, m_runtimeHost.getScenes().size()));
   }
   if (m_currentInstruction.isEmpty() && !m_currentNodeId.isEmpty()) {
     m_currentInstruction = QString("Scene: %1").arg(m_currentNodeId);

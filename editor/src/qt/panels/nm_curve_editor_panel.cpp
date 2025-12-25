@@ -3,10 +3,11 @@
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
 
 #include <QComboBox>
-#include <QGraphicsScene>
-#include <QGraphicsView>
 #include <QGraphicsLineItem>
 #include <QGraphicsPathItem>
+#include <QGraphicsScene>
+#include <QGraphicsView>
+#include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPainterPath>
 #include <QPushButton>
@@ -14,7 +15,6 @@
 #include <QToolBar>
 #include <QVBoxLayout>
 #include <QWheelEvent>
-#include <QKeyEvent>
 
 #include <algorithm>
 #include <cmath>
@@ -28,7 +28,7 @@ namespace NovelMind::editor::qt {
 CurveData::CurveData() { createDefault(); }
 
 CurvePointId CurveData::addPoint(qreal time, qreal value,
-                                  CurveInterpolation interpolation) {
+                                 CurveInterpolation interpolation) {
   CurveDataPoint point;
   point.id = m_nextId++;
   point.time = std::clamp(time, 0.0, 1.0);
@@ -128,8 +128,9 @@ qreal CurveData::evaluate(qreal t) const {
       }
 
       case CurveInterpolation::EaseInOut: {
-        qreal easedT = localT < 0.5 ? 2.0 * localT * localT
-                                    : 1.0 - std::pow(-2.0 * localT + 2.0, 2.0) / 2.0;
+        qreal easedT = localT < 0.5
+                           ? 2.0 * localT * localT
+                           : 1.0 - std::pow(-2.0 * localT + 2.0, 2.0) / 2.0;
         return p0.value + (p1.value - p0.value) * easedT;
       }
 
@@ -435,7 +436,8 @@ void NMCurveEditorPanel::onPointClicked(CurvePointId id, bool additive) {
 
   // Update interpolation combo to reflect selected point's interpolation
   if (m_selectedPoints.size() == 1) {
-    if (const CurveDataPoint *point = m_curveData.getPoint(m_selectedPoints[0])) {
+    if (const CurveDataPoint *point =
+            m_curveData.getPoint(m_selectedPoints[0])) {
       m_interpCombo->blockSignals(true);
       m_interpCombo->setCurrentIndex(static_cast<int>(point->interpolation));
       m_interpCombo->blockSignals(false);
@@ -445,7 +447,8 @@ void NMCurveEditorPanel::onPointClicked(CurvePointId id, bool additive) {
 
 void NMCurveEditorPanel::onPointDragFinished(CurvePointId id) {
   // Create undo command for the move
-  if (auto it = m_dragStartPositions.find(id); it != m_dragStartPositions.end()) {
+  if (auto it = m_dragStartPositions.find(id);
+      it != m_dragStartPositions.end()) {
     const CurveDataPoint *point = m_curveData.getPoint(id);
     if (point) {
       qreal oldTime = it->second.first;

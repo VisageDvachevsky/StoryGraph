@@ -1,6 +1,6 @@
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
-#include "nm_dialogs_detail.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
+#include "nm_dialogs_detail.hpp"
 
 #include <QFormLayout>
 #include <QFrame>
@@ -100,8 +100,7 @@ void NMColorDialog::setColor(const QColor &color, bool updateFields) {
 }
 
 QColor NMColorDialog::currentColor() const {
-  return QColor(m_redSpin->value(), m_greenSpin->value(),
-                m_blueSpin->value());
+  return QColor(m_redSpin->value(), m_greenSpin->value(), m_blueSpin->value());
 }
 
 void NMColorDialog::syncFromHex() {
@@ -121,8 +120,7 @@ void NMColorDialog::syncFromHex() {
     return;
   }
 
-  const QColor color((value >> 16) & 0xFF, (value >> 8) & 0xFF,
-                     value & 0xFF);
+  const QColor color((value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF);
   setColor(color);
 }
 
@@ -130,10 +128,10 @@ void NMColorDialog::updatePreview() {
   const auto &palette = NMStyleManager::instance().palette();
   const QString colorName = currentColor().name(QColor::HexRgb);
   if (m_preview) {
-    m_preview->setStyleSheet(QString("background-color: %1; border: 1px solid %2;")
-                                 .arg(colorName)
-                                 .arg(NMStyleManager::colorToStyleString(
-                                     palette.borderLight)));
+    m_preview->setStyleSheet(
+        QString("background-color: %1; border: 1px solid %2;")
+            .arg(colorName)
+            .arg(NMStyleManager::colorToStyleString(palette.borderLight)));
   }
   if (m_hexEdit) {
     const QSignalBlocker blocker(m_hexEdit);
@@ -150,6 +148,5 @@ QColor NMColorDialog::getColor(const QColor &initial, QWidget *parent,
   }
   return result == QDialog::Accepted ? dialog.currentColor() : initial;
 }
-
 
 } // namespace NovelMind::editor::qt

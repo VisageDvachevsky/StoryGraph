@@ -37,8 +37,7 @@ public:
   void setVariable(const std::string &name, Value value);
   [[nodiscard]] Value getVariable(const std::string &name) const;
   [[nodiscard]] bool hasVariable(const std::string &name) const;
-  [[nodiscard]] std::unordered_map<std::string, Value>
-  getAllVariables() const {
+  [[nodiscard]] std::unordered_map<std::string, Value> getAllVariables() const {
     return m_variables;
   }
 

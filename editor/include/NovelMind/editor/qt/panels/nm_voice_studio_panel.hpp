@@ -95,10 +95,10 @@ struct VoiceClipEdit {
 
   // 3-band EQ
   bool eqEnabled = false;
-  float eqLowGainDb = 0.0f;    // Low band gain
-  float eqMidGainDb = 0.0f;    // Mid band gain
-  float eqHighGainDb = 0.0f;   // High band gain
-  float eqLowFreqHz = 300.0f;  // Low/mid crossover
+  float eqLowGainDb = 0.0f;     // Low band gain
+  float eqMidGainDb = 0.0f;     // Mid band gain
+  float eqHighGainDb = 0.0f;    // High band gain
+  float eqLowFreqHz = 300.0f;   // Low/mid crossover
   float eqHighFreqHz = 3000.0f; // Mid/high crossover
 
   // Noise gate
@@ -113,11 +113,9 @@ struct VoiceClipEdit {
 
   // Check if any edits have been made
   [[nodiscard]] bool hasEdits() const {
-    return trimStartSamples != 0 || trimEndSamples != 0 ||
-           fadeInMs > 0 || fadeOutMs > 0 ||
-           preGainDb != 0.0f || normalizeEnabled ||
-           highPassEnabled || lowPassEnabled ||
-           eqEnabled || noiseGateEnabled;
+    return trimStartSamples != 0 || trimEndSamples != 0 || fadeInMs > 0 ||
+           fadeOutMs > 0 || preGainDb != 0.0f || normalizeEnabled ||
+           highPassEnabled || lowPassEnabled || eqEnabled || noiseGateEnabled;
   }
 };
 
@@ -125,10 +123,10 @@ struct VoiceClipEdit {
  * @brief Represents a voice clip being edited
  */
 struct VoiceClip {
-  std::string sourcePath;       // Path to source audio file
-  std::vector<float> samples;   // Raw audio samples (mono, normalized -1 to 1)
-  AudioFormat format;           // Audio format
-  VoiceClipEdit edit;           // Non-destructive edit parameters
+  std::string sourcePath;     // Path to source audio file
+  std::vector<float> samples; // Raw audio samples (mono, normalized -1 to 1)
+  AudioFormat format;         // Audio format
+  VoiceClipEdit edit;         // Non-destructive edit parameters
 
   // Cached peak data for waveform display
   std::vector<float> peakData;
@@ -136,15 +134,19 @@ struct VoiceClip {
 
   // Duration calculations
   [[nodiscard]] double getDurationSeconds() const {
-    if (format.sampleRate == 0) return 0.0;
+    if (format.sampleRate == 0)
+      return 0.0;
     return static_cast<double>(samples.size()) / format.sampleRate;
   }
 
   [[nodiscard]] double getTrimmedDurationSeconds() const {
-    if (format.sampleRate == 0) return 0.0;
+    if (format.sampleRate == 0)
+      return 0.0;
     int64_t totalSamples = static_cast<int64_t>(samples.size());
-    int64_t trimmedSamples = totalSamples - edit.trimStartSamples - edit.trimEndSamples;
-    return static_cast<double>(std::max<int64_t>(0, trimmedSamples)) / format.sampleRate;
+    int64_t trimmedSamples =
+        totalSamples - edit.trimStartSamples - edit.trimEndSamples;
+    return static_cast<double>(std::max<int64_t>(0, trimmedSamples)) /
+           format.sampleRate;
   }
 };
 
@@ -279,9 +281,8 @@ public:
   /**
    * @brief Apply fade in/out
    */
-  static void applyFades(std::vector<float> &samples,
-                         float fadeInMs, float fadeOutMs,
-                         uint32_t sampleRate);
+  static void applyFades(std::vector<float> &samples, float fadeInMs,
+                         float fadeOutMs, uint32_t sampleRate);
 
   /**
    * @brief Apply pre-gain
@@ -296,28 +297,27 @@ public:
   /**
    * @brief Apply high-pass filter
    */
-  static void applyHighPass(std::vector<float> &samples,
-                            float cutoffHz, uint32_t sampleRate);
+  static void applyHighPass(std::vector<float> &samples, float cutoffHz,
+                            uint32_t sampleRate);
 
   /**
    * @brief Apply low-pass filter
    */
-  static void applyLowPass(std::vector<float> &samples,
-                           float cutoffHz, uint32_t sampleRate);
+  static void applyLowPass(std::vector<float> &samples, float cutoffHz,
+                           uint32_t sampleRate);
 
   /**
    * @brief Apply 3-band EQ
    */
-  static void applyEQ(std::vector<float> &samples,
-                      float lowGainDb, float midGainDb, float highGainDb,
-                      float lowFreq, float highFreq, uint32_t sampleRate);
+  static void applyEQ(std::vector<float> &samples, float lowGainDb,
+                      float midGainDb, float highGainDb, float lowFreq,
+                      float highFreq, uint32_t sampleRate);
 
   /**
    * @brief Apply noise gate
    */
-  static void applyNoiseGate(std::vector<float> &samples,
-                             float thresholdDb, float reductionDb,
-                             float attackMs, float releaseMs,
+  static void applyNoiseGate(std::vector<float> &samples, float thresholdDb,
+                             float reductionDb, float attackMs, float releaseMs,
                              uint32_t sampleRate);
 
   /**
@@ -560,7 +560,8 @@ private:
   bool m_isLooping = false;
 
   // Recording
-  // std::unique_ptr<audio::AudioRecorder> m_recorder;  // TODO: Uncomment when AudioRecorder is implemented
+  // std::unique_ptr<audio::AudioRecorder> m_recorder;  // TODO: Uncomment when
+  // AudioRecorder is implemented
   bool m_isRecording = false;
   QString m_tempRecordingPath;
 

@@ -104,7 +104,9 @@ QString NMInputDialog::textValue() const {
   return m_textEdit ? m_textEdit->text() : QString();
 }
 
-int NMInputDialog::intValue() const { return m_intSpin ? m_intSpin->value() : 0; }
+int NMInputDialog::intValue() const {
+  return m_intSpin ? m_intSpin->value() : 0;
+}
 
 double NMInputDialog::doubleValue() const {
   return m_doubleSpin ? m_doubleSpin->value() : 0.0;
@@ -139,8 +141,7 @@ QString NMInputDialog::multiLineValue() const {
 }
 
 QString NMInputDialog::getText(QWidget *parent, const QString &title,
-                               const QString &label,
-                               QLineEdit::EchoMode mode,
+                               const QString &label, QLineEdit::EchoMode mode,
                                const QString &text, bool *ok) {
   NMInputDialog dialog(parent, title, label, InputType::Text);
   dialog.configureText(text, mode);
@@ -189,7 +190,7 @@ QString NMInputDialog::getItem(QWidget *parent, const QString &title,
     return dialog.itemValue();
   }
   return (current >= 0 && current < items.size()) ? items.at(current)
-                                                   : QString();
+                                                  : QString();
 }
 
 QString NMInputDialog::getMultiLineText(QWidget *parent, const QString &title,

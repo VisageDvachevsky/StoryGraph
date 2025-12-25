@@ -20,8 +20,7 @@ void PackDecryptor::setKey(const u8 *key, usize keySize) {
 
 Result<std::vector<u8>> PackDecryptor::decrypt(const u8 *data, usize size,
                                                const u8 *iv, usize ivSize,
-                                               const u8 *aad,
-                                               usize aadSize) {
+                                               const u8 *aad, usize aadSize) {
   if (m_key.empty()) {
     return Result<std::vector<u8>>::error("Decryption key not set");
   }
@@ -56,8 +55,8 @@ Result<std::vector<u8>> PackDecryptor::decrypt(const u8 *data, usize size,
     return Result<std::vector<u8>>::error("Failed to initialize AES-GCM");
   }
 
-  if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN,
-                          static_cast<int>(ivSize), nullptr) != 1) {
+  if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, static_cast<int>(ivSize),
+                          nullptr) != 1) {
     EVP_CIPHER_CTX_free(ctx);
     return Result<std::vector<u8>>::error("Failed to set IV length");
   }
@@ -124,8 +123,8 @@ Result<std::vector<u8>> PackDecryptor::deriveKey(const std::string &password,
   const int iterations = 100000;
 
   std::vector<u8> defaultSalt = {0x4E, 0x6F, 0x76, 0x65, 0x6C, 0x4D,
-                                  0x69, 0x6E, 0x64, 0x00, 0x00, 0x00,
-                                  0x00, 0x00, 0x00, 0x00};
+                                 0x69, 0x6E, 0x64, 0x00, 0x00, 0x00,
+                                 0x00, 0x00, 0x00, 0x00};
   const u8 *actualSalt = (salt && saltSize > 0) ? salt : defaultSalt.data();
   const usize actualSaltSize =
       (salt && saltSize > 0) ? saltSize : defaultSalt.size();

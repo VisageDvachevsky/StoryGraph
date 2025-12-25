@@ -100,8 +100,8 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
     return Result<void>::error("Invalid resource table offset/size");
   }
 
-  if (m_header.stringTableOffset < m_header.resourceTableOffset +
-                                      resourceTableSize ||
+  if (m_header.stringTableOffset <
+          m_header.resourceTableOffset + resourceTableSize ||
       m_header.stringTableOffset > m_fileSize) {
     m_lastResult = PackVerificationResult::CorruptedResourceTable;
     return Result<void>::error("Invalid string table offset");
@@ -150,9 +150,8 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
   }
 
   const auto stringDataStart = file.tellg();
-  const u64 stringDataStartU64 = stringDataStart >= 0
-                                     ? static_cast<u64>(stringDataStart)
-                                     : 0;
+  const u64 stringDataStartU64 =
+      stringDataStart >= 0 ? static_cast<u64>(stringDataStart) : 0;
   if (stringDataStart < 0 || stringDataStartU64 > m_header.dataOffset) {
     m_lastResult = PackVerificationResult::CorruptedResourceTable;
     return Result<void>::error("Invalid string table data start");
@@ -257,8 +256,8 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
       m_lastResult = PackVerificationResult::CorruptedHeader;
       return Result<void>::error("Failed to read pack for CRC verification");
     }
-    crc = detail::updateCrc32(crc, buffer.data(),
-                              static_cast<usize>(readCount));
+    crc =
+        detail::updateCrc32(crc, buffer.data(), static_cast<usize>(readCount));
     remaining -= static_cast<u64>(readCount);
   }
   crc = ~crc;
@@ -295,16 +294,17 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
         signature.size());
     if (!sigReport.isOk() ||
         sigReport.value().result != PackVerificationResult::Valid) {
-      m_lastResult = sigReport.isOk() ? sigReport.value().result
-                                      : PackVerificationResult::SignatureInvalid;
+      m_lastResult = sigReport.isOk()
+                         ? sigReport.value().result
+                         : PackVerificationResult::SignatureInvalid;
       return Result<void>::error(sigReport.isOk() ? sigReport.value().message
                                                   : sigReport.error());
     }
   }
 
-  const bool hasContentHash = std::any_of(
-      std::begin(m_header.contentHash), std::end(m_header.contentHash),
-      [](u8 byte) { return byte != 0; });
+  const bool hasContentHash = std::any_of(std::begin(m_header.contentHash),
+                                          std::end(m_header.contentHash),
+                                          [](u8 byte) { return byte != 0; });
   if (hasContentHash) {
     file.clear();
     file.seekg(0, std::ios::beg);
@@ -460,8 +460,7 @@ SecurePackReader::readResource(const std::string &resourceId) {
           "Uncompressed size exceeds zlib limits");
     }
 
-    std::vector<u8> decompressed(
-        static_cast<usize>(entry.uncompressedSize));
+    std::vector<u8> decompressed(static_cast<usize>(entry.uncompressedSize));
     uLongf destLen = static_cast<uLongf>(decompressed.size());
     int res = uncompress(decompressed.data(), &destLen, data.data(),
                          static_cast<uLongf>(data.size()));
@@ -481,8 +480,8 @@ SecurePackReader::readResource(const std::string &resourceId) {
         "Resource size mismatch after decode");
   }
 
-  const u32 checksum = PackIntegrityChecker::calculateCrc32(data.data(),
-                                                            data.size());
+  const u32 checksum =
+      PackIntegrityChecker::calculateCrc32(data.data(), data.size());
   if (checksum != entry.checksum) {
     return Result<std::vector<u8>>::error("Resource checksum mismatch");
   }

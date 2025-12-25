@@ -152,9 +152,7 @@ input::InputManager *Application::getInput() { return m_input.get(); }
 
 audio::AudioManager *Application::getAudio() { return m_audio.get(); }
 
-save::SaveManager *Application::getSaveManager() {
-  return m_saveManager.get();
-}
+save::SaveManager *Application::getSaveManager() { return m_saveManager.get(); }
 
 localization::LocalizationManager *Application::getLocalization() {
   return m_localization.get();

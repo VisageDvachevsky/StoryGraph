@@ -1,7 +1,7 @@
-#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/editor/project_manager.hpp"
-#include "NovelMind/editor/scene_document.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+#include "NovelMind/editor/scene_document.hpp"
 
 #include <QColor>
 #include <QDir>
@@ -43,8 +43,7 @@ bool NMSceneViewPanel::loadSceneDocument(const QString &sceneId) {
 
   QDir().mkpath(scenesRoot);
 
-  const QString scenePath =
-      QDir(scenesRoot).filePath(sceneId + ".nmscene");
+  const QString scenePath = QDir(scenesRoot).filePath(sceneId + ".nmscene");
   const auto result =
       ::NovelMind::editor::loadSceneDocument(scenePath.toStdString());
 
@@ -172,8 +171,8 @@ QString NMSceneViewPanel::normalizeAssetPath(const QString &assetPath) const {
     if (info.isAbsolute()) {
       auto &pm = ProjectManager::instance();
       if (pm.isPathInProject(assetPath.toStdString())) {
-        normalized = QString::fromStdString(
-            pm.toRelativePath(assetPath.toStdString()));
+        normalized =
+            QString::fromStdString(pm.toRelativePath(assetPath.toStdString()));
       }
     }
   }
@@ -192,8 +191,7 @@ NMSceneViewPanel::guessObjectTypeForAsset(const QString &assetPath) const {
   QFileInfo info(assetPath);
   if (!info.isAbsolute()) {
     absPath = QString::fromStdString(
-        ProjectManager::instance().toAbsolutePath(
-            assetPath.toStdString()));
+        ProjectManager::instance().toAbsolutePath(assetPath.toStdString()));
   }
 
   QImageReader reader(absPath);
@@ -302,6 +300,5 @@ QPixmap NMSceneViewPanel::loadPixmapForAsset(const QString &hint,
   m_textureCache.insert(hint, fallback);
   return fallback;
 }
-
 
 } // namespace NovelMind::editor::qt

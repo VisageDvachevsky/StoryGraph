@@ -132,8 +132,7 @@ Result<void> FontAtlas::build(const Font &font, const std::string &charset,
   }
 
   auto addGlyph = [&](char32_t codepoint) -> Result<void> {
-    if (FT_Load_Char(face, static_cast<FT_ULong>(codepoint),
-                     FT_LOAD_RENDER)) {
+    if (FT_Load_Char(face, static_cast<FT_ULong>(codepoint), FT_LOAD_RENDER)) {
       return Result<void>::error("Failed to load glyph");
     }
 
@@ -170,9 +169,8 @@ Result<void> FontAtlas::build(const Font &font, const std::string &charset,
           reinterpret_cast<const u8 *>(g->bitmap.buffer + y * g->bitmap.pitch);
       for (i32 x = 0; x < glyphW; ++x) {
         const u8 alpha = srcRow[x];
-        const size_t dstIndex =
-            static_cast<size_t>(((cursorY + y) * atlasWidth + (cursorX + x)) *
-                                4);
+        const size_t dstIndex = static_cast<size_t>(
+            ((cursorY + y) * atlasWidth + (cursorX + x)) * 4);
         atlasPixels[dstIndex + 0] = 255;
         atlasPixels[dstIndex + 1] = 255;
         atlasPixels[dstIndex + 2] = 255;

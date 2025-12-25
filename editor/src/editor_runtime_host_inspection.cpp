@@ -75,10 +75,10 @@ SceneSnapshot EditorRuntimeHost::getSceneSnapshot() const {
 
   collectLayer(bgLayer);
   collectLayer(charLayer);
-  collectLayer(const_cast<scene::SceneGraph *>(m_sceneGraph.get())
-                   ->getUILayer());
-  collectLayer(const_cast<scene::SceneGraph *>(m_sceneGraph.get())
-                   ->getEffectLayer());
+  collectLayer(
+      const_cast<scene::SceneGraph *>(m_sceneGraph.get())->getUILayer());
+  collectLayer(
+      const_cast<scene::SceneGraph *>(m_sceneGraph.get())->getEffectLayer());
 
   return snapshot;
 }

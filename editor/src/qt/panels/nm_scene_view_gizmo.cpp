@@ -1,5 +1,5 @@
-#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 
 #include <QBrush>
 #include <QColor>
@@ -68,8 +68,7 @@ protected:
 
   void mousePressEvent(QGraphicsSceneMouseEvent *event) override {
     if (event->button() == Qt::LeftButton) {
-      if (auto *gizmo =
-              qgraphicsitem_cast<NMTransformGizmo *>(parentItem())) {
+      if (auto *gizmo = qgraphicsitem_cast<NMTransformGizmo *>(parentItem())) {
         gizmo->beginHandleDrag(m_handleType, event->scenePos());
       }
       event->accept();
@@ -87,8 +86,7 @@ protected:
 
   void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override {
     if (event->button() == Qt::LeftButton) {
-      if (auto *gizmo =
-              qgraphicsitem_cast<NMTransformGizmo *>(parentItem())) {
+      if (auto *gizmo = qgraphicsitem_cast<NMTransformGizmo *>(parentItem())) {
         gizmo->endHandleDrag();
       }
       event->accept();
@@ -124,8 +122,7 @@ public:
 protected:
   void mousePressEvent(QGraphicsSceneMouseEvent *event) override {
     if (event->button() == Qt::LeftButton) {
-      if (auto *gizmo =
-              qgraphicsitem_cast<NMTransformGizmo *>(parentItem())) {
+      if (auto *gizmo = qgraphicsitem_cast<NMTransformGizmo *>(parentItem())) {
         gizmo->beginHandleDrag(m_handleType, event->scenePos());
       }
       event->accept();
@@ -143,8 +140,7 @@ protected:
 
   void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override {
     if (event->button() == Qt::LeftButton) {
-      if (auto *gizmo =
-              qgraphicsitem_cast<NMTransformGizmo *>(parentItem())) {
+      if (auto *gizmo = qgraphicsitem_cast<NMTransformGizmo *>(parentItem())) {
         gizmo->endHandleDrag();
       }
       event->accept();
@@ -313,10 +309,10 @@ void NMTransformGizmo::updateHandleDrag(const QPointF &scenePos) {
         std::max(kMinGizmoRadius, QLineF(center, scenePos).length());
     const qreal rawFactor = currentDistance / m_dragStartDistance;
     const qreal scaleFactor = std::pow(rawFactor, 0.6);
-    const qreal newScaleX = std::clamp(m_dragStartScaleX * scaleFactor,
-                                       kMinScale, kMaxScale);
-    const qreal newScaleY = std::clamp(m_dragStartScaleY * scaleFactor,
-                                       kMinScale, kMaxScale);
+    const qreal newScaleX =
+        std::clamp(m_dragStartScaleX * scaleFactor, kMinScale, kMaxScale);
+    const qreal newScaleY =
+        std::clamp(m_dragStartScaleY * scaleFactor, kMinScale, kMaxScale);
     target->setScaleXY(newScaleX, newScaleY);
     updatePosition();
   }
@@ -436,10 +432,9 @@ void NMTransformGizmo::createRotateGizmo() {
   circle->setBrush(Qt::NoBrush);
   addToGroup(circle);
 
-  auto *rotateHit = new NMGizmoHitArea(HandleType::Rotation,
-                                       QRectF(-radius, -radius,
-                                              radius * 2, radius * 2),
-                                       this);
+  auto *rotateHit = new NMGizmoHitArea(
+      HandleType::Rotation, QRectF(-radius, -radius, radius * 2, radius * 2),
+      this);
   rotateHit->setCursor(Qt::CrossCursor);
   addToGroup(rotateHit);
 
@@ -462,9 +457,8 @@ void NMTransformGizmo::createScaleGizmo() {
   box->setBrush(Qt::NoBrush);
   addToGroup(box);
 
-  auto *scaleHit = new NMGizmoHitArea(HandleType::Corner,
-                                      QRectF(-size, -size, size * 2, size * 2),
-                                      this);
+  auto *scaleHit = new NMGizmoHitArea(
+      HandleType::Corner, QRectF(-size, -size, size * 2, size * 2), this);
   scaleHit->setCursor(Qt::SizeFDiagCursor);
   addToGroup(scaleHit);
 
@@ -489,6 +483,5 @@ void NMTransformGizmo::clearGizmo() {
     delete item;
   }
 }
-
 
 } // namespace NovelMind::editor::qt

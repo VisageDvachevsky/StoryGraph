@@ -6,14 +6,19 @@
 #include "NovelMind/editor/qt/panels/nm_recording_studio_panel.hpp"
 #include "NovelMind/audio/audio_recorder.hpp"
 #include "NovelMind/audio/voice_manifest.hpp"
+#include "NovelMind/core/logger.hpp"
 
+#include <QAudioOutput>
 #include <QComboBox>
+#include <QFile>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
+#include <QMediaPlayer>
+#include <QMessageBox>
 #include <QPainter>
 #include <QProgressBar>
 #include <QPushButton>
@@ -75,10 +80,10 @@ void VUMeterWidget::paintEvent(QPaintEvent *event) {
   int rmsWidth = static_cast<int>(rmsNorm * widthAvailable);
 
   QLinearGradient gradient(0, 0, w, 0);
-  gradient.setColorAt(0.0, QColor(40, 180, 40));    // Green
-  gradient.setColorAt(0.7, QColor(200, 200, 40));   // Yellow
-  gradient.setColorAt(0.9, QColor(200, 100, 40));   // Orange
-  gradient.setColorAt(1.0, QColor(200, 40, 40));    // Red
+  gradient.setColorAt(0.0, QColor(40, 180, 40));  // Green
+  gradient.setColorAt(0.7, QColor(200, 200, 40)); // Yellow
+  gradient.setColorAt(0.9, QColor(200, 100, 40)); // Orange
+  gradient.setColorAt(1.0, QColor(200, 40, 40));  // Red
 
   painter.fillRect(margin, margin, rmsWidth, barHeight, gradient);
 
@@ -89,7 +94,8 @@ void VUMeterWidget::paintEvent(QPaintEvent *event) {
 
   // Second bar for visual reference (background scale)
   int scaleY = margin * 2 + barHeight;
-  painter.fillRect(margin, scaleY, w - margin * 2, barHeight, QColor(50, 50, 50));
+  painter.fillRect(margin, scaleY, w - margin * 2, barHeight,
+                   QColor(50, 50, 50));
 
   // Draw scale markers
   painter.setPen(QColor(100, 100, 100));
@@ -133,7 +139,8 @@ void NMRecordingStudioPanel::onInitialize() {
   if (result.isError()) {
     // Show error in UI
     if (m_lineIdLabel) {
-      m_lineIdLabel->setText(tr("Error: %1").arg(QString::fromStdString(result.error())));
+      m_lineIdLabel->setText(
+          tr("Error: %1").arg(QString::fromStdString(result.error())));
     }
     return;
   }
@@ -147,21 +154,38 @@ void NMRecordingStudioPanel::onInitialize() {
 
   m_recorder->setOnRecordingStateChanged([this](audio::RecordingState state) {
     QMetaObject::invokeMethod(
-        this, [this, state]() { onRecordingStateChanged(static_cast<int>(state)); },
+        this,
+        [this, state]() { onRecordingStateChanged(static_cast<int>(state)); },
         Qt::QueuedConnection);
   });
 
-  m_recorder->setOnRecordingComplete([this](const audio::RecordingResult &rec_result) {
-    QMetaObject::invokeMethod(
-        this, [this, rec_result]() { onRecordingComplete(rec_result); },
-        Qt::QueuedConnection);
-  });
+  m_recorder->setOnRecordingComplete(
+      [this](const audio::RecordingResult &rec_result) {
+        QMetaObject::invokeMethod(
+            this, [this, rec_result]() { onRecordingComplete(rec_result); },
+            Qt::QueuedConnection);
+      });
 
   m_recorder->setOnRecordingError([this](const std::string &error) {
     QMetaObject::invokeMethod(
-        this, [this, error]() { onRecordingError(QString::fromStdString(error)); },
+        this,
+        [this, error]() { onRecordingError(QString::fromStdString(error)); },
         Qt::QueuedConnection);
   });
+
+  // Initialize media player for take playback
+  m_audioOutput = new QAudioOutput(this);
+  m_audioOutput->setVolume(1.0);
+  m_mediaPlayer = new QMediaPlayer(this);
+  m_mediaPlayer->setAudioOutput(m_audioOutput);
+
+  connect(m_mediaPlayer, &QMediaPlayer::playbackStateChanged, this,
+          [this](QMediaPlayer::PlaybackState state) {
+            m_isPlayingTake = (state == QMediaPlayer::PlayingState);
+            if (m_playTakeBtn) {
+              m_playTakeBtn->setText(m_isPlayingTake ? tr("Stop") : tr("Play"));
+            }
+          });
 
   // Refresh device list
   refreshDeviceList();
@@ -176,9 +200,12 @@ void NMRecordingStudioPanel::onInitialize() {
       float duration = m_recorder->getRecordingDuration();
       int minutes = static_cast<int>(duration) / 60;
       int seconds = static_cast<int>(duration) % 60;
-      int tenths = static_cast<int>((duration - static_cast<int>(duration)) * 10);
-      m_recordingTimeLabel->setText(
-          QString("%1:%2.%3").arg(minutes).arg(seconds, 2, 10, QChar('0')).arg(tenths));
+      int tenths =
+          static_cast<int>((duration - static_cast<int>(duration)) * 10);
+      m_recordingTimeLabel->setText(QString("%1:%2.%3")
+                                        .arg(minutes)
+                                        .arg(seconds, 2, 10, QChar('0'))
+                                        .arg(tenths));
     }
   });
   m_updateTimer->start(100);
@@ -235,7 +262,8 @@ void NMRecordingStudioPanel::setupDeviceSection() {
 
   m_inputDeviceCombo = new QComboBox(group);
   m_inputDeviceCombo->setMinimumWidth(200);
-  connect(m_inputDeviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+  connect(m_inputDeviceCombo,
+          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           &NMRecordingStudioPanel::onInputDeviceChanged);
   layout->addWidget(m_inputDeviceCombo, 1);
 
@@ -253,7 +281,8 @@ void NMRecordingStudioPanel::setupDeviceSection() {
   m_inputVolumeLabel->setMinimumWidth(40);
   layout->addWidget(m_inputVolumeLabel);
 
-  if (auto *mainLayout = qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
+  if (auto *mainLayout =
+          qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
     mainLayout->addWidget(group);
   }
 }
@@ -281,7 +310,8 @@ void NMRecordingStudioPanel::setupLevelMeterSection() {
 
   layout->addLayout(infoLayout);
 
-  if (auto *mainLayout = qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
+  if (auto *mainLayout =
+          qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
     mainLayout->addWidget(group);
   }
 }
@@ -313,7 +343,8 @@ void NMRecordingStudioPanel::setupLineInfoSection() {
 
   layout->setColumnStretch(1, 1);
 
-  if (auto *mainLayout = qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
+  if (auto *mainLayout =
+          qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
     mainLayout->addWidget(group);
   }
 }
@@ -350,7 +381,8 @@ void NMRecordingStudioPanel::setupRecordingControls() {
   btnLayout->addStretch();
 
   m_recordingTimeLabel = new QLabel("0:00.0", group);
-  m_recordingTimeLabel->setStyleSheet("font-size: 16px; font-family: monospace;");
+  m_recordingTimeLabel->setStyleSheet(
+      "font-size: 16px; font-family: monospace;");
   btnLayout->addWidget(m_recordingTimeLabel);
 
   layout->addLayout(btnLayout);
@@ -361,7 +393,8 @@ void NMRecordingStudioPanel::setupRecordingControls() {
   m_recordingProgress->setVisible(false);
   layout->addWidget(m_recordingProgress);
 
-  if (auto *mainLayout = qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
+  if (auto *mainLayout =
+          qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
     mainLayout->addWidget(group);
   }
 }
@@ -400,7 +433,8 @@ void NMRecordingStudioPanel::setupTakeManagement() {
 
   layout->addLayout(controlsLayout);
 
-  if (auto *mainLayout = qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
+  if (auto *mainLayout =
+          qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
     mainLayout->addWidget(group);
   }
 }
@@ -425,7 +459,8 @@ void NMRecordingStudioPanel::setupNavigationSection() {
           &NMRecordingStudioPanel::onNextLineClicked);
   layout->addWidget(m_nextLineBtn);
 
-  if (auto *mainLayout = qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
+  if (auto *mainLayout =
+          qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
     mainLayout->addLayout(layout);
     mainLayout->addStretch();
   }
@@ -460,14 +495,16 @@ void NMRecordingStudioPanel::updateLineInfo() {
 
   auto *line = m_manifest->getLine(m_currentLineId);
   if (!line) {
-    m_lineIdLabel->setText(QString::fromStdString(m_currentLineId) + tr(" (not found)"));
+    m_lineIdLabel->setText(QString::fromStdString(m_currentLineId) +
+                           tr(" (not found)"));
     return;
   }
 
   m_lineIdLabel->setText(QString::fromStdString(line->id));
   m_speakerLabel->setText(QString::fromStdString(line->speaker));
   m_dialogueText->setText(QString::fromStdString(line->textKey));
-  m_notesLabel->setText(line->notes.empty() ? "-" : QString::fromStdString(line->notes));
+  m_notesLabel->setText(
+      line->notes.empty() ? "-" : QString::fromStdString(line->notes));
 
   // Update progress
   auto stats = m_manifest->getCoverageStats(m_currentLocale);
@@ -531,8 +568,8 @@ void NMRecordingStudioPanel::generateOutputPath() {
   // Generate path using naming convention
   const auto &convention = m_manifest->getNamingConvention();
   m_outputPath = m_manifest->getBasePath() + "/" +
-                 convention.generatePath(m_currentLocale, m_currentLineId, line->scene,
-                                          line->speaker, takeNum);
+                 convention.generatePath(m_currentLocale, m_currentLineId,
+                                         line->scene, line->speaker, takeNum);
 }
 
 void NMRecordingStudioPanel::onInputDeviceChanged(int index) {
@@ -585,11 +622,52 @@ void NMRecordingStudioPanel::onCancelClicked() {
 }
 
 void NMRecordingStudioPanel::onPlayClicked() {
-  // TODO: Implement playback of selected take
+  if (!m_mediaPlayer || !m_manifest || m_currentLineId.empty()) {
+    return;
+  }
+
+  // If already playing, stop
+  if (m_isPlayingTake) {
+    m_mediaPlayer->stop();
+    return;
+  }
+
+  // Get selected take
+  int selectedIndex = m_takesList ? m_takesList->currentRow() : -1;
+  if (selectedIndex < 0) {
+    NOVELMIND_LOG_WARN("[RecordingStudio] No take selected for playback");
+    return;
+  }
+
+  // Get takes for current line
+  auto takes = m_manifest->getTakes(m_currentLineId, m_currentLocale);
+  if (selectedIndex >= static_cast<int>(takes.size())) {
+    NOVELMIND_LOG_WARN("[RecordingStudio] Take index out of range");
+    return;
+  }
+
+  const auto &take = takes[static_cast<size_t>(selectedIndex)];
+  QString filePath = QString::fromStdString(take.filePath);
+
+  if (!QFile::exists(filePath)) {
+    NOVELMIND_LOG_WARN(std::string("[RecordingStudio] Take file not found: ") +
+                       take.filePath);
+    QMessageBox::warning(this, tr("Playback Error"),
+                         tr("Audio file not found: %1").arg(filePath));
+    return;
+  }
+
+  // Play the file
+  m_mediaPlayer->setSource(QUrl::fromLocalFile(filePath));
+  m_mediaPlayer->play();
+  NOVELMIND_LOG_INFO(std::string("[RecordingStudio] Playing take: ") +
+                     take.filePath);
 }
 
 void NMRecordingStudioPanel::onPlayStopClicked() {
-  // TODO: Implement stop playback
+  if (m_mediaPlayer && m_isPlayingTake) {
+    m_mediaPlayer->stop();
+  }
 }
 
 void NMRecordingStudioPanel::onNextLineClicked() { emit requestNextLine(); }
@@ -604,7 +682,68 @@ void NMRecordingStudioPanel::onTakeSelected(int index) {
 }
 
 void NMRecordingStudioPanel::onDeleteTakeClicked() {
-  // TODO: Implement take deletion
+  if (!m_manifest || m_currentLineId.empty()) {
+    return;
+  }
+
+  // Get selected take index
+  int selectedIndex = m_takesList ? m_takesList->currentRow() : -1;
+  if (selectedIndex < 0) {
+    NOVELMIND_LOG_WARN("[RecordingStudio] No take selected for deletion");
+    return;
+  }
+
+  // Get takes for current line
+  auto takes = m_manifest->getTakes(m_currentLineId, m_currentLocale);
+  if (selectedIndex >= static_cast<int>(takes.size())) {
+    NOVELMIND_LOG_WARN(
+        "[RecordingStudio] Take index out of range for deletion");
+    return;
+  }
+
+  const auto &take = takes[static_cast<size_t>(selectedIndex)];
+
+  // Confirm deletion
+  QMessageBox::StandardButton reply = QMessageBox::question(
+      this, tr("Delete Take"),
+      tr("Are you sure you want to delete take #%1?\n\nFile: %2")
+          .arg(take.takeNumber)
+          .arg(QString::fromStdString(take.filePath)),
+      QMessageBox::Yes | QMessageBox::No);
+
+  if (reply != QMessageBox::Yes) {
+    return;
+  }
+
+  // Stop playback if this take is playing
+  if (m_mediaPlayer && m_isPlayingTake) {
+    m_mediaPlayer->stop();
+  }
+
+  // Delete the file
+  QString filePath = QString::fromStdString(take.filePath);
+  if (QFile::exists(filePath)) {
+    if (!QFile::remove(filePath)) {
+      NOVELMIND_LOG_WARN(
+          std::string("[RecordingStudio] Failed to delete file: ") +
+          take.filePath);
+      QMessageBox::warning(this, tr("Delete Error"),
+                           tr("Failed to delete file: %1").arg(filePath));
+      return;
+    }
+    NOVELMIND_LOG_INFO(std::string("[RecordingStudio] Deleted take file: ") +
+                       take.filePath);
+  }
+
+  // Remove from manifest
+  m_manifest->removeTake(m_currentLineId, m_currentLocale, take.takeNumber);
+
+  // Refresh the take list
+  updateTakeList();
+
+  NOVELMIND_LOG_INFO(std::string("[RecordingStudio] Deleted take #") +
+                     std::to_string(take.takeNumber) + " for line " +
+                     m_currentLineId);
 }
 
 void NMRecordingStudioPanel::onInputVolumeChanged(int value) {
@@ -621,7 +760,8 @@ void NMRecordingStudioPanel::onLevelUpdate(const audio::LevelMeter &level) {
   }
 
   if (m_levelDbLabel) {
-    m_levelDbLabel->setText(tr("Level: %1 dB").arg(level.rmsLevelDb, 0, 'f', 1));
+    m_levelDbLabel->setText(
+        tr("Level: %1 dB").arg(level.rmsLevelDb, 0, 'f', 1));
   }
 
   if (m_clippingWarning) {
@@ -652,7 +792,8 @@ void NMRecordingStudioPanel::onRecordingStateChanged(int state) {
   updateRecordingState();
 }
 
-void NMRecordingStudioPanel::onRecordingComplete(const audio::RecordingResult &result) {
+void NMRecordingStudioPanel::onRecordingComplete(
+    const audio::RecordingResult &result) {
   m_isRecording = false;
   updateRecordingState();
 
@@ -663,7 +804,8 @@ void NMRecordingStudioPanel::onRecordingComplete(const audio::RecordingResult &r
   // Add take to manifest
   audio::VoiceTake take;
   take.takeNumber =
-      static_cast<uint32_t>(m_manifest->getTakes(m_currentLineId, m_currentLocale).size()) +
+      static_cast<uint32_t>(
+          m_manifest->getTakes(m_currentLineId, m_currentLocale).size()) +
       1;
   take.filePath = result.filePath;
   take.duration = result.duration;

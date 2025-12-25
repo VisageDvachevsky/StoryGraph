@@ -517,7 +517,8 @@ public:
 
   /**
    * @brief Convenience method to publish typed event
-   * @note Named emitEvent instead of emit to avoid conflict with Qt's emit macro
+   * @note Named emitEvent instead of emit to avoid conflict with Qt's emit
+   * macro
    */
   template <typename T, typename... Args>
   void emitEvent([[maybe_unused]] Args &&...args) {

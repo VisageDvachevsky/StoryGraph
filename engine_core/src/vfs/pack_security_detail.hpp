@@ -7,7 +7,7 @@
 
 namespace NovelMind::VFS::detail {
 
-inline constexpr u32 kPackMagic = 0x53524D4E;  // "NMRS"
+inline constexpr u32 kPackMagic = 0x53524D4E;   // "NMRS"
 inline constexpr u32 kFooterMagic = 0x46524D4E; // "NMRF"
 inline constexpr u16 kPackVersionMajor = 1;
 inline constexpr usize kResourceEntrySize = 48;

@@ -91,8 +91,8 @@ Result<void> PackIntegrityChecker::setPublicKeyPem(const std::string &pem) {
 #endif
 }
 
-Result<void> PackIntegrityChecker::setPublicKeyFromFile(
-    const std::string &path) {
+Result<void>
+PackIntegrityChecker::setPublicKeyFromFile(const std::string &path) {
   std::ifstream file(path, std::ios::binary);
   if (!file.is_open()) {
     return Result<void>::error("Failed to open public key file: " + path);
@@ -155,8 +155,7 @@ PackIntegrityChecker::verifyResourceTable(const u8 *data, usize size,
   }
 
   for (u32 i = 0; i < resourceCount; ++i) {
-    const usize entryOffset =
-        tableOffset + (i * detail::kResourceEntrySize);
+    const usize entryOffset = tableOffset + (i * detail::kResourceEntrySize);
 
     u64 dataOffset;
     std::memcpy(&dataOffset, data + entryOffset + 8, sizeof(dataOffset));
@@ -177,8 +176,7 @@ PackIntegrityChecker::verifyResourceTable(const u8 *data, usize size,
 
 Result<PackVerificationReport>
 PackIntegrityChecker::verifyResource(const u8 *data, usize size, u64 offset,
-                                     usize resourceSize,
-                                     u32 expectedChecksum) {
+                                     usize resourceSize, u32 expectedChecksum) {
   PackVerificationReport report;
 
   if (offset + resourceSize > size) {
@@ -204,10 +202,8 @@ PackIntegrityChecker::verifyResource(const u8 *data, usize size, u64 offset,
   return Result<PackVerificationReport>::ok(report);
 }
 
-Result<PackVerificationReport>
-PackIntegrityChecker::verifyPackSignature(const u8 *data, usize size,
-                                          const u8 *signature,
-                                          usize signatureSize) {
+Result<PackVerificationReport> PackIntegrityChecker::verifyPackSignature(
+    const u8 *data, usize size, const u8 *signature, usize signatureSize) {
   PackVerificationReport report;
 
 #ifdef NOVELMIND_HAS_OPENSSL
@@ -239,22 +235,22 @@ PackIntegrityChecker::verifyPackSignature(const u8 *data, usize size,
   if (EVP_DigestVerifyInit(ctx, nullptr, EVP_sha256(), nullptr,
                            m_publicKey.get()) != 1) {
     report.result = PackVerificationResult::SignatureInvalid;
-    report.message = "Failed to initialize signature verification: " +
-                     getOpenSslError();
+    report.message =
+        "Failed to initialize signature verification: " + getOpenSslError();
     EVP_MD_CTX_free(ctx);
     return Result<PackVerificationReport>::ok(report);
   }
 
   if (EVP_DigestVerifyUpdate(ctx, data, static_cast<size_t>(size)) != 1) {
     report.result = PackVerificationResult::SignatureInvalid;
-    report.message = "Signature verification update failed: " +
-                     getOpenSslError();
+    report.message =
+        "Signature verification update failed: " + getOpenSslError();
     EVP_MD_CTX_free(ctx);
     return Result<PackVerificationReport>::ok(report);
   }
 
-  int verify = EVP_DigestVerifyFinal(ctx, signature,
-                                     static_cast<size_t>(signatureSize));
+  int verify =
+      EVP_DigestVerifyFinal(ctx, signature, static_cast<size_t>(signatureSize));
   EVP_MD_CTX_free(ctx);
 
   if (verify == 1) {
@@ -281,8 +277,7 @@ PackIntegrityChecker::verifyPackSignature(const u8 *data, usize size,
 
 Result<PackVerificationReport>
 PackIntegrityChecker::verifyPackSignatureStream(std::istream &stream,
-                                                usize size,
-                                                const u8 *signature,
+                                                usize size, const u8 *signature,
                                                 usize signatureSize) {
   PackVerificationReport report;
 
@@ -309,8 +304,8 @@ PackIntegrityChecker::verifyPackSignatureStream(std::istream &stream,
   if (EVP_DigestVerifyInit(ctx, nullptr, EVP_sha256(), nullptr,
                            m_publicKey.get()) != 1) {
     report.result = PackVerificationResult::SignatureInvalid;
-    report.message = "Failed to initialize signature verification: " +
-                     getOpenSslError();
+    report.message =
+        "Failed to initialize signature verification: " + getOpenSslError();
     EVP_MD_CTX_free(ctx);
     return Result<PackVerificationReport>::ok(report);
   }
@@ -334,8 +329,8 @@ PackIntegrityChecker::verifyPackSignatureStream(std::istream &stream,
     if (EVP_DigestVerifyUpdate(ctx, buffer.data(),
                                static_cast<size_t>(readCount)) != 1) {
       report.result = PackVerificationResult::SignatureInvalid;
-      report.message = "Signature verification update failed: " +
-                       getOpenSslError();
+      report.message =
+          "Signature verification update failed: " + getOpenSslError();
       EVP_MD_CTX_free(ctx);
       return Result<PackVerificationReport>::ok(report);
     }

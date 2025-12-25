@@ -17,27 +17,27 @@
  * - Memory-bounded thumbnail cache with LRU eviction
  */
 
-#include "NovelMind/editor/qt/nm_dock_panel.hpp"
 #include "NovelMind/editor/qt/lazy_thumbnail_loader.hpp"
+#include "NovelMind/editor/qt/nm_dock_panel.hpp"
+#include <QAction>
+#include <QCache>
+#include <QComboBox>
+#include <QDateTime>
 #include <QFileIconProvider>
 #include <QFileSystemModel>
 #include <QFrame>
-#include <QLabel>
-#include <QListView>
-#include <QLineEdit>
-#include <QSplitter>
-#include <QComboBox>
-#include <QSortFilterProxyModel>
-#include <QToolBar>
-#include <QTreeView>
-#include <QAction>
 #include <QHash>
-#include <QUndoStack>
-#include <QCache>
-#include <QDateTime>
-#include <QThreadPool>
+#include <QLabel>
+#include <QLineEdit>
+#include <QListView>
 #include <QPointer>
 #include <QRunnable>
+#include <QSortFilterProxyModel>
+#include <QSplitter>
+#include <QThreadPool>
+#include <QToolBar>
+#include <QTreeView>
+#include <QUndoStack>
 #include <memory>
 
 namespace NovelMind::editor::qt {
@@ -55,27 +55,24 @@ struct ThumbnailCacheEntry {
  * @brief Asset metadata from database
  */
 struct AssetMetadata {
-  QString id;           // Stable unique ID
-  QString type;         // Asset type (image, audio, font, script, etc.)
-  QString path;         // Relative path
-  qint64 size = 0;      // File size in bytes
-  QString format;       // File format
-  QDateTime modified;   // Last modified time
-  int width = 0;        // For images: width
-  int height = 0;       // For images: height
-  double duration = 0;  // For audio: duration in seconds
-  int sampleRate = 0;   // For audio: sample rate
-  int channels = 0;     // For audio: number of channels
-  QStringList usages;   // Where this asset is used
+  QString id;          // Stable unique ID
+  QString type;        // Asset type (image, audio, font, script, etc.)
+  QString path;        // Relative path
+  qint64 size = 0;     // File size in bytes
+  QString format;      // File format
+  QDateTime modified;  // Last modified time
+  int width = 0;       // For images: width
+  int height = 0;      // For images: height
+  double duration = 0; // For audio: duration in seconds
+  int sampleRate = 0;  // For audio: sample rate
+  int channels = 0;    // For audio: number of channels
+  QStringList usages;  // Where this asset is used
 };
 
 /**
  * @brief View mode for asset list
  */
-enum class AssetViewMode {
-  Grid,
-  List
-};
+enum class AssetViewMode { Grid, List };
 
 /**
  * @brief Asset Browser panel for asset management
@@ -194,7 +191,8 @@ private:
 
 public: // Used by NMAssetIconProvider
   QPixmap generateAudioWaveform(const QString &path, const QSize &size) const;
-  bool isThumbnailValid(const QString &path, const ThumbnailCacheEntry &entry) const;
+  bool isThumbnailValid(const QString &path,
+                        const ThumbnailCacheEntry &entry) const;
 
   // Thumbnail cache with LRU eviction (max size in KB)
   QCache<QString, ThumbnailCacheEntry> m_thumbnailCache;
@@ -253,7 +251,8 @@ private:
   // Audio waveform display
   QLabel *m_waveformLabel = nullptr;
 
-  // Thread pool for background thumbnail loading (legacy - kept for compatibility)
+  // Thread pool for background thumbnail loading (legacy - kept for
+  // compatibility)
   QPointer<QThreadPool> m_thumbnailThreadPool;
 
   // Pending thumbnail requests (for cancellation)

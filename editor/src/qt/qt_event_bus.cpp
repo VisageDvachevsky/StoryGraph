@@ -65,6 +65,26 @@ void QtEventBus::publish(const QtEditorEvent &event) {
                        event.data.value("details").toString());
     break;
 
+  case QtEditorEventType::GraphNodeAdded:
+    emit graphNodeAdded(event.data.value("nodeId").toString(),
+                        event.data.value("nodeType").toString(),
+                        event.data.value("nodeData").toMap());
+    break;
+
+  case QtEditorEventType::GraphNodeRemoved:
+    emit graphNodeRemoved(event.data.value("nodeId").toString());
+    break;
+
+  case QtEditorEventType::GraphConnectionAdded:
+    emit graphConnectionAdded(event.data.value("connectionId").toString(),
+                              event.data.value("sourceNodeId").toString(),
+                              event.data.value("targetNodeId").toString());
+    break;
+
+  case QtEditorEventType::GraphConnectionRemoved:
+    emit graphConnectionRemoved(event.data.value("connectionId").toString());
+    break;
+
   default:
     break;
   }
@@ -104,6 +124,42 @@ void QtEventBus::publishLogMessage(const QString &message,
 
 void QtEventBus::publishNavigationRequest(const QString &locationString) {
   emit navigationRequested(locationString);
+}
+
+void QtEventBus::publishGraphNodeAdded(const QString &nodeId,
+                                       const QString &nodeType,
+                                       const QVariantMap &nodeData) {
+  QtEditorEvent event;
+  event.type = QtEditorEventType::GraphNodeAdded;
+  event.data["nodeId"] = nodeId;
+  event.data["nodeType"] = nodeType;
+  event.data["nodeData"] = nodeData;
+  publish(event);
+}
+
+void QtEventBus::publishGraphNodeRemoved(const QString &nodeId) {
+  QtEditorEvent event;
+  event.type = QtEditorEventType::GraphNodeRemoved;
+  event.data["nodeId"] = nodeId;
+  publish(event);
+}
+
+void QtEventBus::publishGraphConnectionAdded(const QString &connectionId,
+                                             const QString &sourceNodeId,
+                                             const QString &targetNodeId) {
+  QtEditorEvent event;
+  event.type = QtEditorEventType::GraphConnectionAdded;
+  event.data["connectionId"] = connectionId;
+  event.data["sourceNodeId"] = sourceNodeId;
+  event.data["targetNodeId"] = targetNodeId;
+  publish(event);
+}
+
+void QtEventBus::publishGraphConnectionRemoved(const QString &connectionId) {
+  QtEditorEvent event;
+  event.type = QtEditorEventType::GraphConnectionRemoved;
+  event.data["connectionId"] = connectionId;
+  publish(event);
 }
 
 } // namespace NovelMind::editor::qt

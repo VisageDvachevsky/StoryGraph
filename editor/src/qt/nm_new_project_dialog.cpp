@@ -26,17 +26,23 @@ NMNewProjectDialog::NMNewProjectDialog(QWidget *parent) : QDialog(parent) {
 }
 
 QStringList NMNewProjectDialog::standardResolutions() {
-  return {
-      "1920x1080 (Full HD)",  "1280x720 (HD)",    "2560x1440 (QHD)",
-      "3840x2160 (4K)",       "1600x900",         "1366x768",
-      "800x600 (Classic VN)", "1024x768 (4:3)",   "Custom..."};
+  return {"1920x1080 (Full HD)",  "1280x720 (HD)",  "2560x1440 (QHD)",
+          "3840x2160 (4K)",       "1600x900",       "1366x768",
+          "800x600 (Classic VN)", "1024x768 (4:3)", "Custom..."};
 }
 
 QStringList NMNewProjectDialog::standardLocales() {
-  return {"en (English)",   "ja (Japanese)",   "zh-CN (Chinese Simplified)",
-          "zh-TW (Chinese Traditional)", "ko (Korean)",    "ru (Russian)",
-          "es (Spanish)",   "fr (French)",     "de (German)",
-          "pt-BR (Portuguese)", "it (Italian)"};
+  return {"en (English)",
+          "ja (Japanese)",
+          "zh-CN (Chinese Simplified)",
+          "zh-TW (Chinese Traditional)",
+          "ko (Korean)",
+          "ru (Russian)",
+          "es (Spanish)",
+          "fr (French)",
+          "de (German)",
+          "pt-BR (Portuguese)",
+          "it (Italian)"};
 }
 
 void NMNewProjectDialog::buildUi() {
@@ -54,7 +60,8 @@ void NMNewProjectDialog::buildUi() {
   basicLayout->addRow(tr("Name:"), m_nameEdit);
 
   m_templateCombo = new QComboBox(basicGroup);
-  m_templateCombo->setToolTip(tr("Select a starting template for your project"));
+  m_templateCombo->setToolTip(
+      tr("Select a starting template for your project"));
   basicLayout->addRow(tr("Template:"), m_templateCombo);
 
   auto *dirRow = new QWidget(basicGroup);
@@ -84,9 +91,10 @@ void NMNewProjectDialog::buildUi() {
   m_resolutionCombo = new QComboBox(displayGroup);
   m_resolutionCombo->addItems(standardResolutions());
   m_resolutionCombo->setCurrentIndex(0); // Default to 1920x1080
-  m_resolutionCombo->setToolTip(tr("Base resolution for the visual novel.\n"
-                                   "Common choices: 1920x1080 for modern displays,\n"
-                                   "1280x720 for wider compatibility."));
+  m_resolutionCombo->setToolTip(
+      tr("Base resolution for the visual novel.\n"
+         "Common choices: 1920x1080 for modern displays,\n"
+         "1280x720 for wider compatibility."));
   displayLayout->addRow(tr("Base Resolution:"), m_resolutionCombo);
 
   m_localeCombo = new QComboBox(displayGroup);
@@ -191,15 +199,15 @@ QString NMNewProjectDialog::projectPath() const {
 }
 
 QString NMNewProjectDialog::templateName() const {
-  return m_templateCombo ? m_templateCombo->currentText().trimmed()
-                         : QString();
+  return m_templateCombo ? m_templateCombo->currentText().trimmed() : QString();
 }
 
 void NMNewProjectDialog::setResolution(const QString &resolution) {
   if (!m_resolutionCombo) {
     return;
   }
-  const int index = m_resolutionCombo->findText(resolution, Qt::MatchStartsWith);
+  const int index =
+      m_resolutionCombo->findText(resolution, Qt::MatchStartsWith);
   if (index >= 0) {
     m_resolutionCombo->setCurrentIndex(index);
   }
@@ -220,7 +228,8 @@ QString NMNewProjectDialog::resolution() const {
     return "1920x1080";
   }
   QString text = m_resolutionCombo->currentText();
-  // Extract just the resolution part (e.g., "1920x1080" from "1920x1080 (Full HD)")
+  // Extract just the resolution part (e.g., "1920x1080" from "1920x1080 (Full
+  // HD)")
   const qsizetype spacePos = text.indexOf(' ');
   return spacePos > 0 ? text.left(spacePos) : text;
 }
@@ -256,8 +265,8 @@ void NMNewProjectDialog::updateCreateEnabled() {
 }
 
 void NMNewProjectDialog::browseDirectory() {
-  const QString current = baseDirectory().isEmpty() ? QDir::homePath()
-                                                    : baseDirectory();
+  const QString current =
+      baseDirectory().isEmpty() ? QDir::homePath() : baseDirectory();
   const QString dir = NMFileDialog::getExistingDirectory(
       this, tr("Select Project Location"), current);
   if (!dir.isEmpty()) {

@@ -11,22 +11,22 @@
  * - Undo history visualization
  */
 
-#include <QObject>
-#include <QPointF>
-#include <QUndoCommand>
-#include <QUndoStack>
-#include <QVariant>
-#include <QStringList>
-#include <QPointer>
-#include <memory>
-#include <vector>
-#include <cstdint>
-#include <functional>
 #include "NovelMind/core/property_system.hpp"
 #include "NovelMind/editor/qt/panels/nm_curve_editor_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_localization_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_timeline_panel.hpp"
+#include <QObject>
+#include <QPointF>
+#include <QPointer>
+#include <QStringList>
+#include <QUndoCommand>
+#include <QUndoStack>
+#include <QVariant>
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <vector>
 
 namespace NovelMind::editor::qt {
 
@@ -212,8 +212,8 @@ public:
 
   PropertyChangeCommand(const QString &objectName, const QString &propertyName,
                         const PropertyValue &oldValue,
-                        const PropertyValue &newValue,
-                        ApplyFn apply, QUndoCommand *parent = nullptr);
+                        const PropertyValue &newValue, ApplyFn apply,
+                        QUndoCommand *parent = nullptr);
 
   void undo() override;
   void redo() override;
@@ -267,8 +267,7 @@ private:
 class TransformObjectCommand : public QUndoCommand {
 public:
   TransformObjectCommand(NMSceneViewPanel *panel, const QString &objectId,
-                         const QPointF &oldPosition,
-                         const QPointF &newPosition,
+                         const QPointF &oldPosition, const QPointF &newPosition,
                          qreal oldRotation = 0.0, qreal newRotation = 0.0,
                          qreal oldScaleX = 1.0, qreal newScaleX = 1.0,
                          qreal oldScaleY = 1.0, qreal newScaleY = 1.0,
@@ -297,8 +296,9 @@ private:
  */
 class ToggleObjectVisibilityCommand : public QUndoCommand {
 public:
-  ToggleObjectVisibilityCommand(NMSceneViewPanel *panel, const QString &objectId,
-                                bool oldVisible, bool newVisible,
+  ToggleObjectVisibilityCommand(NMSceneViewPanel *panel,
+                                const QString &objectId, bool oldVisible,
+                                bool newVisible,
                                 QUndoCommand *parent = nullptr);
 
   void undo() override;
@@ -394,7 +394,8 @@ private:
 class ConnectGraphNodesCommand : public QUndoCommand {
 public:
   ConnectGraphNodesCommand(NMStoryGraphScene *scene, uint64_t sourceNodeId,
-                           uint64_t targetNodeId, QUndoCommand *parent = nullptr);
+                           uint64_t targetNodeId,
+                           QUndoCommand *parent = nullptr);
 
   void undo() override;
   void redo() override;

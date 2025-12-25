@@ -154,7 +154,8 @@ void NMConsoleOutput::refreshDisplay() {
     }
 
     if (visible) {
-      // Format and display entry directly (don't call appendLog to avoid re-adding to m_entries)
+      // Format and display entry directly (don't call appendLog to avoid
+      // re-adding to m_entries)
       QString color;
       QString levelStr;
       switch (entry.level) {

@@ -13,8 +13,8 @@
  * - Modal behavior with backdrop dimming
  */
 
-#include <functional>
 #include <QString>
+#include <functional>
 
 class QDialog;
 class QLineEdit;
@@ -83,12 +83,12 @@ void applyValidationStyle(QLineEdit *lineEdit, bool isValid,
  *
  * @param lineEdit The input field to validate
  * @param validator Function that returns true if input is valid
- * @param errorMessageProvider Function that returns error message for invalid input
+ * @param errorMessageProvider Function that returns error message for invalid
+ * input
  * @param onValidChanged Callback when validity state changes
  */
 void setupInputValidation(
-    QLineEdit *lineEdit,
-    std::function<bool(const QString &)> validator,
+    QLineEdit *lineEdit, std::function<bool(const QString &)> validator,
     std::function<QString(const QString &)> errorMessageProvider = nullptr,
     std::function<void(bool)> onValidChanged = nullptr);
 

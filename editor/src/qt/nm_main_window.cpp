@@ -1,9 +1,10 @@
 #include "NovelMind/editor/qt/nm_main_window.hpp"
+#include "NovelMind/core/logger.hpp"
+#include "NovelMind/editor/guided_learning/tutorial_subsystem.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/nm_settings_dialog.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
 #include "NovelMind/editor/settings_registry.hpp"
-#include "NovelMind/core/logger.hpp"
 
 #include <QSettings>
 #include <QStandardPaths>
@@ -34,11 +35,14 @@ bool NMMainWindow::initialize() {
   m_settingsRegistry->registerProjectDefaults();
 
   // Load user settings
-  QString configPath = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
+  QString configPath =
+      QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
   QString userSettingsPath = configPath + "/NovelMind/editor_settings.json";
-  auto loadResult = m_settingsRegistry->loadUserSettings(userSettingsPath.toStdString());
+  auto loadResult =
+      m_settingsRegistry->loadUserSettings(userSettingsPath.toStdString());
   if (loadResult.isError()) {
-    NOVELMIND_LOG_WARN(std::string("Failed to load user settings: ") + loadResult.error());
+    NOVELMIND_LOG_WARN(std::string("Failed to load user settings: ") +
+                       loadResult.error());
   }
 
   // Initialize undo/redo system
@@ -67,6 +71,27 @@ bool NMMainWindow::initialize() {
 
   updateStatusBarContext();
 
+  // Initialize the guided learning / tutorial subsystem
+  {
+    using namespace NovelMind::editor::guided_learning;
+    TutorialSubsystemConfig tutorialConfig;
+    tutorialConfig.tutorialDefinitionsPath = ":/tutorials"; // Qt resources
+    tutorialConfig.enabledByDefault = true;
+    tutorialConfig.hintsEnabledByDefault = true;
+    tutorialConfig.walkthroughsOnFirstRunByDefault = true;
+    tutorialConfig.verboseLogging = false;
+
+    auto tutorialResult =
+        NMTutorialSubsystem::instance().initialize(this, tutorialConfig);
+    if (tutorialResult.isError()) {
+      NOVELMIND_LOG_WARN(
+          std::string("Failed to initialize tutorial subsystem: ") +
+          tutorialResult.error());
+    } else {
+      NOVELMIND_LOG_INFO("Tutorial subsystem initialized successfully");
+    }
+  }
+
   m_initialized = true;
   return true;
 }
@@ -79,13 +104,21 @@ void NMMainWindow::shutdown() {
     m_updateTimer->stop();
   }
 
+  // Shutdown tutorial subsystem
+  if (guided_learning::NMTutorialSubsystem::hasInstance()) {
+    guided_learning::NMTutorialSubsystem::instance().shutdown();
+  }
+
   // Save user settings
   if (m_settingsRegistry) {
-    QString configPath = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
+    QString configPath =
+        QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
     QString userSettingsPath = configPath + "/NovelMind/editor_settings.json";
-    auto saveResult = m_settingsRegistry->saveUserSettings(userSettingsPath.toStdString());
+    auto saveResult =
+        m_settingsRegistry->saveUserSettings(userSettingsPath.toStdString());
     if (saveResult.isError()) {
-      NOVELMIND_LOG_WARN(std::string("Failed to save user settings: ") + saveResult.error());
+      NOVELMIND_LOG_WARN(std::string("Failed to save user settings: ") +
+                         saveResult.error());
     }
   }
 

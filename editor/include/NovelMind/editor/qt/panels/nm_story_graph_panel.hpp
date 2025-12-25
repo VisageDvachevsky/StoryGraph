@@ -19,8 +19,8 @@
 #include <QHash>
 #include <QPushButton>
 #include <QStringList>
-#include <QVector>
 #include <QToolBar>
+#include <QVector>
 
 namespace NovelMind::editor::qt {
 
@@ -63,13 +63,17 @@ public:
   void setScriptPath(const QString &path) { m_scriptPath = path; }
   [[nodiscard]] QString scriptPath() const { return m_scriptPath; }
 
-  void setDialogueSpeaker(const QString &speaker) { m_dialogueSpeaker = speaker; }
+  void setDialogueSpeaker(const QString &speaker) {
+    m_dialogueSpeaker = speaker;
+  }
   [[nodiscard]] QString dialogueSpeaker() const { return m_dialogueSpeaker; }
 
   void setDialogueText(const QString &text) { m_dialogueText = text; }
   [[nodiscard]] QString dialogueText() const { return m_dialogueText; }
 
-  void setChoiceOptions(const QStringList &choices) { m_choiceOptions = choices; }
+  void setChoiceOptions(const QStringList &choices) {
+    m_choiceOptions = choices;
+  }
   [[nodiscard]] QStringList choiceOptions() const { return m_choiceOptions; }
 
   // Voice-over properties for dialogue nodes
@@ -89,8 +93,12 @@ public:
   void setLocalizedText(const QString &text) { m_localizedText = text; }
   [[nodiscard]] QString localizedText() const { return m_localizedText; }
 
-  [[nodiscard]] bool hasTranslation() const { return m_translationStatus == 2; } // Translated
-  [[nodiscard]] bool isMissingTranslation() const { return m_translationStatus == 4; } // Missing
+  [[nodiscard]] bool hasTranslation() const {
+    return m_translationStatus == 2;
+  } // Translated
+  [[nodiscard]] bool isMissingTranslation() const {
+    return m_translationStatus == 4;
+  } // Missing
 
   [[nodiscard]] bool hasVoiceClip() const { return !m_voiceClipPath.isEmpty(); }
   [[nodiscard]] bool isDialogueNode() const {
@@ -101,8 +109,12 @@ public:
   void setSceneId(const QString &id) { m_sceneId = id; }
   [[nodiscard]] QString sceneId() const { return m_sceneId; }
 
-  void setHasEmbeddedDialogue(bool embedded) { m_hasEmbeddedDialogue = embedded; }
-  [[nodiscard]] bool hasEmbeddedDialogue() const { return m_hasEmbeddedDialogue; }
+  void setHasEmbeddedDialogue(bool embedded) {
+    m_hasEmbeddedDialogue = embedded;
+  }
+  [[nodiscard]] bool hasEmbeddedDialogue() const {
+    return m_hasEmbeddedDialogue;
+  }
 
   void setDialogueCount(int count) { m_dialogueCount = count; }
   [[nodiscard]] int dialogueCount() const { return m_dialogueCount; }
@@ -150,11 +162,13 @@ private:
 
   // Voice-over properties (for Dialogue nodes)
   QString m_voiceClipPath;
-  int m_voiceBindingStatus = 0; // 0=Unbound, 1=Bound, 2=MissingFile, 3=AutoMapped, 4=Pending
+  int m_voiceBindingStatus =
+      0; // 0=Unbound, 1=Bound, 2=MissingFile, 3=AutoMapped, 4=Pending
   QString m_localizationKey;
 
   // Dialogue localization properties
-  int m_translationStatus = 1; // 0=NotLocalizable, 1=Untranslated, 2=Translated, 3=NeedsReview, 4=Missing
+  int m_translationStatus = 1; // 0=NotLocalizable, 1=Untranslated,
+                               // 2=Translated, 3=NeedsReview, 4=Missing
   QString m_localizedText;     // Translated text for current locale preview
 
   // Scene Node specific properties
@@ -217,8 +231,7 @@ public:
    */
   NMGraphConnectionItem *addConnection(NMGraphNodeItem *from,
                                        NMGraphNodeItem *to);
-  NMGraphConnectionItem *addConnection(uint64_t fromNodeId,
-                                       uint64_t toNodeId);
+  NMGraphConnectionItem *addConnection(uint64_t fromNodeId, uint64_t toNodeId);
 
   /**
    * @brief Remove a node and its connections
@@ -269,7 +282,7 @@ public:
    * @return true if adding this connection would create a cycle
    */
   [[nodiscard]] bool wouldCreateCycle(uint64_t fromNodeId,
-                                       uint64_t toNodeId) const;
+                                      uint64_t toNodeId) const;
 
   /**
    * @brief Detect all cycles in the graph
@@ -451,17 +464,25 @@ signals:
   void sceneNodeDoubleClicked(const QString &sceneId);
   void editSceneLayoutRequested(const QString &sceneId);
   void editDialogueFlowRequested(const QString &sceneId);
-  void openSceneScriptRequested(const QString &sceneId, const QString &scriptPath);
+  void openSceneScriptRequested(const QString &sceneId,
+                                const QString &scriptPath);
   // Voice-over specific signals (for Dialogue nodes)
-  void voiceClipAssignRequested(const QString &nodeIdString, const QString &currentPath);
-  void voiceClipPreviewRequested(const QString &nodeIdString, const QString &voicePath);
-  void voiceRecordingRequested(const QString &nodeIdString, const QString &dialogueText, const QString &speaker);
-  void voiceAutoDetectRequested(const QString &nodeIdString, const QString &localizationKey);
-  void voiceClipChanged(const QString &nodeIdString, const QString &voicePath, int bindingStatus);
+  void voiceClipAssignRequested(const QString &nodeIdString,
+                                const QString &currentPath);
+  void voiceClipPreviewRequested(const QString &nodeIdString,
+                                 const QString &voicePath);
+  void voiceRecordingRequested(const QString &nodeIdString,
+                               const QString &dialogueText,
+                               const QString &speaker);
+  void voiceAutoDetectRequested(const QString &nodeIdString,
+                                const QString &localizationKey);
+  void voiceClipChanged(const QString &nodeIdString, const QString &voicePath,
+                        int bindingStatus);
   // Dialogue localization signals
   void localePreviewChanged(const QString &localeCode);
   void dialogueExportRequested(const QString &sceneId);
-  void localizationKeyClicked(const QString &nodeIdString, const QString &localizationKey);
+  void localizationKeyClicked(const QString &nodeIdString,
+                              const QString &localizationKey);
   void missingTranslationHighlighted(const QString &nodeIdString);
 
 private slots:

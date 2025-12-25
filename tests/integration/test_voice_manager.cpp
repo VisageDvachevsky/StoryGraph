@@ -123,8 +123,9 @@ TEST_CASE("VoiceManagerPanel: CSV export format",
     REQUIRE(file.open(QIODevice::ReadOnly | QIODevice::Text));
     QTextStream in(&file);
     QString header = in.readLine();
-    REQUIRE(header.contains("DialogueID"));
-    REQUIRE(header.contains("VoiceFile"));
+    // CSV header format: id,speaker,text_key,voice_file,scene,status
+    REQUIRE(header.contains("id"));
+    REQUIRE(header.contains("voice_file"));
     file.close();
 
     QFile::remove(tempPath);

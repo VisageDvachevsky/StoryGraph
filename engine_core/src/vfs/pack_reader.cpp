@@ -237,9 +237,11 @@ Result<std::vector<u8>>
 PackReader::readResourceData(const std::string &packPath,
                              const PackResourceEntry &entry) const {
   // Security: Validate resource size to prevent excessive allocations
-  constexpr u64 MAX_RESOURCE_SIZE = 512ULL * 1024 * 1024; // 512 MB max per resource
+  constexpr u64 MAX_RESOURCE_SIZE =
+      512ULL * 1024 * 1024; // 512 MB max per resource
   if (entry.compressedSize > MAX_RESOURCE_SIZE) {
-    return Result<std::vector<u8>>::error("Resource size exceeds maximum allowed");
+    return Result<std::vector<u8>>::error(
+        "Resource size exceeds maximum allowed");
   }
 
   std::ifstream file(packPath, std::ios::binary);
@@ -266,7 +268,8 @@ PackReader::readResourceData(const std::string &packPath,
   }
 
   if (absoluteOffset + entry.compressedSize > static_cast<u64>(fileSize)) {
-    return Result<std::vector<u8>>::error("Resource data extends beyond pack file");
+    return Result<std::vector<u8>>::error(
+        "Resource data extends beyond pack file");
   }
 
   file.seekg(static_cast<std::streamoff>(absoluteOffset));

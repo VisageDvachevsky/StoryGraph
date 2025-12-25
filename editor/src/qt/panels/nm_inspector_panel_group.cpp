@@ -1,35 +1,33 @@
+#include "NovelMind/editor/project_manager.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_inspector_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
-#include "NovelMind/editor/project_manager.hpp"
-#include "NovelMind/editor/qt/nm_style_manager.hpp"
-#include "NovelMind/editor/qt/nm_dialogs.hpp"
 
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialog>
 #include <QDialogButtonBox>
-#include <QDragEnterEvent>
+#include <QDir>
 #include <QDoubleSpinBox>
+#include <QDragEnterEvent>
+#include <QDropEvent>
 #include <QFile>
 #include <QFileInfo>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
-#include <QMouseEvent>
 #include <QMimeData>
+#include <QMouseEvent>
+#include <QPixmap>
 #include <QPlainTextEdit>
 #include <QPushButton>
-#include <QDropEvent>
-#include <QPixmap>
 #include <QSignalBlocker>
 #include <QSpinBox>
 #include <QTimer>
 #include <QVBoxLayout>
-#include <QDir>
-
-
 
 namespace NovelMind::editor::qt {
 
@@ -150,9 +148,9 @@ AssetImportChoice promptAssetImport(QWidget *parent, const QString &assetsRoot,
   layout->setContentsMargins(12, 12, 12, 12);
   layout->setSpacing(8);
 
-  auto *title = new QLabel(QObject::tr(
-      "This file is outside the project. Import it into Assets?"),
-                           &dialog);
+  auto *title = new QLabel(
+      QObject::tr("This file is outside the project. Import it into Assets?"),
+      &dialog);
   title->setWordWrap(true);
   layout->addWidget(title);
 
@@ -188,8 +186,9 @@ AssetImportChoice promptAssetImport(QWidget *parent, const QString &assetsRoot,
   };
   updateCustomState();
 
-  QObject::connect(destCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-                   &dialog, [&](int) { updateCustomState(); });
+  QObject::connect(destCombo,
+                   QOverload<int>::of(&QComboBox::currentIndexChanged), &dialog,
+                   [&](int) { updateCustomState(); });
   QObject::connect(browseButton, &QPushButton::clicked, &dialog, [&]() {
     const QString dir = NMFileDialog::getExistingDirectory(
         &dialog, QObject::tr("Select Import Folder"), assetsRoot);
@@ -198,12 +197,10 @@ AssetImportChoice promptAssetImport(QWidget *parent, const QString &assetsRoot,
     }
   });
 
-  auto *buttons =
-      new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
-                           &dialog);
-  auto *externalButton =
-      buttons->addButton(QObject::tr("Use External"),
-                         QDialogButtonBox::ActionRole);
+  auto *buttons = new QDialogButtonBox(
+      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+  auto *externalButton = buttons->addButton(QObject::tr("Use External"),
+                                            QDialogButtonBox::ActionRole);
   layout->addWidget(buttons);
 
   QObject::connect(buttons, &QDialogButtonBox::rejected, &dialog,
@@ -450,12 +447,10 @@ QWidget *NMPropertyGroup::addEditableProperty(const QString &propertyName,
     auto *debounce = new QTimer(textEdit);
     debounce->setSingleShot(true);
     debounce->setInterval(400);
-    connect(textEdit, &QPlainTextEdit::textChanged, this, [debounce]() {
-      debounce->start();
-    });
+    connect(textEdit, &QPlainTextEdit::textChanged, this,
+            [debounce]() { debounce->start(); });
     connect(debounce, &QTimer::timeout, this, [this, textEdit]() {
-      const QString property =
-          textEdit->property("propertyName").toString();
+      const QString property = textEdit->property("propertyName").toString();
       emit propertyValueChanged(property, textEdit->toPlainText());
     });
     textEdit->installEventFilter(this);
@@ -643,22 +638,19 @@ QWidget *NMPropertyGroup::addEditableProperty(const QString &propertyName,
         QFileInfo info(value);
         if (!info.isAbsolute()) {
           absPath = QString::fromStdString(
-              ProjectManager::instance().toAbsolutePath(
-                  value.toStdString()));
+              ProjectManager::instance().toAbsolutePath(value.toStdString()));
         }
       }
 
       QFileInfo info(absPath);
       const QString ext = info.suffix().toLower();
-      const bool isImage = (ext == "png" || ext == "jpg" ||
-                            ext == "jpeg" || ext == "bmp" ||
-                            ext == "gif");
+      const bool isImage = (ext == "png" || ext == "jpg" || ext == "jpeg" ||
+                            ext == "bmp" || ext == "gif");
       if (isImage && info.exists()) {
         QPixmap pix(absPath);
         if (!pix.isNull()) {
-          assetButton->setIcon(
-              QIcon(pix.scaled(22, 22, Qt::KeepAspectRatio,
-                               Qt::SmoothTransformation)));
+          assetButton->setIcon(QIcon(pix.scaled(22, 22, Qt::KeepAspectRatio,
+                                                Qt::SmoothTransformation)));
         }
       }
     };
@@ -676,9 +668,8 @@ QWidget *NMPropertyGroup::addEditableProperty(const QString &propertyName,
           value = QString::fromStdString(
               projectManager.toRelativePath(path.toStdString()));
         } else {
-          const QString assetsRoot =
-              QString::fromStdString(projectManager.getFolderPath(
-                  ProjectFolder::Assets));
+          const QString assetsRoot = QString::fromStdString(
+              projectManager.getFolderPath(ProjectFolder::Assets));
           const QString extension = QFileInfo(path).suffix();
           AssetImportChoice choice =
               promptAssetImport(this, assetsRoot, extension);
@@ -690,9 +681,8 @@ QWidget *NMPropertyGroup::addEditableProperty(const QString &propertyName,
             if (!targetDir.exists()) {
               targetDir.mkpath(".");
             }
-            const QString destPath =
-                generateUniquePath(targetDir.absolutePath(),
-                                   QFileInfo(path).fileName());
+            const QString destPath = generateUniquePath(
+                targetDir.absolutePath(), QFileInfo(path).fileName());
             if (!QFile::copy(path, destPath)) {
               NMMessageDialog::showWarning(
                   this, tr("Import Asset"),
@@ -700,8 +690,7 @@ QWidget *NMPropertyGroup::addEditableProperty(const QString &propertyName,
               return;
             }
             value = QString::fromStdString(
-                projectManager.toRelativePath(
-                    destPath.toStdString()));
+                projectManager.toRelativePath(destPath.toStdString()));
           }
         }
       }
@@ -712,27 +701,28 @@ QWidget *NMPropertyGroup::addEditableProperty(const QString &propertyName,
 
     updateAssetButton(currentValue);
 
-    connect(assetButton, &QPushButton::clicked, this,
-            [this, propertyName, applyAssetPath]() {
-              auto &projectManager = ProjectManager::instance();
-              QString startDir;
-              if (projectManager.hasOpenProject()) {
-                startDir = QString::fromStdString(
-                    projectManager.getFolderPath(ProjectFolder::Assets));
-              } else {
-                startDir = QDir::homePath();
-              }
+    connect(
+        assetButton, &QPushButton::clicked, this,
+        [this, propertyName, applyAssetPath]() {
+          auto &projectManager = ProjectManager::instance();
+          QString startDir;
+          if (projectManager.hasOpenProject()) {
+            startDir = QString::fromStdString(
+                projectManager.getFolderPath(ProjectFolder::Assets));
+          } else {
+            startDir = QDir::homePath();
+          }
 
-              QString filter = tr(
-                  "Assets (*.png *.jpg *.jpeg *.bmp *.gif *.wav *.mp3 *.ogg "
-                  "*.flac *.ttf *.otf *.nms *.nmscene *.json *.xml *.yaml *.yml)");
-              if (propertyName.contains("script", Qt::CaseInsensitive)) {
-                filter = tr("Scripts (*.nms)");
-              }
-              QString path = NMFileDialog::getOpenFileName(
-                  this, tr("Select Asset"), startDir, filter);
-              applyAssetPath(path);
-            });
+          QString filter = tr(
+              "Assets (*.png *.jpg *.jpeg *.bmp *.gif *.wav *.mp3 *.ogg "
+              "*.flac *.ttf *.otf *.nms *.nmscene *.json *.xml *.yaml *.yml)");
+          if (propertyName.contains("script", Qt::CaseInsensitive)) {
+            filter = tr("Scripts (*.nms)");
+          }
+          QString path = NMFileDialog::getOpenFileName(this, tr("Select Asset"),
+                                                       startDir, filter);
+          applyAssetPath(path);
+        });
 
     connect(assetButton, &NMAssetButton::assetDropped, this,
             [applyAssetPath](const QString &path) { applyAssetPath(path); });
@@ -893,14 +883,13 @@ QWidget *NMPropertyGroup::addEditableProperty(const QString &propertyName,
                                    .arg(palette.borderDark.name())
                                    .arg(palette.accentPrimary.name()));
 
-    connect(curveButton, &QPushButton::clicked, this,
-            [this, propertyName, curveButton]() {
-              const QString curveId =
-                  curveButton->property("curveId").toString();
-              // Emit signal to request curve editor opening
-              emit propertyValueChanged(
-                  propertyName + ":openCurveEditor", curveId);
-            });
+    connect(
+        curveButton, &QPushButton::clicked, this,
+        [this, propertyName, curveButton]() {
+          const QString curveId = curveButton->property("curveId").toString();
+          // Emit signal to request curve editor opening
+          emit propertyValueChanged(propertyName + ":openCurveEditor", curveId);
+        });
 
     editor = curveButton;
     break;

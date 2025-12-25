@@ -11,10 +11,10 @@
  * - Visual feedback for interaction states
  */
 
-#include <QGraphicsObject>
 #include <QColor>
-#include <functional>
+#include <QGraphicsObject>
 #include <cstdint>
+#include <functional>
 
 namespace NovelMind::editor::qt {
 
@@ -85,9 +85,9 @@ public:
    * @param normalizedToScene Converts (time, value) to scene coordinates
    * @param sceneToNormalized Converts scene coordinates to (time, value)
    */
-  void setCoordinateConverter(
-      std::function<QPointF(qreal, qreal)> normalizedToScene,
-      std::function<QPointF(QPointF)> sceneToNormalized) {
+  void
+  setCoordinateConverter(std::function<QPointF(qreal, qreal)> normalizedToScene,
+                         std::function<QPointF(QPointF)> sceneToNormalized) {
     m_normalizedToScene = normalizedToScene;
     m_sceneToNormalized = sceneToNormalized;
   }

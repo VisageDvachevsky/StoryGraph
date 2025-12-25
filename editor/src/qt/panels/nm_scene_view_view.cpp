@@ -160,10 +160,8 @@ void NMSceneGraphicsView::contextMenuEvent(QContextMenuEvent *event) {
   if (!event) {
     return;
   }
-  emit contextMenuRequested(event->globalPos(),
-                            mapToScene(event->pos()));
+  emit contextMenuRequested(event->globalPos(), mapToScene(event->pos()));
   event->accept();
 }
-
 
 } // namespace NovelMind::editor::qt

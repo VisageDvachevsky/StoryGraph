@@ -1,6 +1,6 @@
 #include "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp"
-#include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/editor/project_manager.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
 
 #include <QAudioOutput>
 #include <QCheckBox>
@@ -135,7 +135,8 @@ void NMVoiceManagerPanel::setupToolBar() {
   m_toolbar->addWidget(exportBtn);
 
   auto *exportTemplateBtn = new QPushButton(tr("Export Template"), m_toolbar);
-  exportTemplateBtn->setToolTip(tr("Export VO template for recording workflow"));
+  exportTemplateBtn->setToolTip(
+      tr("Export VO template for recording workflow"));
   connect(exportTemplateBtn, &QPushButton::clicked, this,
           &NMVoiceManagerPanel::onExportTemplateClicked);
   m_toolbar->addWidget(exportTemplateBtn);
@@ -185,8 +186,9 @@ void NMVoiceManagerPanel::setupFilterBar() {
   m_characterFilter = new QComboBox(filterWidget);
   m_characterFilter->addItem(tr("All Characters"));
   m_characterFilter->setMinimumWidth(120);
-  connect(m_characterFilter, QOverload<int>::of(&QComboBox::currentIndexChanged),
-          this, &NMVoiceManagerPanel::onCharacterFilterChanged);
+  connect(m_characterFilter,
+          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &NMVoiceManagerPanel::onCharacterFilterChanged);
   filterLayout->addWidget(m_characterFilter);
 
   filterLayout->addWidget(new QLabel(tr("Status:"), filterWidget));
@@ -217,9 +219,9 @@ void NMVoiceManagerPanel::setupFilterBar() {
 
 void NMVoiceManagerPanel::setupVoiceList() {
   m_voiceTree = new QTreeWidget(this);
-  m_voiceTree->setHeaderLabels(
-      {tr("Line ID"), tr("Speaker"), tr("Scene"), tr("Text Key"),
-       tr("Voice File"), tr("Takes"), tr("Duration"), tr("Status"), tr("Tags")});
+  m_voiceTree->setHeaderLabels({tr("Line ID"), tr("Speaker"), tr("Scene"),
+                                tr("Text Key"), tr("Voice File"), tr("Takes"),
+                                tr("Duration"), tr("Status"), tr("Tags")});
   m_voiceTree->setAlternatingRowColors(true);
   m_voiceTree->setSelectionMode(QAbstractItemView::SingleSelection);
   m_voiceTree->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -227,14 +229,14 @@ void NMVoiceManagerPanel::setupVoiceList() {
   // Adjust column widths
   m_voiceTree->header()->setSectionResizeMode(0, QHeaderView::Interactive);
   m_voiceTree->header()->setSectionResizeMode(3, QHeaderView::Stretch);
-  m_voiceTree->setColumnWidth(0, 120);  // Line ID
-  m_voiceTree->setColumnWidth(1, 80);   // Speaker
-  m_voiceTree->setColumnWidth(2, 80);   // Scene
-  m_voiceTree->setColumnWidth(4, 150);  // Voice File
-  m_voiceTree->setColumnWidth(5, 50);   // Takes
-  m_voiceTree->setColumnWidth(6, 60);   // Duration
-  m_voiceTree->setColumnWidth(7, 80);   // Status
-  m_voiceTree->setColumnWidth(8, 100);  // Tags
+  m_voiceTree->setColumnWidth(0, 120); // Line ID
+  m_voiceTree->setColumnWidth(1, 80);  // Speaker
+  m_voiceTree->setColumnWidth(2, 80);  // Scene
+  m_voiceTree->setColumnWidth(4, 150); // Voice File
+  m_voiceTree->setColumnWidth(5, 50);  // Takes
+  m_voiceTree->setColumnWidth(6, 60);  // Duration
+  m_voiceTree->setColumnWidth(7, 80);  // Status
+  m_voiceTree->setColumnWidth(8, 100); // Tags
 
   connect(m_voiceTree, &QTreeWidget::itemClicked, this,
           &NMVoiceManagerPanel::onLineSelected);
@@ -312,6 +314,11 @@ void NMVoiceManagerPanel::setupPreviewBar() {
 }
 
 void NMVoiceManagerPanel::setupMediaPlayer() {
+  // Guard against multiple initialization (MEM-3 fix)
+  if (m_mediaPlayer) {
+    return; // Already initialized
+  }
+
   // Create audio output with parent ownership
   m_audioOutput = new QAudioOutput(this);
   m_audioOutput->setVolume(static_cast<float>(m_volume));
@@ -366,7 +373,7 @@ void NMVoiceManagerPanel::scanProject() {
   }
 
   m_voiceFiles.clear();
-  m_durationCache.clear();  // Clear cache on full rescan
+  m_durationCache.clear(); // Clear cache on full rescan
 
   scanScriptsForDialogue();
   scanVoiceFolder();
@@ -418,8 +425,8 @@ void NMVoiceManagerPanel::scanScriptsForDialogue() {
     }
 
     QString scriptPath = QString::fromStdString(entry.path().string());
-    QString relPath = QString::fromStdString(
-        pm.toRelativePath(entry.path().string()));
+    QString relPath =
+        QString::fromStdString(pm.toRelativePath(entry.path().string()));
 
     // Extract scene name from file path
     QString sceneName = QFileInfo(relPath).baseName();
@@ -444,7 +451,8 @@ void NMVoiceManagerPanel::scanScriptsForDialogue() {
         // Create VoiceManifestLine
         NovelMind::audio::VoiceManifestLine manifestLine;
         manifestLine.id = dialogueId.toStdString();
-        manifestLine.textKey = dialogueId.toStdString();  // Use ID as text key for now
+        manifestLine.textKey =
+            dialogueId.toStdString(); // Use ID as text key for now
         manifestLine.speaker = speaker.toStdString();
         manifestLine.scene = sceneName.toStdString();
         manifestLine.sourceScript = relPath.toStdString();
@@ -475,7 +483,8 @@ void NMVoiceManagerPanel::scanVoiceFolder() {
     return;
   }
 
-  QString voiceDir = QString::fromStdString(pm.getProjectPath()) + "/Assets/Voice";
+  QString voiceDir =
+      QString::fromStdString(pm.getProjectPath()) + "/Assets/Voice";
   if (!fs::exists(voiceDir.toStdString())) {
     return;
   }
@@ -486,7 +495,8 @@ void NMVoiceManagerPanel::scanVoiceFolder() {
       continue;
     }
 
-    QString ext = QString::fromStdString(entry.path().extension().string()).toLower();
+    QString ext =
+        QString::fromStdString(entry.path().extension().string()).toLower();
     if (ext == ".ogg" || ext == ".wav" || ext == ".mp3" || ext == ".flac") {
       m_voiceFiles.append(QString::fromStdString(entry.path().string()));
     }
@@ -520,15 +530,18 @@ void NMVoiceManagerPanel::matchVoiceToDialogue(const QString &voiceFile) {
 
     // Search through all lines for matching speaker or scene
     for (const auto &manifestLine : m_manifest->getLines()) {
-      if ((QString::fromStdString(manifestLine.speaker).compare(prefix, Qt::CaseInsensitive) == 0 ||
-           QString::fromStdString(manifestLine.scene).compare(prefix, Qt::CaseInsensitive) == 0) &&
+      if ((QString::fromStdString(manifestLine.speaker)
+                   .compare(prefix, Qt::CaseInsensitive) == 0 ||
+           QString::fromStdString(manifestLine.scene)
+                   .compare(prefix, Qt::CaseInsensitive) == 0) &&
           manifestLine.sourceLine == static_cast<NovelMind::u32>(lineNum)) {
 
         // Check if already has file for this locale
         if (!manifestLine.hasFile(m_currentLocale.toStdString())) {
           auto *mutableLine = m_manifest->getLineMutable(manifestLine.id);
           if (mutableLine) {
-            auto &localeFile = mutableLine->getOrCreateFile(m_currentLocale.toStdString());
+            auto &localeFile =
+                mutableLine->getOrCreateFile(m_currentLocale.toStdString());
             localeFile.filePath = voiceFile.toStdString();
             localeFile.status = NovelMind::audio::VoiceLineStatus::Imported;
             return;
@@ -540,7 +553,7 @@ void NMVoiceManagerPanel::matchVoiceToDialogue(const QString &voiceFile) {
 }
 
 QString NMVoiceManagerPanel::generateDialogueId(const QString &scriptPath,
-                                                 int lineNumber) const {
+                                                int lineNumber) const {
   QString baseName = QFileInfo(scriptPath).baseName();
   return QString("%1_%2").arg(baseName).arg(lineNumber);
 }
@@ -553,17 +566,21 @@ void NMVoiceManagerPanel::updateVoiceList() {
   m_voiceTree->clear();
 
   QString filter = m_filterEdit ? m_filterEdit->text().trimmed() : QString();
-  QString charFilter = m_characterFilter && m_characterFilter->currentIndex() > 0
-                           ? m_characterFilter->currentText()
-                           : QString();
+  QString charFilter =
+      m_characterFilter && m_characterFilter->currentIndex() > 0
+          ? m_characterFilter->currentText()
+          : QString();
   bool showUnmatched = m_showUnmatchedBtn && m_showUnmatchedBtn->isChecked();
 
-  // Get status filter (0 = All, 1 = Missing, 2 = Recorded, 3 = Imported, 4 = NeedsReview, 5 = Approved)
+  // Get status filter (0 = All, 1 = Missing, 2 = Recorded, 3 = Imported, 4 =
+  // NeedsReview, 5 = Approved)
   int statusFilterIndex = m_statusFilter ? m_statusFilter->currentIndex() : 0;
-  NovelMind::audio::VoiceLineStatus statusFilter = NovelMind::audio::VoiceLineStatus::Missing;
+  NovelMind::audio::VoiceLineStatus statusFilter =
+      NovelMind::audio::VoiceLineStatus::Missing;
   bool filterByStatus = (statusFilterIndex > 0);
   if (filterByStatus) {
-    statusFilter = static_cast<NovelMind::audio::VoiceLineStatus>(statusFilterIndex - 1);
+    statusFilter =
+        static_cast<NovelMind::audio::VoiceLineStatus>(statusFilterIndex - 1);
   }
 
   std::string currentLocale = m_currentLocale.toStdString();
@@ -575,8 +592,7 @@ void NMVoiceManagerPanel::updateVoiceList() {
     QString textKey = QString::fromStdString(line.textKey);
 
     // Apply text filter
-    if (!filter.isEmpty() &&
-        !lineId.contains(filter, Qt::CaseInsensitive) &&
+    if (!filter.isEmpty() && !lineId.contains(filter, Qt::CaseInsensitive) &&
         !speaker.contains(filter, Qt::CaseInsensitive) &&
         !textKey.contains(filter, Qt::CaseInsensitive)) {
       continue;
@@ -590,7 +606,9 @@ void NMVoiceManagerPanel::updateVoiceList() {
 
     // Get locale file info
     const auto *localeFile = line.getFile(currentLocale);
-    NovelMind::audio::VoiceLineStatus status = localeFile ? localeFile->status : NovelMind::audio::VoiceLineStatus::Missing;
+    NovelMind::audio::VoiceLineStatus status =
+        localeFile ? localeFile->status
+                   : NovelMind::audio::VoiceLineStatus::Missing;
     bool hasFile = localeFile && !localeFile->filePath.empty();
 
     // Apply unmatched filter
@@ -644,26 +662,26 @@ void NMVoiceManagerPanel::updateVoiceList() {
     QString statusText;
     QColor statusColor;
     switch (status) {
-      case NovelMind::audio::VoiceLineStatus::Missing:
-        statusText = tr("Missing");
-        statusColor = QColor(200, 60, 60);
-        break;
-      case NovelMind::audio::VoiceLineStatus::Recorded:
-        statusText = tr("Recorded");
-        statusColor = QColor(60, 180, 200);
-        break;
-      case NovelMind::audio::VoiceLineStatus::Imported:
-        statusText = tr("Imported");
-        statusColor = QColor(200, 180, 60);
-        break;
-      case NovelMind::audio::VoiceLineStatus::NeedsReview:
-        statusText = tr("Needs Review");
-        statusColor = QColor(200, 120, 60);
-        break;
-      case NovelMind::audio::VoiceLineStatus::Approved:
-        statusText = tr("Approved");
-        statusColor = QColor(60, 180, 60);
-        break;
+    case NovelMind::audio::VoiceLineStatus::Missing:
+      statusText = tr("Missing");
+      statusColor = QColor(200, 60, 60);
+      break;
+    case NovelMind::audio::VoiceLineStatus::Recorded:
+      statusText = tr("Recorded");
+      statusColor = QColor(60, 180, 200);
+      break;
+    case NovelMind::audio::VoiceLineStatus::Imported:
+      statusText = tr("Imported");
+      statusColor = QColor(200, 180, 60);
+      break;
+    case NovelMind::audio::VoiceLineStatus::NeedsReview:
+      statusText = tr("Needs Review");
+      statusColor = QColor(200, 120, 60);
+      break;
+    case NovelMind::audio::VoiceLineStatus::Approved:
+      statusText = tr("Approved");
+      statusColor = QColor(60, 180, 60);
+      break;
     }
     item->setText(7, statusText);
     item->setForeground(7, statusColor);
@@ -688,15 +706,15 @@ void NMVoiceManagerPanel::updateStatistics() {
   // Use VoiceManifest's built-in coverage stats
   auto stats = m_manifest->getCoverageStats(m_currentLocale.toStdString());
 
-  m_statsLabel->setText(
-      tr("%1 lines | %2 recorded, %3 imported, %4 approved, %5 needs review, %6 missing | %.1f%% coverage")
-          .arg(stats.totalLines)
-          .arg(stats.recordedLines)
-          .arg(stats.importedLines)
-          .arg(stats.approvedLines)
-          .arg(stats.needsReviewLines)
-          .arg(stats.missingLines)
-          .arg(stats.coveragePercent));
+  m_statsLabel->setText(tr("%1 lines | %2 recorded, %3 imported, %4 approved, "
+                           "%5 needs review, %6 missing | %.1f%% coverage")
+                            .arg(stats.totalLines)
+                            .arg(stats.recordedLines)
+                            .arg(stats.importedLines)
+                            .arg(stats.approvedLines)
+                            .arg(stats.needsReviewLines)
+                            .arg(stats.missingLines)
+                            .arg(stats.coveragePercent));
 }
 
 std::vector<const NovelMind::audio::VoiceManifestLine *>
@@ -710,8 +728,31 @@ NMVoiceManagerPanel::getMissingLines() const {
 }
 
 QStringList NMVoiceManagerPanel::getUnmatchedLines() const {
-  // TODO: Implement unmatched lines logic
-  return QStringList();
+  if (!m_manifest) {
+    return QStringList();
+  }
+
+  QStringList unmatchedLines;
+  const std::string locale = m_currentLocale.toStdString();
+
+  // Iterate through all lines and find those without voice files
+  for (const auto &line : m_manifest->getLines()) {
+    // Check if this line has a file for the current locale
+    auto it = line.files.find(locale);
+    if (it == line.files.end() || it->second.filePath.empty()) {
+      // No file for this locale - it's unmatched
+      unmatchedLines.append(QString::fromStdString(line.id));
+    } else {
+      // Check if the file actually exists on disk
+      const QString filePath = QString::fromStdString(it->second.filePath);
+      if (!QFile::exists(filePath)) {
+        // File is referenced but doesn't exist - also unmatched
+        unmatchedLines.append(QString::fromStdString(line.id));
+      }
+    }
+  }
+
+  return unmatchedLines;
 }
 
 bool NMVoiceManagerPanel::exportToCsv(const QString &filePath) {
@@ -721,7 +762,7 @@ bool NMVoiceManagerPanel::exportToCsv(const QString &filePath) {
 
   // Use VoiceManifest's built-in export functionality
   auto result = m_manifest->exportToCsv(filePath.toStdString(),
-                                         m_currentLocale.toStdString());
+                                        m_currentLocale.toStdString());
   return result.isOk();
 }
 
@@ -732,7 +773,7 @@ bool NMVoiceManagerPanel::importFromCsv(const QString &filePath) {
 
   // Use VoiceManifest's built-in import functionality
   auto result = m_manifest->importFromCsv(filePath.toStdString(),
-                                           m_currentLocale.toStdString());
+                                          m_currentLocale.toStdString());
   if (result.isOk()) {
     updateVoiceList();
     updateStatistics();
@@ -774,7 +815,7 @@ bool NMVoiceManagerPanel::playVoiceFile(const QString &filePath) {
 void NMVoiceManagerPanel::stopPlayback() {
   if (m_mediaPlayer) {
     m_mediaPlayer->stop();
-    m_mediaPlayer->setSource(QUrl());  // Clear source
+    m_mediaPlayer->setSource(QUrl()); // Clear source
   }
 
   m_isPlaying = false;
@@ -791,7 +832,7 @@ void NMVoiceManagerPanel::resetPlaybackUI() {
     m_stopBtn->setEnabled(false);
   if (m_playbackProgress) {
     m_playbackProgress->setValue(0);
-    m_playbackProgress->setRange(0, 1000);  // Reset to default range
+    m_playbackProgress->setRange(0, 1000); // Reset to default range
   }
   if (m_durationLabel)
     m_durationLabel->setText("0:00 / 0:00");
@@ -835,59 +876,61 @@ QString NMVoiceManagerPanel::formatDuration(qint64 ms) const {
 
 // Qt Multimedia signal handlers
 void NMVoiceManagerPanel::onPlaybackStateChanged() {
-  if (!m_mediaPlayer) return;
+  if (!m_mediaPlayer)
+    return;
 
   QMediaPlayer::PlaybackState state = m_mediaPlayer->playbackState();
 
   switch (state) {
-    case QMediaPlayer::StoppedState:
-      m_isPlaying = false;
-      // Only reset UI if we're not switching tracks
-      if (m_currentlyPlayingFile.isEmpty()) {
-        resetPlaybackUI();
-      }
-      break;
+  case QMediaPlayer::StoppedState:
+    m_isPlaying = false;
+    // Only reset UI if we're not switching tracks
+    if (m_currentlyPlayingFile.isEmpty()) {
+      resetPlaybackUI();
+    }
+    break;
 
-    case QMediaPlayer::PlayingState:
-      m_isPlaying = true;
-      if (m_playBtn)
-        m_playBtn->setEnabled(false);
-      if (m_stopBtn)
-        m_stopBtn->setEnabled(true);
-      break;
+  case QMediaPlayer::PlayingState:
+    m_isPlaying = true;
+    if (m_playBtn)
+      m_playBtn->setEnabled(false);
+    if (m_stopBtn)
+      m_stopBtn->setEnabled(true);
+    break;
 
-    case QMediaPlayer::PausedState:
-      // Currently not exposing pause, but handle it gracefully
-      break;
+  case QMediaPlayer::PausedState:
+    // Currently not exposing pause, but handle it gracefully
+    break;
   }
 }
 
 void NMVoiceManagerPanel::onMediaStatusChanged() {
-  if (!m_mediaPlayer) return;
+  if (!m_mediaPlayer)
+    return;
 
   QMediaPlayer::MediaStatus status = m_mediaPlayer->mediaStatus();
 
   switch (status) {
-    case QMediaPlayer::EndOfMedia:
-      // Playback finished naturally
-      m_currentlyPlayingFile.clear();
-      resetPlaybackUI();
-      break;
+  case QMediaPlayer::EndOfMedia:
+    // Playback finished naturally
+    m_currentlyPlayingFile.clear();
+    resetPlaybackUI();
+    break;
 
-    case QMediaPlayer::InvalidMedia:
-      setPlaybackError(tr("Invalid or unsupported media format"));
-      m_currentlyPlayingFile.clear();
-      resetPlaybackUI();
-      break;
+  case QMediaPlayer::InvalidMedia:
+    setPlaybackError(tr("Invalid or unsupported media format"));
+    m_currentlyPlayingFile.clear();
+    resetPlaybackUI();
+    break;
 
-    case QMediaPlayer::NoMedia:
-    case QMediaPlayer::LoadingMedia:
-    case QMediaPlayer::LoadedMedia:
-    case QMediaPlayer::StalledMedia:
-    case QMediaPlayer::BufferingMedia:
-    case QMediaPlayer::BufferedMedia:
-      // Normal states, no action needed
-      break;
+  case QMediaPlayer::NoMedia:
+  case QMediaPlayer::LoadingMedia:
+  case QMediaPlayer::LoadedMedia:
+  case QMediaPlayer::StalledMedia:
+  case QMediaPlayer::BufferingMedia:
+  case QMediaPlayer::BufferedMedia:
+    // Normal states, no action needed
+    break;
   }
 }
 
@@ -920,7 +963,8 @@ void NMVoiceManagerPanel::onPositionChanged(qint64 position) {
 }
 
 void NMVoiceManagerPanel::onMediaErrorOccurred() {
-  if (!m_mediaPlayer) return;
+  if (!m_mediaPlayer)
+    return;
 
   QString errorMsg = m_mediaPlayer->errorString();
   if (errorMsg.isEmpty()) {
@@ -936,6 +980,17 @@ void NMVoiceManagerPanel::onMediaErrorOccurred() {
 void NMVoiceManagerPanel::startDurationProbing() {
   if (!m_manifest) {
     return;
+  }
+
+  // RACE-1 fix: Stop any in-progress probing before restarting
+  if (m_isProbing) {
+    // Cancel current probe by clearing the queue and resetting state
+    m_probeQueue.clear();
+    m_isProbing = false;
+    m_currentProbeFile.clear();
+    if (m_probePlayer) {
+      m_probePlayer->stop();
+    }
   }
 
   // Clear the probe queue and add all voice files for current locale
@@ -998,7 +1053,8 @@ void NMVoiceManagerPanel::onProbeDurationFinished() {
         // Get mutable line to update
         auto *mutableLine = m_manifest->getLineMutable(line.id);
         if (mutableLine) {
-          auto &mutableLocaleFile = mutableLine->getOrCreateFile(m_currentLocale.toStdString());
+          auto &mutableLocaleFile =
+              mutableLine->getOrCreateFile(m_currentLocale.toStdString());
           mutableLocaleFile.duration = static_cast<float>(durationSec);
         }
         break;
@@ -1024,13 +1080,14 @@ double NMVoiceManagerPanel::getCachedDuration(const QString &filePath) const {
 
   qint64 currentMtime = fileInfo.lastModified().toMSecsSinceEpoch();
   if (currentMtime != it->second.mtime) {
-    return 0.0;  // Cache invalidated
+    return 0.0; // Cache invalidated
   }
 
   return it->second.duration;
 }
 
-void NMVoiceManagerPanel::cacheDuration(const QString &filePath, double duration) {
+void NMVoiceManagerPanel::cacheDuration(const QString &filePath,
+                                        double duration) {
   QFileInfo fileInfo(filePath);
   DurationCacheEntry entry;
   entry.duration = duration;
@@ -1040,12 +1097,14 @@ void NMVoiceManagerPanel::cacheDuration(const QString &filePath, double duration
 }
 
 void NMVoiceManagerPanel::updateDurationsInList() {
-  if (!m_voiceTree || !m_manifest) return;
+  if (!m_voiceTree || !m_manifest)
+    return;
 
   // Update durations in the tree widget items
   for (int i = 0; i < m_voiceTree->topLevelItemCount(); ++i) {
     auto *item = m_voiceTree->topLevelItem(i);
-    if (!item) continue;
+    if (!item)
+      continue;
 
     QString dialogueId = item->data(0, Qt::UserRole).toString();
     auto *line = m_manifest->getLine(dialogueId.toStdString());
@@ -1053,7 +1112,7 @@ void NMVoiceManagerPanel::updateDurationsInList() {
       auto *localeFile = line->getFile(m_currentLocale.toStdString());
       if (localeFile && localeFile->duration > 0) {
         qint64 durationMs = static_cast<qint64>(localeFile->duration * 1000);
-        item->setText(6, formatDuration(durationMs));  // Column 6 is duration
+        item->setText(6, formatDuration(durationMs)); // Column 6 is duration
       }
     }
   }
@@ -1160,7 +1219,8 @@ void NMVoiceManagerPanel::onAssignVoiceFile() {
   }
 
   auto &pm = ProjectManager::instance();
-  QString voiceDir = QString::fromStdString(pm.getProjectPath()) + "/Assets/Voice";
+  QString voiceDir =
+      QString::fromStdString(pm.getProjectPath()) + "/Assets/Voice";
 
   QString filePath = NMFileDialog::getOpenFileName(
       this, tr("Select Voice File"), voiceDir,
@@ -1216,7 +1276,8 @@ void NMVoiceManagerPanel::onOpenVoiceFolder() {
     return;
   }
 
-  QString voiceDir = QString::fromStdString(pm.getProjectPath()) + "/Assets/Voice";
+  QString voiceDir =
+      QString::fromStdString(pm.getProjectPath()) + "/Assets/Voice";
 
   if (!fs::exists(voiceDir.toStdString())) {
     std::error_code ec;
@@ -1270,7 +1331,7 @@ void NMVoiceManagerPanel::onValidateManifestClicked() {
     return;
   }
 
-  auto errors = m_manifest->validate(true);  // Check files on disk
+  auto errors = m_manifest->validate(true); // Check files on disk
 
   if (errors.empty()) {
     m_statsLabel->setText(tr("Validation passed - no errors found"));
@@ -1285,11 +1346,12 @@ void NMVoiceManagerPanel::onValidateManifestClicked() {
       errorMessages.append(errorMsg);
     }
 
-    m_statsLabel->setText(tr("Validation found %1 error(s)").arg(errors.size()));
+    m_statsLabel->setText(
+        tr("Validation found %1 error(s)").arg(errors.size()));
 
     // Show first 10 errors in a simple dialog
-    QString msg = tr("Validation Errors:\n\n") +
-                  errorMessages.mid(0, 10).join("\n");
+    QString msg =
+        tr("Validation Errors:\n\n") + errorMessages.mid(0, 10).join("\n");
     if (errors.size() > 10) {
       msg += tr("\n\n... and %1 more errors").arg(errors.size() - 10);
     }
@@ -1320,11 +1382,8 @@ void NMVoiceManagerPanel::onEditLineMetadata() {
     currentTags.append(QString::fromStdString(tag));
   }
   QString tagsStr = NMInputDialog::getText(
-      this, tr("Edit Tags"),
-      tr("Enter tags (comma-separated):"),
-      QLineEdit::Normal,
-      currentTags.join(", "),
-      &ok);
+      this, tr("Edit Tags"), tr("Enter tags (comma-separated):"),
+      QLineEdit::Normal, currentTags.join(", "), &ok);
 
   if (ok) {
     line->tags.clear();
@@ -1335,10 +1394,8 @@ void NMVoiceManagerPanel::onEditLineMetadata() {
 
     // Edit notes
     QString notes = NMInputDialog::getMultiLineText(
-        this, tr("Edit Notes"),
-        tr("Enter notes for this line:"),
-        QString::fromStdString(line->notes),
-        &ok);
+        this, tr("Edit Notes"), tr("Enter notes for this line:"),
+        QString::fromStdString(line->notes), &ok);
 
     if (ok) {
       line->notes = notes.toStdString();
@@ -1357,7 +1414,8 @@ void NMVoiceManagerPanel::onAddTake() {
   QString dialogueId = item->data(0, Qt::UserRole).toString();
 
   auto &pm = ProjectManager::instance();
-  QString voiceDir = QString::fromStdString(pm.getProjectPath()) + "/Assets/Voice";
+  QString voiceDir =
+      QString::fromStdString(pm.getProjectPath()) + "/Assets/Voice";
 
   QString filePath = NMFileDialog::getOpenFileName(
       this, tr("Select Take Audio File"), voiceDir,
@@ -1366,12 +1424,12 @@ void NMVoiceManagerPanel::onAddTake() {
   if (!filePath.isEmpty()) {
     NovelMind::audio::VoiceTake take;
     take.filePath = filePath.toStdString();
-    take.recordedTimestamp = static_cast<NovelMind::u64>(QDateTime::currentSecsSinceEpoch());
+    take.recordedTimestamp =
+        static_cast<NovelMind::u64>(QDateTime::currentSecsSinceEpoch());
     take.isActive = false;
 
     auto result = m_manifest->addTake(dialogueId.toStdString(),
-                                       m_currentLocale.toStdString(),
-                                       take);
+                                      m_currentLocale.toStdString(), take);
     if (result.isOk()) {
       updateVoiceList();
       m_statsLabel->setText(tr("Take added successfully"));
@@ -1407,24 +1465,24 @@ void NMVoiceManagerPanel::onSetActiveTake() {
   QStringList takeNames;
   for (size_t i = 0; i < localeFile->takes.size(); ++i) {
     const auto &take = localeFile->takes[i];
-    QString takeName = QString("Take %1: %2 %3")
-                           .arg(take.takeNumber)
-                           .arg(QFileInfo(QString::fromStdString(take.filePath)).fileName())
-                           .arg(take.isActive ? "(active)" : "");
+    QString takeName =
+        QString("Take %1: %2 %3")
+            .arg(take.takeNumber)
+            .arg(QFileInfo(QString::fromStdString(take.filePath)).fileName())
+            .arg(take.isActive ? "(active)" : "");
     takeNames.append(takeName);
   }
 
   bool ok;
   QString selected = NMInputDialog::getItem(
-      this, tr("Select Active Take"),
-      tr("Choose which take to set as active:"),
+      this, tr("Select Active Take"), tr("Choose which take to set as active:"),
       takeNames, static_cast<int>(localeFile->activeTakeIndex), false, &ok);
 
   if (ok) {
     int selectedIndex = static_cast<int>(takeNames.indexOf(selected));
-    auto result = m_manifest->setActiveTake(dialogueId.toStdString(),
-                                             m_currentLocale.toStdString(),
-                                             static_cast<NovelMind::u32>(selectedIndex));
+    auto result = m_manifest->setActiveTake(
+        dialogueId.toStdString(), m_currentLocale.toStdString(),
+        static_cast<NovelMind::u32>(selectedIndex));
     if (result.isOk()) {
       updateVoiceList();
       m_statsLabel->setText(tr("Active take set successfully"));
@@ -1445,10 +1503,9 @@ void NMVoiceManagerPanel::onSetLineStatus() {
                           tr("Needs Review"), tr("Approved")};
 
   bool ok;
-  QString selected = NMInputDialog::getItem(
-      this, tr("Set Status"),
-      tr("Select status for this line:"),
-      statuses, 0, false, &ok);
+  QString selected = NMInputDialog::getItem(this, tr("Set Status"),
+                                            tr("Select status for this line:"),
+                                            statuses, 0, false, &ok);
 
   if (ok) {
     int statusIndex = static_cast<int>(statuses.indexOf(selected));
@@ -1456,8 +1513,7 @@ void NMVoiceManagerPanel::onSetLineStatus() {
         static_cast<NovelMind::audio::VoiceLineStatus>(statusIndex);
 
     auto result = m_manifest->setStatus(dialogueId.toStdString(),
-                                         m_currentLocale.toStdString(),
-                                         status);
+                                        m_currentLocale.toStdString(), status);
     if (result.isOk()) {
       updateVoiceList();
       updateStatistics();

@@ -187,7 +187,8 @@ EditorRuntimeHost::applySaveDataToRuntime(const save::SaveData &data) {
   }
 
   for (const auto &[name, value] : data.stringVariables) {
-    if (detail::startsWith(name, "__runtime.") || detail::startsWith(name, "__var.type.")) {
+    if (detail::startsWith(name, "__runtime.") ||
+        detail::startsWith(name, "__var.type.")) {
       continue;
     }
     state.variables[name] = scripting::Value{value};

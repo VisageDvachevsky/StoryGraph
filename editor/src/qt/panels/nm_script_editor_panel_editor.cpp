@@ -1,33 +1,33 @@
-#include "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp"
+#include "NovelMind/core/logger.hpp"
 #include "NovelMind/editor/project_manager.hpp"
-#include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
+#include "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp"
 #include "NovelMind/scripting/compiler.hpp"
 #include "NovelMind/scripting/lexer.hpp"
 #include "NovelMind/scripting/parser.hpp"
 #include "NovelMind/scripting/validator.hpp"
-#include "NovelMind/core/logger.hpp"
 
 #include <QAbstractItemView>
 #include <QCompleter>
-#include <QFileSystemWatcher>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QFileSystemWatcher>
 #include <QHeaderView>
 #include <QKeyEvent>
 #include <QPainter>
 #include <QRegularExpression>
 #include <QScrollBar>
 #include <QSet>
-#include <QStringListModel>
 #include <QStandardItem>
 #include <QStandardItemModel>
+#include <QStringListModel>
 #include <QStyledItemDelegate>
-#include <QTextStream>
 #include <QTextBlock>
 #include <QTextFormat>
+#include <QTextStream>
 #include <QToolTip>
 #include <QVBoxLayout>
 #include <QWindow>
@@ -68,9 +68,8 @@ public:
     const auto &palette = NMStyleManager::instance().palette();
     painter->save();
 
-    QColor bg = (option.state & QStyle::State_Selected)
-                    ? palette.bgLight
-                    : palette.bgMedium;
+    QColor bg = (option.state & QStyle::State_Selected) ? palette.bgLight
+                                                        : palette.bgMedium;
     painter->fillRect(opt.rect, bg);
 
     QRect textRect = opt.rect.adjusted(8, 0, -8, 0);
@@ -262,14 +261,15 @@ NMScriptEditor::NMScriptEditor(QWidget *parent) : QPlainTextEdit(parent) {
   completer->setWrapAround(false);
   completer->setWidget(this);
   completer->popup()->setItemDelegate(new NMCompletionDelegate(completer));
-  completer->popup()->setStyleSheet(QString(
-      "QListView { background-color: %1; color: %2; border: 1px solid %3; }"
-      "QListView::item { padding: 4px 6px; }"
-      "QListView::item:selected { background: %4; color: %2; }")
-                                        .arg(palette.bgMedium.name())
-                                        .arg(palette.textPrimary.name())
-                                        .arg(palette.borderLight.name())
-                                        .arg(palette.bgLight.name()));
+  completer->popup()->setStyleSheet(
+      QString(
+          "QListView { background-color: %1; color: %2; border: 1px solid %3; }"
+          "QListView::item { padding: 4px 6px; }"
+          "QListView::item:selected { background: %4; color: %2; }")
+          .arg(palette.bgMedium.name())
+          .arg(palette.textPrimary.name())
+          .arg(palette.borderLight.name())
+          .arg(palette.bgLight.name()));
   m_completer = completer;
   setCompletionEntries(detail::buildKeywordEntries());
 
@@ -348,8 +348,8 @@ void NMScriptEditor::keyPressEvent(QKeyEvent *event) {
     return;
   }
 
-  const bool isShortcut =
-      (event->modifiers() & Qt::ControlModifier) && event->key() == Qt::Key_Space;
+  const bool isShortcut = (event->modifiers() & Qt::ControlModifier) &&
+                          event->key() == Qt::Key_Space;
 
   if (!isShortcut) {
     QPlainTextEdit::keyPressEvent(event);
@@ -480,9 +480,8 @@ void NMScriptEditor::lineNumberAreaPaintEvent(QPaintEvent *event) {
 
   QTextBlock block = firstVisibleBlock();
   int blockNumber = block.blockNumber();
-  int top = static_cast<int>(blockBoundingGeometry(block)
-                                 .translated(contentOffset())
-                                 .top());
+  int top = static_cast<int>(
+      blockBoundingGeometry(block).translated(contentOffset()).top());
   int bottom = top + static_cast<int>(blockBoundingRect(block).height());
 
   while (block.isValid() && top <= event->rect().bottom()) {
@@ -618,9 +617,9 @@ void NMScriptEditor::insertCompletion(const QString &completion) {
     return;
   }
   QTextCursor cursor = textCursor();
-  const int prefixLength = static_cast<int>(m_completer->completionPrefix().length());
-  cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor,
-                      prefixLength);
+  const int prefixLength =
+      static_cast<int>(m_completer->completionPrefix().length());
+  cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, prefixLength);
   cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor,
                       prefixLength);
   cursor.insertText(completion);
@@ -683,7 +682,8 @@ void NMScriptEditor::rebuildCompleterModel(
   if (!m_completer) {
     return;
   }
-  auto *model = new QStandardItemModel(static_cast<int>(entries.size()), 1, m_completer);
+  auto *model =
+      new QStandardItemModel(static_cast<int>(entries.size()), 1, m_completer);
   int row = 0;
   for (const auto &entry : entries) {
     auto *item = new QStandardItem(entry.text);

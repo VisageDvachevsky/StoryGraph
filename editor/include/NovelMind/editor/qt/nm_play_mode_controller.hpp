@@ -2,8 +2,8 @@
 #define NOVELMIND_EDITOR_NM_PLAY_MODE_CONTROLLER_HPP
 
 #include "NovelMind/editor/editor_runtime_host.hpp"
-#include <QObject>
 #include <QElapsedTimer>
+#include <QObject>
 #include <QSet>
 #include <QString>
 #include <QThread>

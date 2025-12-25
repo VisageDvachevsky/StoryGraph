@@ -23,10 +23,7 @@ constexpr u32 kMagic = 0x564D4E53; // "SNMV"
 constexpr u16 kVersionLegacy = 1;
 constexpr u16 kVersionCurrent = 2;
 
-enum SaveFlags : u16 {
-  kFlagCompressed = 1 << 0,
-  kFlagEncrypted = 1 << 1
-};
+enum SaveFlags : u16 { kFlagCompressed = 1 << 0, kFlagEncrypted = 1 << 1 };
 
 constexpr u32 kMaxStringLength = 1024 * 1024;
 constexpr u32 kMaxVariableCount = 100000;
@@ -201,9 +198,10 @@ Result<EncryptedPayload> encryptData(const std::vector<u8> &input,
 #endif
 }
 
-Result<std::vector<u8>>
-decryptData(const std::vector<u8> &input, const std::vector<u8> &key,
-            const std::array<u8, 12> &iv, const std::array<u8, 16> &tag) {
+Result<std::vector<u8>> decryptData(const std::vector<u8> &input,
+                                    const std::vector<u8> &key,
+                                    const std::array<u8, 12> &iv,
+                                    const std::array<u8, 16> &tag) {
 #if defined(NOVELMIND_HAS_OPENSSL)
   if (key.size() != 32) {
     return Result<std::vector<u8>>::error("Invalid encryption key size");
@@ -498,8 +496,7 @@ Result<void> SaveManager::saveToFile(const std::string &filename,
   file.write(reinterpret_cast<const char *>(&data.checksum),
              sizeof(data.checksum));
   file.write(reinterpret_cast<const char *>(&thumbWidth), sizeof(thumbWidth));
-  file.write(reinterpret_cast<const char *>(&thumbHeight),
-             sizeof(thumbHeight));
+  file.write(reinterpret_cast<const char *>(&thumbHeight), sizeof(thumbHeight));
   file.write(reinterpret_cast<const char *>(&thumbStored), sizeof(thumbStored));
   file.write(reinterpret_cast<const char *>(iv.data()),
              static_cast<std::streamsize>(iv.size()));
@@ -584,8 +581,7 @@ Result<SaveData> SaveManager::loadFromFile(const std::string &filename) {
       file.read(reinterpret_cast<char *>(&value), sizeof(value));
       if (!file) {
         return Result<SaveData>::error(
-            "Failed to read int variable value at index " +
-            std::to_string(i));
+            "Failed to read int variable value at index " + std::to_string(i));
       }
       data.intVariables[name] = value;
     }
@@ -604,8 +600,8 @@ Result<SaveData> SaveManager::loadFromFile(const std::string &filename) {
       u8 bval = 0;
       file.read(reinterpret_cast<char *>(&bval), sizeof(bval));
       if (!file) {
-        return Result<SaveData>::error(
-            "Failed to read flag value at index " + std::to_string(i));
+        return Result<SaveData>::error("Failed to read flag value at index " +
+                                       std::to_string(i));
       }
       data.flags[name] = bval != 0;
     }
@@ -630,7 +626,8 @@ Result<SaveData> SaveManager::loadFromFile(const std::string &filename) {
       data.stringVariables[name] = value;
     }
 
-    file.read(reinterpret_cast<char *>(&data.timestamp), sizeof(data.timestamp));
+    file.read(reinterpret_cast<char *>(&data.timestamp),
+              sizeof(data.timestamp));
     if (!file) {
       return Result<SaveData>::error("Failed to read timestamp");
     }
@@ -649,7 +646,8 @@ Result<SaveData> SaveManager::loadFromFile(const std::string &filename) {
           "Save file checksum mismatch in file " + filename +
           " (stored: " + std::to_string(storedChecksum) +
           ", calculated: " + std::to_string(calculatedChecksum) + ")");
-      return Result<SaveData>::error("Save file is corrupted (checksum mismatch)");
+      return Result<SaveData>::error(
+          "Save file is corrupted (checksum mismatch)");
     }
 
     return Result<SaveData>::ok(std::move(data));
@@ -738,8 +736,7 @@ Result<SaveData> SaveManager::loadFromFile(const std::string &filename) {
     i32 value = 0;
     if (!reader.readPod(value)) {
       return Result<SaveData>::error(
-          "Failed to read int variable value at index " +
-          std::to_string(i));
+          "Failed to read int variable value at index " + std::to_string(i));
     }
     data.intVariables[name] = value;
   }
@@ -757,8 +754,7 @@ Result<SaveData> SaveManager::loadFromFile(const std::string &filename) {
     f32 value = 0.0f;
     if (!reader.readPod(value)) {
       return Result<SaveData>::error(
-          "Failed to read float variable value at index " +
-          std::to_string(i));
+          "Failed to read float variable value at index " + std::to_string(i));
     }
     data.floatVariables[name] = value;
   }
@@ -788,13 +784,13 @@ Result<SaveData> SaveManager::loadFromFile(const std::string &filename) {
   for (u32 i = 0; i < strCount; ++i) {
     std::string name;
     if (!reader.readString(name, kMaxStringLength)) {
-      return Result<SaveData>::error(
-          "Invalid string variable name at index " + std::to_string(i));
+      return Result<SaveData>::error("Invalid string variable name at index " +
+                                     std::to_string(i));
     }
     std::string value;
     if (!reader.readString(value, kMaxStringLength)) {
-      return Result<SaveData>::error(
-          "Invalid string variable value at index " + std::to_string(i));
+      return Result<SaveData>::error("Invalid string variable value at index " +
+                                     std::to_string(i));
     }
     data.stringVariables[name] = value;
   }
@@ -820,11 +816,12 @@ Result<SaveData> SaveManager::loadFromFile(const std::string &filename) {
 
   u32 calculatedChecksum = calculateChecksum(data);
   if (calculatedChecksum != checksum) {
-    NOVELMIND_LOG_ERROR(
-        "Save file checksum mismatch in file " + filename +
-        " (stored: " + std::to_string(checksum) +
-        ", calculated: " + std::to_string(calculatedChecksum) + ")");
-    return Result<SaveData>::error("Save file is corrupted (checksum mismatch)");
+    NOVELMIND_LOG_ERROR("Save file checksum mismatch in file " + filename +
+                        " (stored: " + std::to_string(checksum) +
+                        ", calculated: " + std::to_string(calculatedChecksum) +
+                        ")");
+    return Result<SaveData>::error(
+        "Save file is corrupted (checksum mismatch)");
   }
 
   return Result<SaveData>::ok(std::move(data));

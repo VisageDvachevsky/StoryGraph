@@ -69,7 +69,9 @@ public:
   [[nodiscard]] qreal scaleY() const { return m_scaleY; }
 
   // Parent-child relationships
-  void setParentObjectId(const QString &parentId) { m_parentObjectId = parentId; }
+  void setParentObjectId(const QString &parentId) {
+    m_parentObjectId = parentId;
+  }
   [[nodiscard]] QString parentObjectId() const { return m_parentObjectId; }
   [[nodiscard]] QStringList childObjectIds() const { return m_childObjectIds; }
   void addChildObjectId(const QString &childId);
@@ -193,8 +195,7 @@ public:
   [[nodiscard]] QString selectedObjectId() const { return m_selectedObjectId; }
 
   void setGizmoMode(NMTransformGizmo::GizmoMode mode);
-  void handleItemPositionChange(const QString &objectId,
-                                const QPointF &newPos);
+  void handleItemPositionChange(const QString &objectId, const QPointF &newPos);
 
 signals:
   void objectSelected(const QString &objectId);
@@ -203,10 +204,10 @@ signals:
                           const QPointF &newPosition);
   void objectTransformFinished(const QString &objectId,
                                const QPointF &oldPosition,
-                               const QPointF &newPosition,
-                               qreal oldRotation, qreal newRotation,
-                               qreal oldScaleX, qreal newScaleX,
-                               qreal oldScaleY, qreal newScaleY);
+                               const QPointF &newPosition, qreal oldRotation,
+                               qreal newRotation, qreal oldScaleX,
+                               qreal newScaleX, qreal oldScaleY,
+                               qreal newScaleY);
   void deleteRequested(const QString &objectId);
 
 protected:
@@ -384,9 +385,9 @@ public:
   bool addObjectFromAsset(const QString &assetPath, const QPointF &scenePos);
   bool addObjectFromAsset(const QString &assetPath, const QPointF &scenePos,
                           NMSceneObjectType type);
-  void setBreadcrumbContext(const QString &projectName, const QString &graphName,
-                            const QString &nodeId, const QString &sceneId,
-                            bool playModeActive);
+  void setBreadcrumbContext(const QString &projectName,
+                            const QString &graphName, const QString &nodeId,
+                            const QString &sceneId, bool playModeActive);
   void setFocusModeActive(bool active);
   void setStoryPreview(const QString &speaker, const QString &text,
                        const QStringList &choices);
@@ -400,7 +401,9 @@ public:
   /**
    * @brief Check if animation preview mode is active
    */
-  [[nodiscard]] bool isAnimationPreviewMode() const { return m_animationPreviewMode; }
+  [[nodiscard]] bool isAnimationPreviewMode() const {
+    return m_animationPreviewMode;
+  }
 
 signals:
   void objectSelected(const QString &objectId);
@@ -408,11 +411,11 @@ signals:
   void sceneObjectsChanged();
   void objectNameChanged(const QString &objectId, const QString &name);
   void objectPositionChanged(const QString &objectId, const QPointF &position);
-  void objectTransformFinished(const QString &objectId,
-                               const QPointF &oldPos, const QPointF &newPos,
-                               qreal oldRotation, qreal newRotation,
-                               qreal oldScaleX, qreal newScaleX,
-                               qreal oldScaleY, qreal newScaleY);
+  void objectTransformFinished(const QString &objectId, const QPointF &oldPos,
+                               const QPointF &newPos, qreal oldRotation,
+                               qreal newRotation, qreal oldScaleX,
+                               qreal newScaleX, qreal oldScaleY,
+                               qreal newScaleY);
   void sceneChanged(const QString &sceneId);
   void focusModeRequested(bool enabled);
 
@@ -433,11 +436,11 @@ private slots:
                                const QPointF &position);
   void onObjectMoveFinished(const QString &objectId, const QPointF &oldPos,
                             const QPointF &newPos);
-  void onObjectTransformFinished(const QString &objectId,
-                                 const QPointF &oldPos, const QPointF &newPos,
-                                 qreal oldRotation, qreal newRotation,
-                                 qreal oldScaleX, qreal newScaleX,
-                                 qreal oldScaleY, qreal newScaleY);
+  void onObjectTransformFinished(const QString &objectId, const QPointF &oldPos,
+                                 const QPointF &newPos, qreal oldRotation,
+                                 qreal newRotation, qreal oldScaleX,
+                                 qreal newScaleX, qreal oldScaleY,
+                                 qreal newScaleY);
   void onDeleteRequested(const QString &objectId);
   void onContextMenuRequested(const QPoint &globalPos, const QPointF &scenePos);
   void onDragActiveChanged(bool active);

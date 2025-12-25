@@ -1,5 +1,6 @@
-#include "NovelMind/editor/qt/nm_main_window.hpp"
+#include "NovelMind/editor/project_manager.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/nm_main_window.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_console_panel.hpp"
@@ -9,7 +10,6 @@
 #include "NovelMind/editor/qt/panels/nm_script_doc_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
-#include "NovelMind/editor/project_manager.hpp"
 
 #include <QAction>
 #include <QCloseEvent>
@@ -33,8 +33,7 @@ namespace {
 
 class NMCommandPalette : public QDialog {
 public:
-  explicit NMCommandPalette(QWidget *parent,
-                            const QList<QAction *> &actions)
+  explicit NMCommandPalette(QWidget *parent, const QList<QAction *> &actions)
       : QDialog(parent), m_actions(actions) {
     setWindowFlag(Qt::FramelessWindowHint);
     setWindowModality(Qt::ApplicationModal);
@@ -79,8 +78,9 @@ private:
   void onFilterChanged(const QString &text) {
     for (int i = 0; i < m_list->count(); ++i) {
       auto *item = m_list->item(i);
-      const bool match =
-          item->data(Qt::UserRole).toString().contains(text, Qt::CaseInsensitive);
+      const bool match = item->data(Qt::UserRole)
+                             .toString()
+                             .contains(text, Qt::CaseInsensitive);
       item->setHidden(!match);
     }
     if (m_list->currentItem() && m_list->currentItem()->isHidden()) {
@@ -143,8 +143,7 @@ void NMMainWindow::setupShortcuts() {
   connect(prevDockShortcut, &QShortcut::activated, this,
           [this]() { focusNextDock(true); });
 
-  auto *paletteShortcut =
-      new QShortcut(QKeySequence("Ctrl+Shift+P"), this);
+  auto *paletteShortcut = new QShortcut(QKeySequence("Ctrl+Shift+P"), this);
   connect(paletteShortcut, &QShortcut::activated, this,
           &NMMainWindow::showCommandPalette);
 
@@ -172,11 +171,10 @@ void NMMainWindow::updateStatusBarContext() {
   }
   if (m_statusPlay) {
     m_statusPlay->setText(QString("Play: %1").arg(playText));
-    m_statusPlay->setProperty("mode",
-                              playController.isPlaying()
-                                  ? "playing"
-                                  : (playController.isPaused() ? "paused"
-                                                               : "stopped"));
+    m_statusPlay->setProperty(
+        "mode", playController.isPlaying()
+                    ? "playing"
+                    : (playController.isPaused() ? "paused" : "stopped"));
     m_statusPlay->style()->unpolish(m_statusPlay);
     m_statusPlay->style()->polish(m_statusPlay);
   }
@@ -199,8 +197,8 @@ void NMMainWindow::updateStatusBarContext() {
     assetText = "-";
   } else if (pm.hasOpenProject() &&
              pm.isPathInProject(assetText.toStdString())) {
-    assetText = QString::fromStdString(
-        pm.toRelativePath(assetText.toStdString()));
+    assetText =
+        QString::fromStdString(pm.toRelativePath(assetText.toStdString()));
   }
   if (m_statusAsset) {
     m_statusAsset->setText(QString("Asset: %1").arg(assetText));
@@ -240,10 +238,9 @@ void NMMainWindow::onUpdateTick() {
   }
   const qint64 elapsedMs = nowMs - m_fpsLastSample;
   if (elapsedMs >= 1000) {
-    m_lastFps = (elapsedMs > 0)
-                    ? (static_cast<double>(m_fpsFrameCount) * 1000.0 /
-                       static_cast<double>(elapsedMs))
-                    : 0.0;
+    m_lastFps = (elapsedMs > 0) ? (static_cast<double>(m_fpsFrameCount) *
+                                   1000.0 / static_cast<double>(elapsedMs))
+                                : 0.0;
     m_fpsFrameCount = 0;
     m_fpsLastSample = nowMs;
   }
@@ -270,12 +267,13 @@ void NMMainWindow::onUpdateTick() {
 }
 
 void NMMainWindow::showAboutDialog() {
-  NMMessageDialog::showInfo(this, tr("About NovelMind Editor"),
-                            tr("<h3>NovelMind Editor</h3>"
-                               "<p>Version 0.3.0</p>"
-                               "<p>A modern visual novel editor built with Qt 6.</p>"
-                               "<p>Copyright (c) 2024 NovelMind Contributors</p>"
-                               "<p>Licensed under MIT License</p>"));
+  NMMessageDialog::showInfo(
+      this, tr("About NovelMind Editor"),
+      tr("<h3>NovelMind Editor</h3>"
+         "<p>Version 0.3.0</p>"
+         "<p>A modern visual novel editor built with Qt 6.</p>"
+         "<p>Copyright (c) 2024 NovelMind Contributors</p>"
+         "<p>Licensed under MIT License</p>"));
 }
 
 void NMMainWindow::setStatusMessage(const QString &message, int timeout) {
@@ -315,15 +313,14 @@ void NMMainWindow::showCommandPalette() {
           << m_actionToggleIssues << m_actionToggleDiagnostics
           << m_actionToggleVoiceManager << m_actionToggleLocalization
           << m_actionToggleTimeline << m_actionToggleCurveEditor
-          << m_actionToggleBuildSettings
-          << m_actionToggleAssetBrowser
+          << m_actionToggleBuildSettings << m_actionToggleAssetBrowser
           << m_actionToggleScenePalette << m_actionToggleHierarchy
           << m_actionToggleScriptEditor << m_actionToggleScriptDocs
           << m_actionToggleDebugOverlay << m_actionLayoutStory
           << m_actionLayoutScene << m_actionLayoutScript
           << m_actionLayoutDeveloper << m_actionLayoutCompact
-          << m_actionFocusMode << m_actionLockLayout
-          << m_actionUiScaleDown << m_actionUiScaleUp << m_actionUiScaleReset;
+          << m_actionFocusMode << m_actionLockLayout << m_actionUiScaleDown
+          << m_actionUiScaleUp << m_actionUiScaleReset;
 
   auto *palette = new NMCommandPalette(this, actions);
   palette->openCentered(this);
@@ -335,11 +332,9 @@ void NMMainWindow::closeEvent(QCloseEvent *event) {
     const auto choice = NMMessageDialog::showQuestion(
         this, tr("Unsaved Changes"),
         tr("You have unsaved project changes. Save before closing?"),
-        {NMDialogButton::Save, NMDialogButton::Discard,
-         NMDialogButton::Cancel},
+        {NMDialogButton::Save, NMDialogButton::Discard, NMDialogButton::Cancel},
         NMDialogButton::Save);
-    if (choice == NMDialogButton::Cancel ||
-        choice == NMDialogButton::None) {
+    if (choice == NMDialogButton::Cancel || choice == NMDialogButton::None) {
       event->ignore();
       return;
     }

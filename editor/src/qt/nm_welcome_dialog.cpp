@@ -1,13 +1,13 @@
 #include "NovelMind/editor/qt/nm_welcome_dialog.hpp"
-#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 
 #include <QCheckBox>
 #include <QDateTime>
 #include <QDesktopServices>
+#include <QDir>
 #include <QEasingCurve>
 #include <QEvent>
-#include <QDir>
 #include <QFileInfo>
 #include <QFrame>
 #include <QGraphicsOpacityEffect>
@@ -238,7 +238,8 @@ void NMWelcomeDialog::setupRightPanel() {
       {"Getting Started Guide", "Learn the basics of NovelMind Editor",
        "https://github.com/VisageDvachevsky/NovelMind"},
       {"Tutorial Videos", "Video tutorials for common tasks",
-       "https://github.com/VisageDvachevsky/NovelMind/tree/main/examples/sample_vn"},
+       "https://github.com/VisageDvachevsky/NovelMind/tree/main/examples/"
+       "sample_vn"},
       {"API Documentation", "Complete API reference",
        "https://github.com/VisageDvachevsky/NovelMind/tree/main/docs"},
       {"Community Forum", "Ask questions and share projects",
@@ -799,13 +800,8 @@ void NMWelcomeDialog::styleDialog() {
 }
 
 void NMWelcomeDialog::setupAnimations() {
-  // IMPORTANT: Entrance animations are disabled to ensure panels are always
-  // visible. Previously, setting opacity to 0 before animations caused panels
-  // to become invisible if animations failed to start or were interrupted. The
-  // opacity effects are no longer used to prevent any visibility issues.
-
-  // Animation system is disabled - panels remain fully visible at all times
-  return;
+  // Animation setup - panels start with full opacity and animate using
+  // QGraphicsOpacityEffect which doesn't affect layout visibility
 }
 
 void NMWelcomeDialog::startEntranceAnimations() {
@@ -814,9 +810,38 @@ void NMWelcomeDialog::startEntranceAnimations() {
   }
   m_animationsPlayed = true;
 
-  // Entrance animations are disabled to prevent visibility issues.
-  // Panels remain fully visible without any opacity animations.
-  return;
+  // Create opacity effects for smooth fade-in without affecting visibility
+  // Using QGraphicsOpacityEffect which properly handles the rendering pipeline
+
+  auto createFadeIn = [this](QWidget *widget, int delayMs) {
+    if (!widget)
+      return;
+
+    // Create and apply opacity effect
+    auto *effect = new QGraphicsOpacityEffect(widget);
+    effect->setOpacity(0.0);
+    widget->setGraphicsEffect(effect);
+
+    // Create fade-in animation
+    auto *anim = new QPropertyAnimation(effect, "opacity", this);
+    anim->setDuration(350);
+    anim->setStartValue(0.0);
+    anim->setEndValue(1.0);
+    anim->setEasingCurve(QEasingCurve::OutCubic);
+
+    // Start after delay
+    QTimer::singleShot(delayMs, this, [anim, effect, widget]() {
+      anim->start(QPropertyAnimation::DeleteWhenStopped);
+      // Clear effect after animation to restore normal rendering
+      QObject::connect(anim, &QPropertyAnimation::finished, widget,
+                       [widget]() { widget->setGraphicsEffect(nullptr); });
+    });
+  };
+
+  // Stagger the panel animations for a nice cascading effect
+  createFadeIn(m_leftPanel, 0);     // Left panel fades in first
+  createFadeIn(m_centerPanel, 100); // Center panel slightly delayed
+  createFadeIn(m_rightPanel, 200);  // Right panel last
 }
 
 void NMWelcomeDialog::animateButtonHover(QWidget *button, bool entering) {

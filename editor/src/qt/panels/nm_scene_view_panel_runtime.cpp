@@ -1,7 +1,7 @@
-#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/editor/editor_runtime_host.hpp"
 #include "NovelMind/editor/project_manager.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "nm_scene_view_overlays.hpp"
 
 #include <QDebug>
@@ -67,8 +67,7 @@ void NMSceneViewPanel::setStoryPreview(const QString &speaker,
   m_editorPreviewSpeaker = speaker;
   m_editorPreviewText = text;
   m_editorPreviewChoices = choices;
-  m_editorPreviewActive =
-      !text.trimmed().isEmpty() || !choices.isEmpty();
+  m_editorPreviewActive = !text.trimmed().isEmpty() || !choices.isEmpty();
 
   if (m_playModeActive) {
     return;
@@ -143,8 +142,8 @@ void NMSceneViewPanel::restoreEditorObjectsAfterRuntime() {
       obj->setVisible(it.value());
     }
   }
-  for (auto it = m_editorOpacity.constBegin();
-       it != m_editorOpacity.constEnd(); ++it) {
+  for (auto it = m_editorOpacity.constBegin(); it != m_editorOpacity.constEnd();
+       ++it) {
     if (auto *obj = m_scene->findSceneObject(it.key())) {
       obj->setOpacity(it.value());
     }
@@ -195,9 +194,8 @@ void NMSceneViewPanel::applyRuntimeSnapshot(
     m_scene->clearSelection();
   }
 
-  const QString assetsRoot =
-      QString::fromStdString(ProjectManager::instance().getFolderPath(
-          ProjectFolder::Assets));
+  const QString assetsRoot = QString::fromStdString(
+      ProjectManager::instance().getFolderPath(ProjectFolder::Assets));
   m_assetsRoot = assetsRoot;
 
   if (m_glViewport) {
@@ -256,7 +254,12 @@ void NMSceneViewPanel::applyRuntimeSnapshot(
       id = QString("runtime_%1_%2").arg(baseId).arg(runtimeIndex++);
     }
 
+    // MEM-4 fix: Validate allocation before use
     auto *obj = new NMSceneObject(id, toQtType(state.type));
+    if (!obj) {
+      qWarning() << "[SceneViewPanel] Failed to allocate runtime object:" << id;
+      continue;
+    }
     obj->setName(objectNameFromState(state));
     obj->setPos(QPointF(state.x, state.y));
     obj->setZValue(state.zOrder);
@@ -300,8 +303,8 @@ void NMSceneViewPanel::onPlayModeChanged(int mode) {
   qDebug() << "[SceneView] Play mode changed to:" << playMode;
 
   if (m_playOverlay) {
-    m_playOverlay->setInteractionEnabled(
-        playMode != NMPlayModeController::Stopped);
+    m_playOverlay->setInteractionEnabled(playMode !=
+                                         NMPlayModeController::Stopped);
     if (playMode != NMPlayModeController::Stopped) {
       m_playOverlay->setFocus();
     }
@@ -419,8 +422,8 @@ void NMSceneViewPanel::updateRuntimePreviewVisibility() {
     return;
   }
 
-  const bool showGL =
-      m_playModeActive && !m_followPlayModeNodes && !m_renderRuntimeSceneObjects;
+  const bool showGL = m_playModeActive && !m_followPlayModeNodes &&
+                      !m_renderRuntimeSceneObjects;
   m_glViewport->setVisible(showGL);
 
   if (m_fontWarning) {
@@ -460,6 +463,5 @@ void NMSceneViewPanel::updatePreviewOverlayVisibility() {
   const bool visible = m_playModeActive || m_editorPreviewActive;
   m_playOverlay->setVisible(visible);
 }
-
 
 } // namespace NovelMind::editor::qt

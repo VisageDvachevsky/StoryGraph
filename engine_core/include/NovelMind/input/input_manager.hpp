@@ -99,8 +99,7 @@ public:
   void clearTextInput();
 
 private:
-  static constexpr size_t kKeyCount =
-      static_cast<size_t>(Key::RAlt) + 1;
+  static constexpr size_t kKeyCount = static_cast<size_t>(Key::RAlt) + 1;
   static constexpr size_t kMouseCount = 3;
 
   std::array<bool, kKeyCount> m_keyDown{};

@@ -38,10 +38,17 @@ QString NMStyleManager::getStyleSheet() const {
     background-color: %2;
     selection-background-color: %3;
     selection-color: %1;
-    outline: none;
 }
 
+/* Focus indicators for accessibility - keyboard users can see focused elements */
 *:focus {
+    outline: 1px solid %3;
+    outline-offset: 1px;
+}
+
+/* Remove outline from containers that shouldn't show it */
+QMainWindow:focus, QWidget:focus, QFrame:focus, QScrollArea:focus,
+QDockWidget:focus, QStackedWidget:focus, QSplitter:focus {
     outline: none;
 }
 
@@ -561,6 +568,89 @@ QSlider::handle:horizontal {
 
 QSlider::handle:horizontal:hover {
     background-color: %11;
+}
+
+/* ========================================================================== */
+/* QCheckBox                                                                  */
+/* ========================================================================== */
+
+QCheckBox {
+    spacing: 6px;
+    color: %1;
+}
+
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border: 1px solid %5;
+    border-radius: 3px;
+    background-color: %9;
+}
+
+QCheckBox::indicator:hover {
+    border-color: %3;
+    background-color: %4;
+}
+
+QCheckBox::indicator:checked {
+    background-color: %3;
+    border-color: %3;
+    image: url(:/icons/lucide/check.svg);
+}
+
+QCheckBox::indicator:checked:hover {
+    background-color: %11;
+    border-color: %11;
+}
+
+QCheckBox::indicator:disabled {
+    background-color: %9;
+    border-color: %5;
+}
+
+QCheckBox:disabled {
+    color: %10;
+}
+
+/* ========================================================================== */
+/* QRadioButton                                                               */
+/* ========================================================================== */
+
+QRadioButton {
+    spacing: 6px;
+    color: %1;
+}
+
+QRadioButton::indicator {
+    width: 16px;
+    height: 16px;
+    border: 1px solid %5;
+    border-radius: 8px;
+    background-color: %9;
+}
+
+QRadioButton::indicator:hover {
+    border-color: %3;
+    background-color: %4;
+}
+
+QRadioButton::indicator:checked {
+    background-color: %3;
+    border-color: %3;
+}
+
+QRadioButton::indicator:checked:hover {
+    background-color: %11;
+    border-color: %11;
+}
+
+QRadioButton::indicator:disabled {
+    background-color: %9;
+    border-color: %5;
+}
+
+QRadioButton:disabled {
+    color: %10;
 }
 
 /* ========================================================================== */
@@ -1324,35 +1414,35 @@ QFrame#DropIndicator {
 }
 
 )")
-      .arg(colorToStyleString(p.textPrimary))    // %1
-      .arg(colorToStyleString(p.bgDark))         // %2
-      .arg(colorToStyleString(p.accentPrimary))  // %3
-      .arg(colorToStyleString(p.bgDarkest))      // %4
-      .arg(colorToStyleString(p.borderDefault))  // %5
-      .arg(colorToStyleString(p.bgLight))        // %6
-      .arg(colorToStyleString(p.textDisabled))   // %7
-      .arg(colorToStyleString(p.accentActive))   // %8
-      .arg(colorToStyleString(p.bgMedium))       // %9
-      .arg(colorToStyleString(p.textSecondary))  // %10
-      .arg(colorToStyleString(p.accentHover))    // %11
-      .arg(colorToStyleString(p.textSecondary))  // %12
-      .arg(colorToStyleString(p.warning))        // %13
-      .arg(colorToStyleString(p.success))        // %14
+      .arg(colorToStyleString(p.textPrimary))   // %1
+      .arg(colorToStyleString(p.bgDark))        // %2
+      .arg(colorToStyleString(p.accentPrimary)) // %3
+      .arg(colorToStyleString(p.bgDarkest))     // %4
+      .arg(colorToStyleString(p.borderDefault)) // %5
+      .arg(colorToStyleString(p.bgLight))       // %6
+      .arg(colorToStyleString(p.textDisabled))  // %7
+      .arg(colorToStyleString(p.accentActive))  // %8
+      .arg(colorToStyleString(p.bgMedium))      // %9
+      .arg(colorToStyleString(p.textSecondary)) // %10
+      .arg(colorToStyleString(p.accentHover))   // %11
+      .arg(colorToStyleString(p.textSecondary)) // %12
+      .arg(colorToStyleString(p.warning))       // %13
+      .arg(colorToStyleString(p.success))       // %14
       // Panel accent colors
-      .arg(colorToStyleString(pa.sceneView))     // %15
-      .arg(colorToStyleString(pa.storyGraph))    // %16
-      .arg(colorToStyleString(pa.inspector))     // %17
-      .arg(colorToStyleString(pa.assetBrowser))  // %18
-      .arg(colorToStyleString(pa.scriptEditor))  // %19
-      .arg(colorToStyleString(pa.console))       // %20
-      .arg(colorToStyleString(pa.timeline))      // %21
-      .arg(colorToStyleString(pa.curveEditor))   // %22
-      .arg(colorToStyleString(pa.voiceManager))  // %23
-      .arg(colorToStyleString(pa.localization))  // %24
-      .arg(colorToStyleString(pa.diagnostics))   // %25
-      .arg(colorToStyleString(pa.hierarchy))     // %26
-      .arg(colorToStyleString(pa.scenePalette))  // %27
-      .arg(colorToStyleString(pa.playToolbar));  // %28
+      .arg(colorToStyleString(pa.sceneView))    // %15
+      .arg(colorToStyleString(pa.storyGraph))   // %16
+      .arg(colorToStyleString(pa.inspector))    // %17
+      .arg(colorToStyleString(pa.assetBrowser)) // %18
+      .arg(colorToStyleString(pa.scriptEditor)) // %19
+      .arg(colorToStyleString(pa.console))      // %20
+      .arg(colorToStyleString(pa.timeline))     // %21
+      .arg(colorToStyleString(pa.curveEditor))  // %22
+      .arg(colorToStyleString(pa.voiceManager)) // %23
+      .arg(colorToStyleString(pa.localization)) // %24
+      .arg(colorToStyleString(pa.diagnostics))  // %25
+      .arg(colorToStyleString(pa.hierarchy))    // %26
+      .arg(colorToStyleString(pa.scenePalette)) // %27
+      .arg(colorToStyleString(pa.playToolbar)); // %28
 }
 
 } // namespace NovelMind::editor::qt
