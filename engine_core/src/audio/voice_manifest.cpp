@@ -316,6 +316,62 @@ std::vector<VoiceTake> VoiceManifest::getTakes(const std::string &lineId,
   return file->takes;
 }
 
+Result<void> VoiceManifest::removeTake(const std::string &lineId,
+                                        const std::string &locale, u32 takeNumber) {
+  auto *line = getLineMutable(lineId);
+  if (!line) {
+    return Result<void>::error("Voice line not found: " + lineId);
+  }
+
+  auto it = line->files.find(locale);
+  if (it == line->files.end()) {
+    return Result<void>::error("Locale not found for line: " + locale);
+  }
+
+  auto &file = it->second;
+
+  // Find and remove the take with matching takeNumber
+  auto takeIt = std::find_if(file.takes.begin(), file.takes.end(),
+                              [takeNumber](const VoiceTake &take) {
+                                return take.takeNumber == takeNumber;
+                              });
+
+  if (takeIt == file.takes.end()) {
+    return Result<void>::error("Take not found: " + std::to_string(takeNumber));
+  }
+
+  bool wasActive = takeIt->isActive;
+  file.takes.erase(takeIt);
+
+  // If we removed the active take, clear the active index or activate another
+  if (wasActive) {
+    if (!file.takes.empty()) {
+      // Activate the first take
+      file.takes[0].isActive = true;
+      file.activeTakeIndex = 0;
+      file.filePath = file.takes[0].filePath;
+      file.duration = file.takes[0].duration;
+    } else {
+      file.activeTakeIndex = 0;
+      file.filePath.clear();
+      file.duration = 0.0f;
+      file.status = VoiceLineStatus::Missing;
+    }
+  } else if (file.activeTakeIndex > 0) {
+    // Adjust active index if needed
+    size_t removedIndex = 0;
+    for (size_t i = 0; i < file.takes.size(); ++i) {
+      if (file.takes[i].isActive) {
+        file.activeTakeIndex = static_cast<u32>(i);
+        break;
+      }
+    }
+  }
+
+  fireLineChanged(lineId);
+  return {};
+}
+
 // ============================================================================
 // Status Management
 // ============================================================================

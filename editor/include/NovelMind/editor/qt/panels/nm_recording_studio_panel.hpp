@@ -28,6 +28,8 @@ class QLineEdit;
 class QTimer;
 class QStackedWidget;
 class QGroupBox;
+class QMediaPlayer;
+class QAudioOutput;
 
 namespace NovelMind::audio {
 class VoiceManifest;
@@ -193,6 +195,11 @@ private:
   std::string m_outputPath;
   bool m_isRecording = false;
   float m_recordingStartTime = 0.0f;
+
+  // Playback
+  QMediaPlayer *m_mediaPlayer = nullptr;
+  QAudioOutput *m_audioOutput = nullptr;
+  bool m_isPlayingTake = false;
 };
 
 } // namespace NovelMind::editor::qt

@@ -6,14 +6,19 @@
 #include "NovelMind/editor/qt/panels/nm_recording_studio_panel.hpp"
 #include "NovelMind/audio/audio_recorder.hpp"
 #include "NovelMind/audio/voice_manifest.hpp"
+#include "NovelMind/core/logger.hpp"
 
+#include <QAudioOutput>
 #include <QComboBox>
+#include <QFile>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
+#include <QMediaPlayer>
+#include <QMessageBox>
 #include <QPainter>
 #include <QProgressBar>
 #include <QPushButton>
@@ -162,6 +167,20 @@ void NMRecordingStudioPanel::onInitialize() {
         this, [this, error]() { onRecordingError(QString::fromStdString(error)); },
         Qt::QueuedConnection);
   });
+
+  // Initialize media player for take playback
+  m_audioOutput = new QAudioOutput(this);
+  m_audioOutput->setVolume(1.0);
+  m_mediaPlayer = new QMediaPlayer(this);
+  m_mediaPlayer->setAudioOutput(m_audioOutput);
+
+  connect(m_mediaPlayer, &QMediaPlayer::playbackStateChanged, this,
+          [this](QMediaPlayer::PlaybackState state) {
+            m_isPlayingTake = (state == QMediaPlayer::PlayingState);
+            if (m_playTakeBtn) {
+              m_playTakeBtn->setText(m_isPlayingTake ? tr("Stop") : tr("Play"));
+            }
+          });
 
   // Refresh device list
   refreshDeviceList();
@@ -585,11 +604,50 @@ void NMRecordingStudioPanel::onCancelClicked() {
 }
 
 void NMRecordingStudioPanel::onPlayClicked() {
-  // TODO: Implement playback of selected take
+  if (!m_mediaPlayer || !m_manifest || m_currentLineId.empty()) {
+    return;
+  }
+
+  // If already playing, stop
+  if (m_isPlayingTake) {
+    m_mediaPlayer->stop();
+    return;
+  }
+
+  // Get selected take
+  int selectedIndex = m_takesList ? m_takesList->currentRow() : -1;
+  if (selectedIndex < 0) {
+    NOVELMIND_LOG_WARN("[RecordingStudio] No take selected for playback");
+    return;
+  }
+
+  // Get takes for current line
+  auto takes = m_manifest->getTakes(m_currentLineId, m_currentLocale);
+  if (selectedIndex >= static_cast<int>(takes.size())) {
+    NOVELMIND_LOG_WARN("[RecordingStudio] Take index out of range");
+    return;
+  }
+
+  const auto &take = takes[static_cast<size_t>(selectedIndex)];
+  QString filePath = QString::fromStdString(take.filePath);
+
+  if (!QFile::exists(filePath)) {
+    NOVELMIND_LOG_WARN(std::string("[RecordingStudio] Take file not found: ") + take.filePath);
+    QMessageBox::warning(this, tr("Playback Error"),
+                         tr("Audio file not found: %1").arg(filePath));
+    return;
+  }
+
+  // Play the file
+  m_mediaPlayer->setSource(QUrl::fromLocalFile(filePath));
+  m_mediaPlayer->play();
+  NOVELMIND_LOG_INFO(std::string("[RecordingStudio] Playing take: ") + take.filePath);
 }
 
 void NMRecordingStudioPanel::onPlayStopClicked() {
-  // TODO: Implement stop playback
+  if (m_mediaPlayer && m_isPlayingTake) {
+    m_mediaPlayer->stop();
+  }
 }
 
 void NMRecordingStudioPanel::onNextLineClicked() { emit requestNextLine(); }
@@ -604,7 +662,63 @@ void NMRecordingStudioPanel::onTakeSelected(int index) {
 }
 
 void NMRecordingStudioPanel::onDeleteTakeClicked() {
-  // TODO: Implement take deletion
+  if (!m_manifest || m_currentLineId.empty()) {
+    return;
+  }
+
+  // Get selected take index
+  int selectedIndex = m_takesList ? m_takesList->currentRow() : -1;
+  if (selectedIndex < 0) {
+    NOVELMIND_LOG_WARN("[RecordingStudio] No take selected for deletion");
+    return;
+  }
+
+  // Get takes for current line
+  auto takes = m_manifest->getTakes(m_currentLineId, m_currentLocale);
+  if (selectedIndex >= static_cast<int>(takes.size())) {
+    NOVELMIND_LOG_WARN("[RecordingStudio] Take index out of range for deletion");
+    return;
+  }
+
+  const auto &take = takes[static_cast<size_t>(selectedIndex)];
+
+  // Confirm deletion
+  QMessageBox::StandardButton reply = QMessageBox::question(
+      this, tr("Delete Take"),
+      tr("Are you sure you want to delete take #%1?\n\nFile: %2")
+          .arg(take.takeNumber)
+          .arg(QString::fromStdString(take.filePath)),
+      QMessageBox::Yes | QMessageBox::No);
+
+  if (reply != QMessageBox::Yes) {
+    return;
+  }
+
+  // Stop playback if this take is playing
+  if (m_mediaPlayer && m_isPlayingTake) {
+    m_mediaPlayer->stop();
+  }
+
+  // Delete the file
+  QString filePath = QString::fromStdString(take.filePath);
+  if (QFile::exists(filePath)) {
+    if (!QFile::remove(filePath)) {
+      NOVELMIND_LOG_WARN(std::string("[RecordingStudio] Failed to delete file: ") + take.filePath);
+      QMessageBox::warning(this, tr("Delete Error"),
+                           tr("Failed to delete file: %1").arg(filePath));
+      return;
+    }
+    NOVELMIND_LOG_INFO(std::string("[RecordingStudio] Deleted take file: ") + take.filePath);
+  }
+
+  // Remove from manifest
+  m_manifest->removeTake(m_currentLineId, m_currentLocale, take.takeNumber);
+
+  // Refresh the take list
+  updateTakeList();
+
+  NOVELMIND_LOG_INFO(std::string("[RecordingStudio] Deleted take #") +
+                     std::to_string(take.takeNumber) + " for line " + m_currentLineId);
 }
 
 void NMRecordingStudioPanel::onInputVolumeChanged(int value) {

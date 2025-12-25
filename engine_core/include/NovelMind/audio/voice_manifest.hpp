@@ -496,6 +496,16 @@ public:
   [[nodiscard]] std::vector<VoiceTake> getTakes(const std::string &lineId,
                                                  const std::string &locale) const;
 
+  /**
+   * @brief Remove a take from a voice line
+   * @param lineId Voice line ID
+   * @param locale Locale
+   * @param takeNumber Take number to remove
+   * @return Success or error
+   */
+  Result<void> removeTake(const std::string &lineId, const std::string &locale,
+                          u32 takeNumber);
+
   // =========================================================================
   // Status Management
   // =========================================================================

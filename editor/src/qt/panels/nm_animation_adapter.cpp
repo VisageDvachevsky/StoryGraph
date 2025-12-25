@@ -274,21 +274,83 @@ void NMAnimationAdapter::applyAnimationToScene(const AnimationBinding &binding,
     return;
   }
 
+  // Get current object state from scene
+  NMSceneObject *obj = m_sceneView->findObjectById(binding.objectId);
+  if (!obj) {
+    NOVELMIND_LOG_WARN(std::string("[AnimationAdapter] Object not found: ") +
+                       binding.objectId.toStdString());
+    return;
+  }
+
   // Apply value to scene object based on property type
-  // Note: We need access to the scene graphics scene
-  // For now, we'll log the values. Full implementation would need
-  // NMSceneViewPanel to expose its scene management methods
+  bool applied = false;
+  switch (binding.property) {
+  case AnimatedProperty::PositionX: {
+    QPointF currentPos = obj->pos();
+    applied = m_sceneView->moveObject(binding.objectId,
+                                      QPointF(value.toDouble(), currentPos.y()));
+    break;
+  }
+  case AnimatedProperty::PositionY: {
+    QPointF currentPos = obj->pos();
+    applied = m_sceneView->moveObject(binding.objectId,
+                                      QPointF(currentPos.x(), value.toDouble()));
+    break;
+  }
+  case AnimatedProperty::Position: {
+    // Expects QPointF value
+    if (value.canConvert<QPointF>()) {
+      applied = m_sceneView->moveObject(binding.objectId, value.toPointF());
+    } else if (value.canConvert<QVariantList>()) {
+      QVariantList list = value.toList();
+      if (list.size() >= 2) {
+        applied = m_sceneView->moveObject(binding.objectId,
+                                          QPointF(list[0].toDouble(), list[1].toDouble()));
+      }
+    }
+    break;
+  }
+  case AnimatedProperty::ScaleX: {
+    qreal currentScaleY = obj->scaleY();
+    applied = m_sceneView->scaleObject(binding.objectId, value.toDouble(), currentScaleY);
+    break;
+  }
+  case AnimatedProperty::ScaleY: {
+    qreal currentScaleX = obj->scaleX();
+    applied = m_sceneView->scaleObject(binding.objectId, currentScaleX, value.toDouble());
+    break;
+  }
+  case AnimatedProperty::Scale: {
+    // Uniform scale
+    qreal scale = value.toDouble();
+    applied = m_sceneView->scaleObject(binding.objectId, scale, scale);
+    break;
+  }
+  case AnimatedProperty::Rotation: {
+    applied = m_sceneView->rotateObject(binding.objectId, value.toDouble());
+    break;
+  }
+  case AnimatedProperty::Alpha: {
+    applied = m_sceneView->setObjectOpacity(binding.objectId, value.toDouble());
+    break;
+  }
+  case AnimatedProperty::Visible: {
+    applied = m_sceneView->setObjectVisible(binding.objectId, value.toBool());
+    break;
+  }
+  case AnimatedProperty::Color:
+  case AnimatedProperty::Custom:
+    // Custom properties not yet supported
+    NOVELMIND_LOG_DEBUG("[AnimationAdapter] Custom/Color properties not yet implemented");
+    break;
+  }
 
-  NOVELMIND_LOG_DEBUG(std::string("[AnimationAdapter] Applying animation: object '") +
-                      binding.objectId.toStdString() + "' property " +
-                      std::to_string(static_cast<int>(binding.property)) + " = " +
-                      value.toString().toStdString());
-
-  // TODO: Once NMSceneViewPanel exposes scene object setters, apply values here
-  // Example:
-  // if (binding.property == AnimatedProperty::PositionX) {
-  //   m_sceneView->setObjectPositionX(binding.objectId, value.toDouble());
-  // }
+  if (applied) {
+    NOVELMIND_LOG_DEBUG(std::string("[AnimationAdapter] Applied animation: object '") +
+                        binding.objectId.toStdString() + "' property " +
+                        std::to_string(static_cast<int>(binding.property)) + " = " +
+                        value.toString().toStdString());
+  }
 }
 
 QVariant NMAnimationAdapter::interpolateTrackValue(TimelineTrack *track,
