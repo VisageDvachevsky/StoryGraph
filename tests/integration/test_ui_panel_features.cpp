@@ -251,11 +251,15 @@ TEST_CASE("ProjectIntegrity: Quick fix dispatch",
   }
 
   SECTION("Issue categories") {
-    REQUIRE(static_cast<int>(IssueCategory::Configuration) == 0);
-    REQUIRE(static_cast<int>(IssueCategory::Assets) == 1);
-    REQUIRE(static_cast<int>(IssueCategory::Scripts) == 2);
-    REQUIRE(static_cast<int>(IssueCategory::Graph) == 3);
-    REQUIRE(static_cast<int>(IssueCategory::Localization) == 4);
+    // Categories are: Scene, Asset, VoiceLine, Localization, StoryGraph, Script, Resource, Configuration
+    REQUIRE(static_cast<int>(IssueCategory::Scene) == 0);
+    REQUIRE(static_cast<int>(IssueCategory::Asset) == 1);
+    REQUIRE(static_cast<int>(IssueCategory::VoiceLine) == 2);
+    REQUIRE(static_cast<int>(IssueCategory::Localization) == 3);
+    REQUIRE(static_cast<int>(IssueCategory::StoryGraph) == 4);
+    REQUIRE(static_cast<int>(IssueCategory::Script) == 5);
+    REQUIRE(static_cast<int>(IssueCategory::Resource) == 6);
+    REQUIRE(static_cast<int>(IssueCategory::Configuration) == 7);
   }
 }
 
@@ -297,7 +301,7 @@ TEST_CASE("LocalizationPanel: Key operations",
     NMLocalizationPanel panel;
     panel.onInitialize();
 
-    bool result = panel.addKey("test_key", "Test value");
+    [[maybe_unused]] bool result = panel.addKey("test_key", "Test value");
     // Operation should complete (may depend on project state)
     SUCCEED();
   }
@@ -308,7 +312,7 @@ TEST_CASE("LocalizationPanel: Key operations",
 
     // Add then delete
     panel.addKey("temp_key", "Temporary");
-    bool result = panel.deleteKey("temp_key");
+    [[maybe_unused]] bool result = panel.deleteKey("temp_key");
     // Operation should complete
     SUCCEED();
   }
