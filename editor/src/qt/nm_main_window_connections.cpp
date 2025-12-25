@@ -28,12 +28,16 @@
 #include "NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp"
 
 #include <QAction>
+#include <QApplication>
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QDockWidget>
 #include <QFileInfo>
 #include <QKeySequence>
+#include <QLineEdit>
+#include <QPlainTextEdit>
 #include <QSignalBlocker>
+#include <QTextEdit>
 #include <QUrl>
 #include <cmath>
 
@@ -162,6 +166,95 @@ void NMMainWindow::setupConnections() {
   // Initialize undo/redo states
   m_actionUndo->setEnabled(NMUndoManager::instance().canUndo());
   m_actionRedo->setEnabled(NMUndoManager::instance().canRedo());
+
+  // Edit menu - Cut/Copy/Paste/Delete/SelectAll
+  // These actions delegate to the currently focused widget that supports them
+  // Note: For scene objects, these are handled internally by the SceneView panel's
+  // keyboard shortcuts (Ctrl+C, Ctrl+V, etc.) since the methods are private
+  connect(m_actionCut, &QAction::triggered, this, []() {
+    if (QWidget *focused = QApplication::focusWidget()) {
+      if (auto *lineEdit = qobject_cast<QLineEdit *>(focused)) {
+        lineEdit->cut();
+        return;
+      }
+      if (auto *textEdit = qobject_cast<QTextEdit *>(focused)) {
+        textEdit->cut();
+        return;
+      }
+      if (auto *plainTextEdit = qobject_cast<QPlainTextEdit *>(focused)) {
+        plainTextEdit->cut();
+        return;
+      }
+    }
+  });
+
+  connect(m_actionCopy, &QAction::triggered, this, []() {
+    if (QWidget *focused = QApplication::focusWidget()) {
+      if (auto *lineEdit = qobject_cast<QLineEdit *>(focused)) {
+        lineEdit->copy();
+        return;
+      }
+      if (auto *textEdit = qobject_cast<QTextEdit *>(focused)) {
+        textEdit->copy();
+        return;
+      }
+      if (auto *plainTextEdit = qobject_cast<QPlainTextEdit *>(focused)) {
+        plainTextEdit->copy();
+        return;
+      }
+    }
+  });
+
+  connect(m_actionPaste, &QAction::triggered, this, []() {
+    if (QWidget *focused = QApplication::focusWidget()) {
+      if (auto *lineEdit = qobject_cast<QLineEdit *>(focused)) {
+        lineEdit->paste();
+        return;
+      }
+      if (auto *textEdit = qobject_cast<QTextEdit *>(focused)) {
+        textEdit->paste();
+        return;
+      }
+      if (auto *plainTextEdit = qobject_cast<QPlainTextEdit *>(focused)) {
+        plainTextEdit->paste();
+        return;
+      }
+    }
+  });
+
+  connect(m_actionDelete, &QAction::triggered, this, []() {
+    if (QWidget *focused = QApplication::focusWidget()) {
+      if (auto *lineEdit = qobject_cast<QLineEdit *>(focused)) {
+        lineEdit->del();
+        return;
+      }
+      if (auto *textEdit = qobject_cast<QTextEdit *>(focused)) {
+        textEdit->textCursor().removeSelectedText();
+        return;
+      }
+      if (auto *plainTextEdit = qobject_cast<QPlainTextEdit *>(focused)) {
+        plainTextEdit->textCursor().removeSelectedText();
+        return;
+      }
+    }
+  });
+
+  connect(m_actionSelectAll, &QAction::triggered, this, []() {
+    if (QWidget *focused = QApplication::focusWidget()) {
+      if (auto *lineEdit = qobject_cast<QLineEdit *>(focused)) {
+        lineEdit->selectAll();
+        return;
+      }
+      if (auto *textEdit = qobject_cast<QTextEdit *>(focused)) {
+        textEdit->selectAll();
+        return;
+      }
+      if (auto *plainTextEdit = qobject_cast<QPlainTextEdit *>(focused)) {
+        plainTextEdit->selectAll();
+        return;
+      }
+    }
+  });
 
   // Preferences action
   connect(m_actionPreferences, &QAction::triggered, this,
