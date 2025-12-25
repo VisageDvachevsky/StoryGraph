@@ -1,5 +1,6 @@
 #include "NovelMind/editor/qt/nm_main_window.hpp"
 #include "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp"
+#include "NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_build_settings_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_console_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_curve_editor_panel.hpp"
@@ -18,7 +19,6 @@
 #include "NovelMind/editor/qt/panels/nm_timeline_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp"
-#include "NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp"
 
 #include <QDockWidget>
 #include <QEvent>
@@ -125,11 +125,13 @@ QStringList NMMainWindow::availableWorkspacePresets() const {
 
 void NMMainWindow::focusNextDock(bool reverse) {
   QList<QDockWidget *> docks = {
-      m_sceneViewPanel,   m_storyGraphPanel,   m_inspectorPanel,
-      m_consolePanel,     m_assetBrowserPanel, m_hierarchyPanel,
-      m_scriptEditorPanel, m_scriptDocPanel,   m_playToolbarPanel,
-      m_debugOverlayPanel, m_voiceManagerPanel, m_localizationPanel,
-      m_timelinePanel,     m_curveEditorPanel,  m_buildSettingsPanel};
+      m_sceneViewPanel,     m_storyGraphPanel,   m_sceneDialogueGraphPanel,
+      m_inspectorPanel,     m_consolePanel,      m_assetBrowserPanel,
+      m_hierarchyPanel,     m_scenePalettePanel, m_scriptEditorPanel,
+      m_scriptDocPanel,     m_playToolbarPanel,  m_debugOverlayPanel,
+      m_voiceManagerPanel,  m_voiceStudioPanel,  m_audioMixerPanel,
+      m_localizationPanel,  m_timelinePanel,     m_curveEditorPanel,
+      m_buildSettingsPanel, m_issuesPanel,       m_diagnosticsPanel};
 
   QList<QDockWidget *> visible;
   for (auto *dock : docks) {
@@ -183,13 +185,13 @@ bool NMMainWindow::eventFilter(QObject *watched, QEvent *event) {
 
 void NMMainWindow::applyLayoutPreset(LayoutPreset preset) {
   QList<QDockWidget *> docks = {
-      m_sceneViewPanel,      m_storyGraphPanel,   m_inspectorPanel,
-      m_consolePanel,        m_assetBrowserPanel, m_scenePalettePanel,
-      m_hierarchyPanel,      m_scriptEditorPanel, m_scriptDocPanel,
-      m_playToolbarPanel,    m_debugOverlayPanel, m_issuesPanel,
-      m_diagnosticsPanel,    m_voiceManagerPanel, m_localizationPanel,
-      m_timelinePanel,       m_curveEditorPanel,  m_buildSettingsPanel,
-      m_voiceStudioPanel,    m_audioMixerPanel};
+      m_sceneViewPanel,     m_storyGraphPanel,   m_sceneDialogueGraphPanel,
+      m_inspectorPanel,     m_consolePanel,      m_assetBrowserPanel,
+      m_hierarchyPanel,     m_scenePalettePanel, m_scriptEditorPanel,
+      m_scriptDocPanel,     m_playToolbarPanel,  m_debugOverlayPanel,
+      m_voiceManagerPanel,  m_voiceStudioPanel,  m_audioMixerPanel,
+      m_localizationPanel,  m_timelinePanel,     m_curveEditorPanel,
+      m_buildSettingsPanel, m_issuesPanel,       m_diagnosticsPanel};
 
   for (auto *dock : docks) {
     if (!dock) {
@@ -208,9 +210,9 @@ void NMMainWindow::applyLayoutPreset(LayoutPreset preset) {
   }
 
   switch (preset) {
-  // ========================================================================
-  // D2: New Workspace Presets
-  // ========================================================================
+    // ========================================================================
+    // D2: New Workspace Presets
+    // ========================================================================
 
   case LayoutPreset::Default: {
     // D2: Default workspace - balanced layout for general editing
@@ -551,9 +553,9 @@ void NMMainWindow::applyLayoutPreset(LayoutPreset preset) {
     break;
   }
 
-  // ========================================================================
-  // Legacy Presets (maintained for compatibility)
-  // ========================================================================
+    // ========================================================================
+    // Legacy Presets (maintained for compatibility)
+    // ========================================================================
 
   case LayoutPreset::Story: {
     if (m_storyGraphPanel)
@@ -758,8 +760,6 @@ void NMMainWindow::applyLayoutPreset(LayoutPreset preset) {
       m_timelinePanel->show();
     if (m_curveEditorPanel)
       m_curveEditorPanel->show();
-    if (m_buildSettingsPanel)
-      m_buildSettingsPanel->show();
     if (m_buildSettingsPanel)
       m_buildSettingsPanel->show();
 
@@ -1007,12 +1007,13 @@ void NMMainWindow::toggleFocusMode(bool enabled) {
 
 void NMMainWindow::applyFocusModeLayout() {
   QList<QDockWidget *> docks = {
-      m_sceneViewPanel,   m_storyGraphPanel,   m_inspectorPanel,
-      m_consolePanel,     m_assetBrowserPanel, m_scenePalettePanel,
-      m_hierarchyPanel,   m_scriptEditorPanel, m_scriptDocPanel,
-      m_playToolbarPanel, m_debugOverlayPanel, m_issuesPanel,
-      m_voiceManagerPanel, m_localizationPanel, m_timelinePanel,
-      m_curveEditorPanel, m_buildSettingsPanel};
+      m_sceneViewPanel,     m_storyGraphPanel,   m_sceneDialogueGraphPanel,
+      m_inspectorPanel,     m_consolePanel,      m_assetBrowserPanel,
+      m_hierarchyPanel,     m_scenePalettePanel, m_scriptEditorPanel,
+      m_scriptDocPanel,     m_playToolbarPanel,  m_debugOverlayPanel,
+      m_voiceManagerPanel,  m_voiceStudioPanel,  m_audioMixerPanel,
+      m_localizationPanel,  m_timelinePanel,     m_curveEditorPanel,
+      m_buildSettingsPanel, m_issuesPanel,       m_diagnosticsPanel};
 
   for (auto *dock : docks) {
     if (!dock) {
@@ -1059,12 +1060,13 @@ void NMMainWindow::applyDockLockState(bool locked) {
   m_layoutLocked = locked;
 
   QList<QDockWidget *> docks = {
-      m_sceneViewPanel,   m_storyGraphPanel,   m_inspectorPanel,
-      m_consolePanel,     m_assetBrowserPanel, m_scenePalettePanel,
-      m_hierarchyPanel,   m_scriptEditorPanel, m_scriptDocPanel,
-      m_playToolbarPanel, m_debugOverlayPanel, m_issuesPanel,
-      m_voiceManagerPanel, m_localizationPanel, m_timelinePanel,
-      m_curveEditorPanel, m_buildSettingsPanel};
+      m_sceneViewPanel,     m_storyGraphPanel,   m_sceneDialogueGraphPanel,
+      m_inspectorPanel,     m_consolePanel,      m_assetBrowserPanel,
+      m_hierarchyPanel,     m_scenePalettePanel, m_scriptEditorPanel,
+      m_scriptDocPanel,     m_playToolbarPanel,  m_debugOverlayPanel,
+      m_voiceManagerPanel,  m_voiceStudioPanel,  m_audioMixerPanel,
+      m_localizationPanel,  m_timelinePanel,     m_curveEditorPanel,
+      m_buildSettingsPanel, m_issuesPanel,       m_diagnosticsPanel};
 
   for (auto *dock : docks) {
     if (!dock) {
@@ -1086,7 +1088,8 @@ void NMMainWindow::applyTabbedDockMode(bool enabled) {
   if (m_tabbedDockOnly) {
     setDockOptions(QMainWindow::AllowTabbedDocks | QMainWindow::AnimatedDocks);
   } else {
-    setDockOptions(QMainWindow::AllowTabbedDocks | QMainWindow::AllowNestedDocks |
+    setDockOptions(QMainWindow::AllowTabbedDocks |
+                   QMainWindow::AllowNestedDocks |
                    QMainWindow::GroupedDragging | QMainWindow::AnimatedDocks);
   }
 
@@ -1095,12 +1098,13 @@ void NMMainWindow::applyTabbedDockMode(bool enabled) {
   }
 
   QList<QDockWidget *> docks = {
-      m_sceneViewPanel,   m_storyGraphPanel,   m_inspectorPanel,
-      m_consolePanel,     m_assetBrowserPanel, m_scenePalettePanel,
-      m_hierarchyPanel,   m_scriptEditorPanel, m_scriptDocPanel,
-      m_playToolbarPanel, m_debugOverlayPanel, m_issuesPanel,
-      m_voiceManagerPanel, m_localizationPanel, m_timelinePanel,
-      m_curveEditorPanel, m_buildSettingsPanel};
+      m_sceneViewPanel,     m_storyGraphPanel,   m_sceneDialogueGraphPanel,
+      m_inspectorPanel,     m_consolePanel,      m_assetBrowserPanel,
+      m_hierarchyPanel,     m_scenePalettePanel, m_scriptEditorPanel,
+      m_scriptDocPanel,     m_playToolbarPanel,  m_debugOverlayPanel,
+      m_voiceManagerPanel,  m_voiceStudioPanel,  m_audioMixerPanel,
+      m_localizationPanel,  m_timelinePanel,     m_curveEditorPanel,
+      m_buildSettingsPanel, m_issuesPanel,       m_diagnosticsPanel};
 
   QHash<Qt::DockWidgetArea, QDockWidget *> anchors;
   for (auto *dock : docks) {
@@ -1132,8 +1136,7 @@ void NMMainWindow::loadCustomLayout() {
   QSettings settings("NovelMind", "Editor");
   const QByteArray geometry =
       settings.value("layout/custom/geometry").toByteArray();
-  const QByteArray state =
-      settings.value("layout/custom/state").toByteArray();
+  const QByteArray state = settings.value("layout/custom/state").toByteArray();
   if (geometry.isEmpty() || state.isEmpty()) {
     setStatusMessage(tr("No saved layout found"), 2000);
     return;
@@ -1165,7 +1168,8 @@ void NMMainWindow::restoreLayout() {
   }
 
   // Ensure all panels are at least created and available
-  // Even if they were hidden in saved state, they should be accessible via View menu
+  // Even if they were hidden in saved state, they should be accessible via View
+  // menu
   if (m_sceneViewPanel && !m_sceneViewPanel->isVisible()) {
     m_actionToggleSceneView->setChecked(false);
   }

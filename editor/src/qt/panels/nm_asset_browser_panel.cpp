@@ -1,9 +1,9 @@
 #include "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp"
 #include "NovelMind/editor/project_manager.hpp"
-#include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
-#include "NovelMind/editor/qt/qt_event_bus.hpp"
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/performance_metrics.hpp"
+#include "NovelMind/editor/qt/qt_event_bus.hpp"
 
 #include <QAction>
 #include <QApplication>
@@ -11,12 +11,12 @@
 #include <QComboBox>
 #include <QCryptographicHash>
 #include <QDesktopServices>
-#include <QProcess>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QDragEnterEvent>
 #include <QDragMoveEvent>
+#include <QDropEvent>
 #include <QFile>
 #include <QFileIconProvider>
 #include <QFileInfo>
@@ -26,19 +26,20 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMenu>
-#include <QPixmapCache>
 #include <QMimeData>
-#include <QDropEvent>
-#include <QPushButton>
-#include <QToolBar>
-#include <QVBoxLayout>
 #include <QPainter>
+#include <QPixmapCache>
+#include <QProcess>
+#include <QPushButton>
 #include <QRunnable>
 #include <QScrollBar>
 #include <QTimer>
+#include <QToolBar>
+#include <QVBoxLayout>
 
 #if defined(__GNUC__)
-// Suppress GCC false positives in Qt container inlines for this translation unit.
+// Suppress GCC false positives in Qt container inlines for this translation
+// unit.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnull-dereference"
 #endif
@@ -169,15 +170,16 @@ public:
       reader.setAutoTransform(true);
       QImage image = reader.read();
       if (!image.isNull()) {
-        QPixmap pix =
-            QPixmap::fromImage(image.scaled(m_iconSize, Qt::KeepAspectRatio,
-                                            Qt::SmoothTransformation));
+        QPixmap pix = QPixmap::fromImage(image.scaled(
+            m_iconSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
 
         // Cache it
         if (m_panel) {
-          auto *entry = new ThumbnailCacheEntry{pix, info.lastModified(), info.size()};
-          m_panel->m_thumbnailCache.insert(path, entry,
-                                          static_cast<int>(pix.width() * pix.height() * 4 / 1024));
+          auto *entry =
+              new ThumbnailCacheEntry{pix, info.lastModified(), info.size()};
+          m_panel->m_thumbnailCache.insert(
+              path, entry,
+              static_cast<int>(pix.width() * pix.height() * 4 / 1024));
         }
         return QIcon(pix);
       }
@@ -219,21 +221,21 @@ NMAssetBrowserPanel::NMAssetBrowserPanel(QWidget *parent)
   // Initialize lazy thumbnail loader with proper config
   ThumbnailLoaderConfig loaderConfig;
   loaderConfig.maxConcurrentTasks = 2;
-  loaderConfig.maxCacheSizeKB = 50 * 1024;  // 50 MB
+  loaderConfig.maxCacheSizeKB = 50 * 1024; // 50 MB
   loaderConfig.thumbnailSize = 80;
   loaderConfig.queueHighWaterMark = 100;
   m_lazyLoader = std::make_unique<LazyThumbnailLoader>(loaderConfig, this);
 
   // Connect lazy loader signals
-  connect(m_lazyLoader.get(), &LazyThumbnailLoader::thumbnailReady,
-          this, &NMAssetBrowserPanel::onLazyThumbnailReady);
+  connect(m_lazyLoader.get(), &LazyThumbnailLoader::thumbnailReady, this,
+          &NMAssetBrowserPanel::onLazyThumbnailReady);
 
   // Setup visibility update timer for lazy loading visible items
   m_visibilityUpdateTimer = new QTimer(this);
-  m_visibilityUpdateTimer->setInterval(100);  // 100ms debounce
+  m_visibilityUpdateTimer->setInterval(100); // 100ms debounce
   m_visibilityUpdateTimer->setSingleShot(true);
-  connect(m_visibilityUpdateTimer, &QTimer::timeout,
-          this, &NMAssetBrowserPanel::updateVisibleItems);
+  connect(m_visibilityUpdateTimer, &QTimer::timeout, this,
+          &NMAssetBrowserPanel::updateVisibleItems);
 
   setupContent();
   setupToolBar();
@@ -336,9 +338,8 @@ void NMAssetBrowserPanel::setupToolBar() {
   m_toolBar->addWidget(m_filterEdit);
 
   m_typeFilter = new QComboBox(this);
-  m_typeFilter->addItems(
-      {tr("All"), tr("Images"), tr("Audio"), tr("Fonts"), tr("Scripts"),
-       tr("Data")});
+  m_typeFilter->addItems({tr("All"), tr("Images"), tr("Audio"), tr("Fonts"),
+                          tr("Scripts"), tr("Data")});
   m_typeFilter->setMaximumWidth(120);
   m_typeFilter->setToolTip(tr("Filter assets by type"));
   connect(m_typeFilter, QOverload<int>::of(&QComboBox::currentIndexChanged),
@@ -543,7 +544,8 @@ void NMAssetBrowserPanel::onListDoubleClicked(const QModelIndex &index) {
   if (!index.isValid())
     return;
 
-  QModelIndex source = m_filterProxy ? m_filterProxy->mapToSource(index) : index;
+  QModelIndex source =
+      m_filterProxy ? m_filterProxy->mapToSource(index) : index;
   QString path = m_listModel->filePath(source);
   emit assetDoubleClicked(path);
 }
@@ -553,9 +555,52 @@ void NMAssetBrowserPanel::onListContextMenu(const QPoint &pos) {
   if (!index.isValid())
     return;
 
-  QModelIndex source = m_filterProxy ? m_filterProxy->mapToSource(index) : index;
+  QModelIndex source =
+      m_filterProxy ? m_filterProxy->mapToSource(index) : index;
   QString path = m_listModel->filePath(source);
+
+  // Emit signal for external handlers
   emit assetContextMenu(path, m_listView->mapToGlobal(pos));
+
+  // Create and show context menu with actions
+  QMenu menu(this);
+
+  QAction *renameAction = menu.addAction(tr("Rename"));
+  connect(renameAction, &QAction::triggered, this,
+          &NMAssetBrowserPanel::onRenameAction);
+
+  QAction *duplicateAction = menu.addAction(tr("Duplicate"));
+  connect(duplicateAction, &QAction::triggered, this,
+          &NMAssetBrowserPanel::onDuplicateAction);
+
+  menu.addSeparator();
+
+  QAction *reimportAction = menu.addAction(tr("Reimport"));
+  connect(reimportAction, &QAction::triggered, this,
+          &NMAssetBrowserPanel::onReimportAction);
+
+  menu.addSeparator();
+
+  QAction *showInExplorerAction = menu.addAction(tr("Show in Explorer"));
+  connect(showInExplorerAction, &QAction::triggered, this,
+          &NMAssetBrowserPanel::onShowInExplorerAction);
+
+  QAction *copyPathAction = menu.addAction(tr("Copy Path"));
+  connect(copyPathAction, &QAction::triggered, this,
+          &NMAssetBrowserPanel::onCopyPathAction);
+
+  QAction *copyIdAction = menu.addAction(tr("Copy ID"));
+  connect(copyIdAction, &QAction::triggered, this,
+          &NMAssetBrowserPanel::onCopyIdAction);
+
+  menu.addSeparator();
+
+  QAction *deleteAction = menu.addAction(tr("Delete"));
+  deleteAction->setShortcut(QKeySequence::Delete);
+  connect(deleteAction, &QAction::triggered, this,
+          &NMAssetBrowserPanel::onDeleteAction);
+
+  menu.exec(m_listView->mapToGlobal(pos));
 }
 
 void NMAssetBrowserPanel::onListSelectionChanged(
@@ -583,8 +628,8 @@ void NMAssetBrowserPanel::onImportAssets() {
   const QString filter =
       tr("Assets (*.png *.jpg *.jpeg *.bmp *.gif *.wav *.mp3 *.ogg *.flac "
          "*.ttf *.otf *.nms *.nmscene *.json *.xml *.yaml *.yml)");
-  QStringList files = NMFileDialog::getOpenFileNames(
-      this, tr("Import Assets"), QDir::homePath(), filter);
+  QStringList files = NMFileDialog::getOpenFileNames(this, tr("Import Assets"),
+                                                     QDir::homePath(), filter);
   if (files.isEmpty()) {
     return;
   }
@@ -704,9 +749,8 @@ void NMAssetBrowserPanel::importFiles(const QStringList &files,
       }
     });
 
-    auto *buttons =
-        new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
-                             &dialog);
+    auto *buttons = new QDialogButtonBox(
+        QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
     layout->addWidget(buttons);
     connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
     connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
@@ -752,7 +796,8 @@ void NMAssetBrowserPanel::importFiles(const QStringList &files,
     if (!info.exists()) {
       failedFiles.append(info.fileName());
       QtEventBus::instance().publish(
-          {QtEditorEventType::ErrorOccurred, "AssetImport",
+          {QtEditorEventType::ErrorOccurred,
+           "AssetImport",
            {{"message", tr("Missing source file: %1").arg(info.fileName())}}});
       continue;
     }
@@ -761,9 +806,9 @@ void NMAssetBrowserPanel::importFiles(const QStringList &files,
     QString targetDir;
     switch (targetMode) {
     case ImportTargetMode::AutoByType:
-      targetDir =
-          currentTarget.isEmpty() ? importDestinationForExtension(extension)
-                                  : currentTarget;
+      targetDir = currentTarget.isEmpty()
+                      ? importDestinationForExtension(extension)
+                      : currentTarget;
       break;
     case ImportTargetMode::CurrentFolder:
       targetDir = currentTarget.isEmpty() ? assetsRoot : currentTarget;
@@ -786,26 +831,24 @@ void NMAssetBrowserPanel::importFiles(const QStringList &files,
         generateUniquePath(target.absolutePath(), info.fileName());
 
     if (auto *database = projectManager.assetDatabase()) {
-      auto result =
-          database->importAssetToPath(filePath.toStdString(),
-                                      destPath.toStdString());
+      auto result = database->importAssetToPath(filePath.toStdString(),
+                                                destPath.toStdString());
       if (result.isError()) {
         failedFiles.append(info.fileName());
         QtEventBus::instance().publish(
-            {QtEditorEventType::ErrorOccurred, "AssetImport",
-             {{"message",
-               tr("Import failed: %1").arg(info.fileName())},
-              {"details",
-               QString::fromStdString(result.error())}}});
+            {QtEditorEventType::ErrorOccurred,
+             "AssetImport",
+             {{"message", tr("Import failed: %1").arg(info.fileName())},
+              {"details", QString::fromStdString(result.error())}}});
         continue;
       }
     } else {
       if (!QFile::copy(filePath, destPath)) {
         failedFiles.append(info.fileName());
         QtEventBus::instance().publish(
-            {QtEditorEventType::ErrorOccurred, "AssetImport",
-             {{"message",
-               tr("Import failed: %1").arg(info.fileName())},
+            {QtEditorEventType::ErrorOccurred,
+             "AssetImport",
+             {{"message", tr("Import failed: %1").arg(info.fileName())},
               {"details", tr("File copy failed")}}});
         continue;
       }
@@ -822,8 +865,8 @@ void NMAssetBrowserPanel::importFiles(const QStringList &files,
       if (m_listModel && m_listView) {
         m_listModel->setRootPath(targetDir);
         const QModelIndex idx = m_listModel->index(targetDir);
-        m_listView->setRootIndex(m_filterProxy ? m_filterProxy->mapFromSource(idx)
-                                               : idx);
+        m_listView->setRootIndex(
+            m_filterProxy ? m_filterProxy->mapFromSource(idx) : idx);
       }
       if (m_treeModel && m_treeView) {
         const QModelIndex index = m_treeModel->index(targetDir);
@@ -966,13 +1009,14 @@ void NMAssetBrowserPanel::updatePreview(const QString &path) {
     if (!image.isNull()) {
       QPixmap pix = QPixmap::fromImage(image);
       QSize target = m_previewImage->size();
-      QPixmap scaled = pix.scaled(target, Qt::KeepAspectRatio,
-                                  Qt::SmoothTransformation);
+      QPixmap scaled =
+          pix.scaled(target, Qt::KeepAspectRatio, Qt::SmoothTransformation);
       m_previewImage->setPixmap(scaled);
       m_previewImage->setText(QString());
-      m_previewMeta->setText(
-          tr("%1 x %2 | %3").arg(imgSize.width()).arg(imgSize.height()).arg(
-              sizeText));
+      m_previewMeta->setText(tr("%1 x %2 | %3")
+                                 .arg(imgSize.width())
+                                 .arg(imgSize.height())
+                                 .arg(sizeText));
       return;
     }
   }
@@ -1093,7 +1137,8 @@ QPixmap NMAssetBrowserPanel::generateAudioWaveform(const QString &path,
     // Generate deterministic height based on position and seed
     seed = (seed * 1103515245 + 12345) & 0x7fffffff;
     const double normalized = static_cast<double>(seed % 1000) / 1000.0;
-    const int barHeight = static_cast<int>(maxBarHeight * normalized * 0.8 + maxBarHeight * 0.2);
+    const int barHeight =
+        static_cast<int>(maxBarHeight * normalized * 0.8 + maxBarHeight * 0.2);
 
     const int x = 10 + i * barWidth;
     const int y = (size.height() - barHeight) / 2;
@@ -1202,15 +1247,18 @@ void NMAssetBrowserPanel::updateVisibleItems() {
 
   // Iterate through visible items
   QModelIndex rootIndex = m_listView->rootIndex();
-  for (int row = 0; row < m_listModel->rowCount(
-           m_filterProxy ? m_filterProxy->mapToSource(rootIndex) : rootIndex);
+  for (int row = 0;
+       row < m_listModel->rowCount(m_filterProxy
+                                       ? m_filterProxy->mapToSource(rootIndex)
+                                       : rootIndex);
        ++row) {
     QModelIndex proxyIndex =
         m_filterProxy
             ? m_filterProxy->index(row, 0, rootIndex)
             : m_listModel->index(row, 0,
-                                 m_filterProxy ? m_filterProxy->mapToSource(rootIndex)
-                                               : rootIndex);
+                                 m_filterProxy
+                                     ? m_filterProxy->mapToSource(rootIndex)
+                                     : rootIndex);
 
     QRect itemRect = m_listView->visualRect(proxyIndex);
     if (visibleRect.intersects(itemRect)) {
@@ -1229,8 +1277,8 @@ void NMAssetBrowserPanel::updateVisibleItems() {
   }
 
   // Record metrics
-  PerformanceMetrics::instance().recordCount("AssetBrowser.visibleItems",
-                                              static_cast<int>(m_visiblePaths.size()));
+  PerformanceMetrics::instance().recordCount(
+      "AssetBrowser.visibleItems", static_cast<int>(m_visiblePaths.size()));
   auto stats = m_lazyLoader->getStats();
   PerformanceMetrics::instance().recordCount(
       PerformanceMetrics::METRIC_CACHE_SIZE_KB,
@@ -1242,9 +1290,11 @@ void NMAssetBrowserPanel::onLazyThumbnailReady(const QString &path,
   // Update the legacy cache for icon provider compatibility
   if (!pixmap.isNull()) {
     QFileInfo info(path);
-    auto *entry = new ThumbnailCacheEntry{pixmap, info.lastModified(), info.size()};
-    m_thumbnailCache.insert(path, entry,
-                            static_cast<int>(pixmap.width() * pixmap.height() * 4 / 1024));
+    auto *entry =
+        new ThumbnailCacheEntry{pixmap, info.lastModified(), info.size()};
+    m_thumbnailCache.insert(
+        path, entry,
+        static_cast<int>(pixmap.width() * pixmap.height() * 4 / 1024));
   }
 
   // Record successful load
@@ -1267,9 +1317,9 @@ void NMAssetBrowserPanel::onRenameAction() {
   const QString oldName = info.fileName();
 
   bool ok = false;
-  QString newName = NMInputDialog::getText(
-      this, tr("Rename Asset"),
-      tr("Enter new name:"), QLineEdit::Normal, oldName, &ok);
+  QString newName =
+      NMInputDialog::getText(this, tr("Rename Asset"), tr("Enter new name:"),
+                             QLineEdit::Normal, oldName, &ok);
 
   if (!ok || newName.isEmpty() || newName == oldName) {
     return;
@@ -1291,10 +1341,10 @@ void NMAssetBrowserPanel::onDeleteAction() {
 
   NMDialogButton result = NMMessageDialog::showQuestion(
       this, tr("Delete Asset"),
-      tr("Are you sure you want to delete '%1'?\n\nThis action cannot be undone.")
+      tr("Are you sure you want to delete '%1'?\n\nThis action cannot be "
+         "undone.")
           .arg(fileName),
-      {NMDialogButton::Yes, NMDialogButton::No},
-      NMDialogButton::No);
+      {NMDialogButton::Yes, NMDialogButton::No}, NMDialogButton::No);
 
   if (result == NMDialogButton::Yes) {
     if (deleteAsset(path)) {
@@ -1393,8 +1443,8 @@ AssetMetadata NMAssetBrowserPanel::getAssetMetadata(const QString &path) const {
   }
 
   // Generate a stable ID based on path
-  meta.id = QCryptographicHash::hash(path.toUtf8(),
-                                      QCryptographicHash::Md5).toHex();
+  meta.id =
+      QCryptographicHash::hash(path.toUtf8(), QCryptographicHash::Md5).toHex();
   meta.path = path;
   meta.size = info.size();
   meta.modified = info.lastModified();
@@ -1424,7 +1474,7 @@ AssetMetadata NMAssetBrowserPanel::getAssetMetadata(const QString &path) const {
 }
 
 bool NMAssetBrowserPanel::renameAsset(const QString &oldPath,
-                                       const QString &newName) {
+                                      const QString &newName) {
   QFileInfo info(oldPath);
   if (!info.exists()) {
     return false;
@@ -1473,8 +1523,8 @@ QString NMAssetBrowserPanel::duplicateAsset(const QString &path) {
   QString baseName = info.completeBaseName();
   QString extension = info.suffix();
   QString directory = info.absolutePath();
-  QString newPath = generateUniquePath(directory,
-                                        baseName + "_copy." + extension);
+  QString newPath =
+      generateUniquePath(directory, baseName + "_copy." + extension);
 
   QFile file(path);
   if (file.copy(newPath)) {
@@ -1518,5 +1568,3 @@ void NMAssetBrowserPanel::showInExplorer(const QString &path) {
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif
-
-

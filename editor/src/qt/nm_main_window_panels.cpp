@@ -1,7 +1,8 @@
-#include "NovelMind/editor/qt/nm_main_window.hpp"
 #include "NovelMind/editor/qt/nm_dock_panel.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
+#include "NovelMind/editor/qt/nm_main_window.hpp"
 #include "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp"
+#include "NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_build_settings_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_console_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_curve_editor_panel.hpp"
@@ -12,16 +13,15 @@
 #include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_localization_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_play_toolbar_panel.hpp"
+#include "NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_scene_palette_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_script_doc_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
-#include "NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_timeline_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp"
-#include "NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp"
 
 #include <QAction>
 #include <QDockWidget>
@@ -43,7 +43,8 @@ void NMMainWindow::setupPanels() {
 
   m_sceneDialogueGraphPanel = new NMSceneDialogueGraphPanel(this);
   m_sceneDialogueGraphPanel->setObjectName("SceneDialogueGraphPanel");
-  m_sceneDialogueGraphPanel->setWindowIcon(iconMgr.getIcon("node-dialogue", 16));
+  m_sceneDialogueGraphPanel->setWindowIcon(
+      iconMgr.getIcon("node-dialogue", 16));
 
   m_inspectorPanel = new NMInspectorPanel(this);
   m_inspectorPanel->setObjectName("InspectorPanel");
@@ -71,8 +72,7 @@ void NMMainWindow::setupPanels() {
 
   m_localizationPanel = new NMLocalizationPanel(this);
   m_localizationPanel->setObjectName("LocalizationPanel");
-  m_localizationPanel->setWindowIcon(
-      iconMgr.getIcon("panel-localization", 16));
+  m_localizationPanel->setWindowIcon(iconMgr.getIcon("panel-localization", 16));
 
   m_timelinePanel = new NMTimelinePanel(this);
   m_timelinePanel->setObjectName("TimelinePanel");
@@ -192,9 +192,9 @@ void NMMainWindow::configureDocking() {
       return;
     }
     dock->setAllowedAreas(Qt::AllDockWidgetAreas);
-    const auto features = QDockWidget::DockWidgetClosable
-        | QDockWidget::DockWidgetMovable
-        | QDockWidget::DockWidgetFloatable;
+    const auto features = QDockWidget::DockWidgetClosable |
+                          QDockWidget::DockWidgetMovable |
+                          QDockWidget::DockWidgetFloatable;
     dock->setFeatures(features);
     dock->installEventFilter(this);
     addDockContextActions(dock);
@@ -220,6 +220,7 @@ void NMMainWindow::configureDocking() {
   configureDock(m_debugOverlayPanel);
   configureDock(m_issuesPanel);
   configureDock(m_diagnosticsPanel);
+  configureDock(m_sceneDialogueGraphPanel);
 
   applyDockLockState(m_layoutLocked);
   applyTabbedDockMode(m_tabbedDockOnly);

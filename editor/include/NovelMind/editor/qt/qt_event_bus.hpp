@@ -92,6 +92,29 @@ public:
    */
   void publishNavigationRequest(const QString &locationString);
 
+  /**
+   * @brief Convenience method to publish graph node added
+   */
+  void publishGraphNodeAdded(const QString &nodeId, const QString &nodeType,
+                             const QVariantMap &nodeData);
+
+  /**
+   * @brief Convenience method to publish graph node removed
+   */
+  void publishGraphNodeRemoved(const QString &nodeId);
+
+  /**
+   * @brief Convenience method to publish graph connection added
+   */
+  void publishGraphConnectionAdded(const QString &connectionId,
+                                   const QString &sourceNodeId,
+                                   const QString &targetNodeId);
+
+  /**
+   * @brief Convenience method to publish graph connection removed
+   */
+  void publishGraphConnectionRemoved(const QString &connectionId);
+
 signals:
   /**
    * @brief Emitted for all events
