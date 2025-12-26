@@ -314,7 +314,7 @@ void NMScriptHighlighter::highlightBlock(const QString &text) {
 
 NMScriptMinimap::NMScriptMinimap(NMScriptEditor *editor, QWidget *parent)
     : QWidget(parent), m_editor(editor) {
-  setFixedWidth(MINIMAP_WIDTH);
+  setFixedWidth(kMinimapWidth);
   setMouseTracking(true);
 
   // Connect to editor signals for updates
@@ -328,14 +328,14 @@ void NMScriptMinimap::updateContent() {
   m_totalLines = m_editor->document()->blockCount();
 
   // Create a cached image of the minimap
-  const int height = static_cast<int>(m_totalLines * LINE_HEIGHT);
+  const int height = static_cast<int>(m_totalLines * kMinimapLineHeight);
   if (height <= 0) {
     m_cachedImage = QImage();
     update();
     return;
   }
 
-  m_cachedImage = QImage(MINIMAP_WIDTH, std::max(1, height),
+  m_cachedImage = QImage(kMinimapWidth, std::max(1, height),
                          QImage::Format_ARGB32_Premultiplied);
   m_cachedImage.fill(Qt::transparent);
 
@@ -348,12 +348,12 @@ void NMScriptMinimap::updateContent() {
 
   while (block.isValid()) {
     const QString text = block.text();
-    const int y = static_cast<int>(lineNum * LINE_HEIGHT);
+    const int y = static_cast<int>(lineNum * kMinimapLineHeight);
     int x = 0;
 
     for (const QChar &ch : text) {
       if (ch.isSpace()) {
-        x += static_cast<int>(CHAR_WIDTH);
+        x += static_cast<int>(kMinimapCharWidth);
         continue;
       }
 
@@ -365,10 +365,10 @@ void NMScriptMinimap::updateContent() {
         color = QColor(220, 180, 120);
       }
 
-      painter.fillRect(QRectF(x, y, CHAR_WIDTH, LINE_HEIGHT - 1), color);
-      x += static_cast<int>(CHAR_WIDTH);
+      painter.fillRect(QRectF(x, y, kMinimapCharWidth, kMinimapLineHeight - 1), color);
+      x += static_cast<int>(kMinimapCharWidth);
 
-      if (x >= MINIMAP_WIDTH - 10) {
+      if (x >= kMinimapWidth - 10) {
         break;
       }
     }
@@ -401,7 +401,7 @@ void NMScriptMinimap::paintEvent(QPaintEvent *event) {
   // Calculate scale factor to fit minimap
   const double scale =
       std::min(1.0, static_cast<double>(height()) /
-                        static_cast<double>(m_totalLines * LINE_HEIGHT));
+                        static_cast<double>(m_totalLines * kMinimapLineHeight));
 
   // Draw the cached minimap image
   painter.save();

@@ -135,9 +135,9 @@ private:
   int m_lastVisibleLine = 0;
   int m_totalLines = 0;
   bool m_isDragging = false;
-  static constexpr int MINIMAP_WIDTH = 120;
-  static constexpr double CHAR_WIDTH = 1.5;
-  static constexpr double LINE_HEIGHT = 3.0;
+  static constexpr int kMinimapWidth = 120;
+  static constexpr double kMinimapCharWidth = 1.5;
+  static constexpr double kMinimapLineHeight = 3.0;
 };
 
 /**
