@@ -509,10 +509,10 @@ bool updateSceneSayStatement(const QString &sceneId, const QString &scriptPath,
   QString body = content.mid(bodyStart, bodyEnd - bodyStart);
 
   // Find and replace the first say statement
-  // Pattern: say <speaker> "<text>"
-  // We need to match say statements and replace them
+  // Pattern: say <speaker> "<text>" OR say "<text>"
+  // We need to match say statements with or without speaker
   const QRegularExpression sayRe(
-      "\\bsay\\s+(\\w+)\\s+\"([^\"]*)\"",
+      "\\bsay\\s+(?:(\\w+)\\s+)?\"([^\"]*)\"",
       QRegularExpression::DotMatchesEverythingOption);
 
   QRegularExpressionMatch sayMatch = sayRe.match(body);
