@@ -140,13 +140,16 @@ bool loadGraphLayout(QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
 
     // Choice branching mappings
     const QJsonObject choiceTargetsObj = obj.value("choiceTargets").toObject();
-    for (auto it = choiceTargetsObj.begin(); it != choiceTargetsObj.end(); ++it) {
+    for (auto it = choiceTargetsObj.begin(); it != choiceTargetsObj.end();
+         ++it) {
       node.choiceTargets.insert(it.key(), it.value().toString());
     }
 
     // Condition branching mappings
-    const QJsonObject conditionTargetsObj = obj.value("conditionTargets").toObject();
-    for (auto it = conditionTargetsObj.begin(); it != conditionTargetsObj.end(); ++it) {
+    const QJsonObject conditionTargetsObj =
+        obj.value("conditionTargets").toObject();
+    for (auto it = conditionTargetsObj.begin(); it != conditionTargetsObj.end();
+         ++it) {
       node.conditionTargets.insert(it.key(), it.value().toString());
     }
 
@@ -419,6 +422,11 @@ bool updateSceneSayStatement(const QString &sceneId, const QString &scriptPath,
     return false;
   }
 
+  // Skip if text is empty or is the default placeholder "New scene"
+  if (text.isEmpty() || text.trimmed() == "New scene") {
+    return true; // Not an error, just nothing to update
+  }
+
   QFile file(scriptPath);
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
     return false;
@@ -509,10 +517,10 @@ bool updateSceneSayStatement(const QString &sceneId, const QString &scriptPath,
   QString body = content.mid(bodyStart, bodyEnd - bodyStart);
 
   // Find and replace the first say statement
-  // Pattern: say <speaker> "<text>"
-  // We need to match say statements and replace them
+  // Pattern: say <speaker> "<text>" OR say "<text>"
+  // We need to match say statements with or without speaker
   const QRegularExpression sayRe(
-      "\\bsay\\s+(\\w+)\\s+\"([^\"]*)\"",
+      "\\bsay\\s+(?:(\\w+)\\s+)?\"([^\"]*)\"",
       QRegularExpression::DotMatchesEverythingOption);
 
   QRegularExpressionMatch sayMatch = sayRe.match(body);
