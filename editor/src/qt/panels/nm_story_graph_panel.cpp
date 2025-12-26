@@ -347,6 +347,17 @@ void NMStoryGraphPanel::setupToolBar() {
           &NMStoryGraphPanel::onExportDialogueClicked);
   m_toolBar->addWidget(m_exportDialogueBtn);
 
+  // Sync section (issue #82)
+  m_toolBar->addSeparator();
+
+  m_syncGraphToScriptBtn = new QPushButton(tr("Sync to Script"), m_toolBar);
+  m_syncGraphToScriptBtn->setToolTip(
+      tr("Synchronize Story Graph changes to NMScript files.\n"
+         "This writes graph node data (speaker, dialogue) to .nms files."));
+  connect(m_syncGraphToScriptBtn, &QPushButton::clicked, this,
+          &NMStoryGraphPanel::onSyncGraphToScript);
+  m_toolBar->addWidget(m_syncGraphToScriptBtn);
+
   if (auto *layout = qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
     layout->insertWidget(0, m_scrollableToolBar);
   }

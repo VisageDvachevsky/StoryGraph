@@ -925,4 +925,80 @@ void NMStoryGraphPanel::onGenerateLocalizationKeysClicked() {
   }
 }
 
+void NMStoryGraphPanel::onSyncGraphToScript() {
+  // Issue #82: Sync Story Graph data to NMScript files
+  // This ensures that visual edits made in the Story Graph are persisted
+  // to the authoritative NMScript source files.
+
+  if (!m_scene) {
+    return;
+  }
+
+  int nodesSynced = 0;
+  int nodesSkipped = 0;
+  QStringList syncErrors;
+
+  for (auto *item : m_scene->items()) {
+    auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item);
+    if (!node) {
+      continue;
+    }
+
+    const QString sceneId = node->nodeIdString();
+    const QString scriptPath = detail::resolveScriptPath(node);
+
+    if (scriptPath.isEmpty()) {
+      // Node has no associated script file - skip
+      ++nodesSkipped;
+      continue;
+    }
+
+    // Sync speaker and dialogue text to script
+    const QString speaker = node->dialogueSpeaker();
+    const QString dialogueText = node->dialogueText();
+
+    // Only sync if we have meaningful content (not default placeholder)
+    if (dialogueText.isEmpty() || dialogueText.trimmed() == "New scene") {
+      ++nodesSkipped;
+      continue;
+    }
+
+    bool success = detail::updateSceneSayStatement(sceneId, scriptPath, speaker,
+                                                   dialogueText);
+    if (success) {
+      ++nodesSynced;
+    } else {
+      syncErrors
+          << tr("Failed to sync node '%1' to '%2'").arg(sceneId, scriptPath);
+    }
+  }
+
+  // Report results to user
+  QString message;
+  if (syncErrors.isEmpty()) {
+    if (nodesSynced > 0) {
+      message = tr("Successfully synchronized %1 node(s) to NMScript files.\n"
+                   "(%2 node(s) skipped - no script or empty content)")
+                    .arg(nodesSynced)
+                    .arg(nodesSkipped);
+      qDebug() << "[StoryGraph] Sync to Script:" << nodesSynced << "synced,"
+               << nodesSkipped << "skipped";
+    } else {
+      message = tr("No nodes needed synchronization.\n"
+                   "(%1 node(s) skipped - no script or empty content)")
+                    .arg(nodesSkipped);
+    }
+  } else {
+    message = tr("Synchronization completed with errors:\n\n%1\n\n"
+                 "(%2 node(s) synced, %3 failed)")
+                  .arg(syncErrors.join("\n"))
+                  .arg(nodesSynced)
+                  .arg(syncErrors.size());
+    ErrorReporter::instance().reportWarning(message.toStdString());
+  }
+
+  // Show notification (non-blocking info dialog)
+  NMMessageDialog::showInfo(this, tr("Sync Graph to Script"), message);
+}
+
 } // namespace NovelMind::editor::qt
