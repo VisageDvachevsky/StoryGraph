@@ -298,10 +298,10 @@ void NMScriptHighlighter::highlightBlock(const QString &text) {
           (issue.severity == "error") ? m_errorFormat : m_warningFormat;
       // Apply to non-whitespace portion of line
       int startPos = 0;
-      while (startPos < text.size() && text.at(startPos).isSpace()) {
+      while (startPos < static_cast<int>(text.size()) && text.at(startPos).isSpace()) {
         ++startPos;
       }
-      if (startPos < text.size()) {
+      if (startPos < static_cast<int>(text.size())) {
         setFormat(startPos, clampToInt(text.size()) - startPos, format);
       }
     }
@@ -800,7 +800,7 @@ void NMFindReplaceWidget::clearHighlights() {
 }
 
 int NMFindReplaceWidget::countMatches() const {
-  return m_searchHighlights.size();
+  return static_cast<int>(m_searchHighlights.size());
 }
 
 void NMFindReplaceWidget::updateMatchCount() {
@@ -923,7 +923,7 @@ void NMCommandPalette::onItemActivated(QListWidgetItem *item) {
   }
 
   const int index = item->data(Qt::UserRole).toInt();
-  if (index >= 0 && index < m_commands.size()) {
+  if (index >= 0 && index < static_cast<int>(m_commands.size())) {
     hide();
     if (m_commands[index].action) {
       m_commands[index].action();
@@ -935,7 +935,7 @@ void NMCommandPalette::onItemActivated(QListWidgetItem *item) {
 void NMCommandPalette::updateCommandList(const QString &filter) {
   m_commandList->clear();
 
-  for (int i = 0; i < m_commands.size(); ++i) {
+  for (int i = 0; i < static_cast<int>(m_commands.size()); ++i) {
     const Command &cmd = m_commands[i];
 
     // Filter by name or category
@@ -1298,7 +1298,7 @@ void NMScriptEditor::keyPressEvent(QKeyEvent *event) {
   }
 
   const QString completionPrefix = textUnderCursor();
-  if (completionPrefix.size() < 2 && !isShortcut) {
+  if (static_cast<int>(completionPrefix.size()) < 2 && !isShortcut) {
     m_completer->popup()->hide();
     return;
   }
@@ -1544,7 +1544,7 @@ void NMScriptEditor::highlightCurrentLine() {
 QString NMScriptEditor::indentForCurrentLine(int *outLogicalIndent) const {
   const QString text = textCursor().block().text();
   int leading = 0;
-  while (leading < text.size() && text.at(leading).isSpace()) {
+  while (leading < static_cast<int>(text.size()) && text.at(leading).isSpace()) {
     ++leading;
   }
   if (outLogicalIndent) {
@@ -1592,7 +1592,7 @@ void NMScriptEditor::indentSelection(int delta) {
     } else {
       const QString text = block.text();
       int removable = 0;
-      while (removable < text.size() && text.at(removable).isSpace() &&
+      while (removable < static_cast<int>(text.size()) && text.at(removable).isSpace() &&
              removable < m_indentSize) {
         ++removable;
       }
@@ -1619,7 +1619,7 @@ void NMScriptEditor::indentSelection(int delta) {
     } else {
       const QString text = block.text();
       int removable = 0;
-      while (removable < text.size() && text.at(removable).isSpace() &&
+      while (removable < static_cast<int>(text.size()) && text.at(removable).isSpace() &&
              removable < m_indentSize) {
         ++removable;
       }
@@ -1807,7 +1807,7 @@ void NMScriptEditor::updateFoldingRegions() {
 
   QStack<int> braceStack;
 
-  for (int i = 0; i < lines.size(); ++i) {
+  for (int i = 0; i < static_cast<int>(lines.size()); ++i) {
     const QString &line = lines[i];
     const int openCount = static_cast<int>(line.count('{'));
     const int closeCount = static_cast<int>(line.count('}'));
@@ -1889,7 +1889,7 @@ BracketPosition NMScriptEditor::findMatchingBracket(int position) const {
   BracketPosition result;
   const QString text = document()->toPlainText();
 
-  if (position < 0 || position >= text.size()) {
+  if (position < 0 || position >= static_cast<int>(text.size())) {
     return result;
   }
 
@@ -1913,7 +1913,7 @@ BracketPosition NMScriptEditor::findMatchingBracket(int position) const {
   int depth = 1;
   int i = position + direction;
 
-  while (i >= 0 && i < text.size() && depth > 0) {
+  while (i >= 0 && i < static_cast<int>(text.size()) && depth > 0) {
     const QChar current = text.at(i);
     if (current == ch) {
       ++depth;
@@ -1952,7 +1952,7 @@ void NMScriptEditor::highlightMatchingBrackets() {
                                      palette.accentPrimary.blue(), 80));
 
   for (int checkPos : positions) {
-    if (checkPos < 0 || checkPos >= text.size()) {
+    if (checkPos < 0 || checkPos >= static_cast<int>(text.size())) {
       continue;
     }
 
