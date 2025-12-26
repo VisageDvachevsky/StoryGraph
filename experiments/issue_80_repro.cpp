@@ -1,9 +1,14 @@
 /**
- * @file test_say_statement_sync.cpp
- * @brief Test for issue #67 - syncing graph node text to .nms script
+ * @file issue_80_repro.cpp
+ * @brief Reproduction test for issue #80 - multiple say statements generated
  *
- * This test verifies that when dialogue text is changed in a graph node,
- * the corresponding say statement in the .nms script is updated.
+ * Issue: When user sets speaker="система" and text="Леха привет" in Inspector,
+ * the script contains:
+ *   say система "Леха привет\n"
+ *   say система ""
+ *   say "New scene"
+ *
+ * Expected: Only one say statement with the specified speaker and text.
  */
 
 #include <QFile>
@@ -12,7 +17,7 @@
 #include <QTextStream>
 #include <iostream>
 
-// Simplified version of the updateSceneSayStatement function for testing
+// Copy of the updateSceneSayStatement function
 bool updateSceneSayStatement(const QString &sceneId, const QString &scriptPath,
                              const QString &speaker, const QString &text) {
   if (sceneId.isEmpty() || scriptPath.isEmpty()) {
@@ -110,6 +115,7 @@ bool updateSceneSayStatement(const QString &sceneId, const QString &scriptPath,
 
   // Find and replace the first say statement
   // Pattern: say <speaker> "<text>" OR say "<text>"
+  // FIX for issue #80: Make speaker optional with (?:(\\w+)\\s+)?
   const QRegularExpression sayRe("\\bsay\\s+(?:(\\w+)\\s+)?\"([^\"]*)\"",
                                  QRegularExpression::DotMatchesEverythingOption);
 
@@ -150,108 +156,73 @@ bool updateSceneSayStatement(const QString &sceneId, const QString &scriptPath,
 }
 
 int main() {
-  // Create a test script file
-  const QString testScriptPath = "/tmp/test_script.nms";
-  const QString originalContent = R"(// Test script
-character Hero(name="Alex", color="#00AAFF")
-character Narrator(name="", color="#AAAAAA")
+  const QString testScriptPath = "/tmp/issue_80_test.nms";
 
-scene intro {
-    show background "bg_forest"
-    say Hero "Original text from script"
-    wait 1.0
-}
-
-scene chapter1 {
-    say Narrator "Another scene"
+  // Scenario 1: Start with default "New scene"
+  std::cout << "=== Scenario 1: Default scene ===" << std::endl;
+  const QString initialContent = R"(// test_scene
+scene test_scene {
+    say "New scene"
 }
 )";
 
-  // Write original script
-  QFile originalFile(testScriptPath);
-  if (!originalFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-    std::cerr << "Failed to create test script file" << std::endl;
+  QFile file1(testScriptPath);
+  if (!file1.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    std::cerr << "Failed to create test file" << std::endl;
     return 1;
   }
-  originalFile.write(originalContent.toUtf8());
-  originalFile.close();
+  file1.write(initialContent.toUtf8());
+  file1.close();
 
-  std::cout << "=== Original script ===" << std::endl;
-  std::cout << originalContent.toStdString() << std::endl;
+  std::cout << "Initial content:\n" << initialContent.toStdString() << std::endl;
 
-  // Test 1: Update text in intro scene
-  std::cout << "\n=== Test 1: Update text in intro scene ===" << std::endl;
-  bool result1 =
-      updateSceneSayStatement("intro", testScriptPath, "Hero",
-                              "Updated text from Story Graph editor!");
+  // Simulate user setting speaker="система" in Inspector
+  std::cout << "\n--- Setting speaker to 'система' ---" << std::endl;
+  updateSceneSayStatement("test_scene", testScriptPath, "система", "New scene");
 
-  if (result1) {
-    std::cout << "SUCCESS: say statement updated" << std::endl;
+  QFile file2(testScriptPath);
+  if (!file2.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    std::cerr << "Failed to read file" << std::endl;
+    return 1;
+  }
+  QString afterSpeaker = QString::fromUtf8(file2.readAll());
+  file2.close();
+  std::cout << "After setting speaker:\n" << afterSpeaker.toStdString() << std::endl;
+
+  // Simulate user setting text="Леха привет" in Inspector
+  std::cout << "--- Setting text to 'Леха привет' ---" << std::endl;
+  updateSceneSayStatement("test_scene", testScriptPath, "система", "Леха привет");
+
+  QFile file3(testScriptPath);
+  if (!file3.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    std::cerr << "Failed to read file" << std::endl;
+    return 1;
+  }
+  QString afterText = QString::fromUtf8(file3.readAll());
+  file3.close();
+  std::cout << "After setting text:\n" << afterText.toStdString() << std::endl;
+
+  // Count how many say statements exist
+  QRegularExpression countSay("\\bsay\\b");
+  QRegularExpressionMatchIterator it = countSay.globalMatch(afterText);
+  int sayCount = 0;
+  while (it.hasNext()) {
+    it.next();
+    sayCount++;
+  }
+
+  std::cout << "\n=== Results ===" << std::endl;
+  std::cout << "Number of 'say' statements found: " << sayCount << std::endl;
+
+  if (sayCount == 1) {
+    std::cout << "✓ PASS: Only one say statement (as expected)" << std::endl;
   } else {
-    std::cerr << "FAILED: could not update say statement" << std::endl;
-    return 1;
-  }
-
-  // Read and display updated script
-  QFile updatedFile1(testScriptPath);
-  if (!updatedFile1.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    std::cerr << "Failed to read updated script" << std::endl;
-    return 1;
-  }
-  QString updated1 = QString::fromUtf8(updatedFile1.readAll());
-  updatedFile1.close();
-
-  std::cout << "\nUpdated script:" << std::endl;
-  std::cout << updated1.toStdString() << std::endl;
-
-  // Verify the update
-  if (updated1.contains("Updated text from Story Graph editor!")) {
-    std::cout << "VERIFIED: New text is present in script" << std::endl;
-  } else {
-    std::cerr << "FAILED: New text not found in script" << std::endl;
-    return 1;
-  }
-
-  if (!updated1.contains("Original text from script")) {
-    std::cout << "VERIFIED: Old text is removed from script" << std::endl;
-  } else {
-    std::cerr << "FAILED: Old text still present in script" << std::endl;
-    return 1;
-  }
-
-  // Test 2: Update speaker as well
-  std::cout << "\n=== Test 2: Update speaker ===" << std::endl;
-  bool result2 = updateSceneSayStatement("intro", testScriptPath, "Narrator",
-                                         "Now the narrator speaks!");
-
-  if (result2) {
-    std::cout << "SUCCESS: say statement updated with new speaker" << std::endl;
-  } else {
-    std::cerr << "FAILED: could not update say statement" << std::endl;
-    return 1;
-  }
-
-  QFile updatedFile2(testScriptPath);
-  if (!updatedFile2.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    std::cerr << "Failed to read updated script" << std::endl;
-    return 1;
-  }
-  QString updated2 = QString::fromUtf8(updatedFile2.readAll());
-  updatedFile2.close();
-
-  std::cout << "\nUpdated script:" << std::endl;
-  std::cout << updated2.toStdString() << std::endl;
-
-  if (updated2.contains("say Narrator \"Now the narrator speaks!\"")) {
-    std::cout << "VERIFIED: Speaker and text updated correctly" << std::endl;
-  } else {
-    std::cerr << "FAILED: Speaker/text not updated correctly" << std::endl;
-    return 1;
+    std::cout << "✗ FAIL: Found " << sayCount << " say statements (expected 1)" << std::endl;
+    std::cout << "\nThis confirms issue #80" << std::endl;
   }
 
   // Clean up
   QFile::remove(testScriptPath);
 
-  std::cout << "\n=== ALL TESTS PASSED ===" << std::endl;
-  return 0;
+  return (sayCount == 1) ? 0 : 1;
 }
