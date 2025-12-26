@@ -1,8 +1,10 @@
 #ifndef NOVELMIND_EDITOR_NM_PLAY_TOOLBAR_PANEL_HPP
 #define NOVELMIND_EDITOR_NM_PLAY_TOOLBAR_PANEL_HPP
 
+#include <NovelMind/editor/project_manager.hpp>
 #include <NovelMind/editor/qt/nm_dock_panel.hpp>
 #include <NovelMind/editor/qt/nm_play_mode_controller.hpp>
+#include <QComboBox>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
@@ -28,10 +30,15 @@ public:
   void onShutdown() override;
   void onUpdate(double deltaTime) override;
 
+signals:
+  /// Emitted when playback source mode is changed by the user
+  void playbackSourceModeChanged(PlaybackSourceMode mode);
+
 private slots:
   void onPlayModeChanged(NMPlayModeController::PlayMode mode);
   void onCurrentNodeChanged(const QString &nodeId);
   void onBreakpointHit(const QString &nodeId);
+  void onSourceModeChanged(int index);
 
 private:
   void setupUI();
@@ -53,6 +60,10 @@ private:
   QSpinBox *m_slotSpin = nullptr;
   QLabel *m_statusLabel = nullptr;
   QTimer m_statusTimer;
+
+  // Playback source controls (issue #82)
+  QComboBox *m_sourceCombo = nullptr;
+  QLabel *m_sourceIndicator = nullptr;
 
   // State
   NMPlayModeController::PlayMode m_currentMode = NMPlayModeController::Stopped;

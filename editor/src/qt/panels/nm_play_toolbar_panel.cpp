@@ -28,6 +28,20 @@ void NMPlayToolbarPanel::onInitialize() {
   connect(&m_statusTimer, &QTimer::timeout, this,
           &NMPlayToolbarPanel::updateStatusLabel);
 
+  // Initialize playback source mode from project settings
+  auto &pm = ProjectManager::instance();
+  if (pm.hasOpenProject()) {
+    const auto &meta = pm.getMetadata();
+    int modeIndex = static_cast<int>(meta.playbackSourceMode);
+    if (m_sourceCombo && modeIndex >= 0 && modeIndex < m_sourceCombo->count()) {
+      m_sourceCombo->setCurrentIndex(modeIndex);
+    }
+  }
+  // Trigger initial indicator update
+  if (m_sourceCombo) {
+    onSourceModeChanged(m_sourceCombo->currentIndex());
+  }
+
   updateButtonStates();
 }
 
@@ -215,6 +229,38 @@ void NMPlayToolbarPanel::setupUI() {
   toolbar->addWidget(m_autoLoadButton);
   toolbar->addSeparator();
 
+  // Playback source selector (issue #82)
+  QLabel *sourceLabel = new QLabel(tr("Source:"));
+  sourceLabel->setObjectName("PlaybackSourceLabel");
+  sourceLabel->setToolTip(
+      tr("Playback source determines where story content comes from"));
+  toolbar->addWidget(sourceLabel);
+
+  m_sourceCombo = new QComboBox;
+  m_sourceCombo->setObjectName("PlaybackSourceCombo");
+  m_sourceCombo->addItem(tr("Script"),
+                         static_cast<int>(PlaybackSourceMode::Script));
+  m_sourceCombo->addItem(tr("Graph"),
+                         static_cast<int>(PlaybackSourceMode::Graph));
+  m_sourceCombo->addItem(tr("Mixed"),
+                         static_cast<int>(PlaybackSourceMode::Mixed));
+  m_sourceCombo->setToolTip(
+      tr("Script: NMScript files are authoritative\n"
+         "Graph: Story Graph visual data is authoritative\n"
+         "Mixed: Script + Graph overrides (Graph wins on conflicts)"));
+  m_sourceCombo->setCurrentIndex(0);
+  connect(m_sourceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, &NMPlayToolbarPanel::onSourceModeChanged);
+  toolbar->addWidget(m_sourceCombo);
+
+  // Source indicator showing current active source
+  m_sourceIndicator = new QLabel;
+  m_sourceIndicator->setObjectName("PlaybackSourceIndicator");
+  m_sourceIndicator->setToolTip(
+      tr("Shows which data source is currently being used for playback"));
+  toolbar->addWidget(m_sourceIndicator);
+  toolbar->addSeparator();
+
   // Status label
   m_statusLabel = new QLabel("Stopped");
   m_statusLabel->setObjectName("PlayStatusLabel");
@@ -323,6 +369,71 @@ void NMPlayToolbarPanel::showTransientStatus(const QString &text,
               "border-radius: 10px; padding: 3px 8px; font-weight: 600; }")
           .arg(color, bg, border));
   m_statusTimer.start(2000);
+}
+
+void NMPlayToolbarPanel::onSourceModeChanged(int index) {
+  if (!m_sourceCombo || !m_sourceIndicator) {
+    return;
+  }
+
+  auto mode =
+      static_cast<PlaybackSourceMode>(m_sourceCombo->itemData(index).toInt());
+
+  // Update indicator style based on selected mode
+  QString indicatorText;
+  QString indicatorColor;
+  QString indicatorBg;
+
+  switch (mode) {
+  case PlaybackSourceMode::Script:
+    indicatorText = "NMS";
+    indicatorColor = "#2196f3"; // Blue
+    indicatorBg = "#1d2b32";
+    break;
+  case PlaybackSourceMode::Graph:
+    indicatorText = "GRAPH";
+    indicatorColor = "#4caf50"; // Green
+    indicatorBg = "#1d2b1d";
+    break;
+  case PlaybackSourceMode::Mixed:
+    indicatorText = "MIXED";
+    indicatorColor = "#ff9800"; // Orange
+    indicatorBg = "#2b251d";
+    break;
+  }
+
+  m_sourceIndicator->setText(indicatorText);
+  m_sourceIndicator->setStyleSheet(
+      QString("QLabel { color: %1; background-color: %2; border: 1px solid %1; "
+              "border-radius: 8px; padding: 2px 6px; font-weight: bold; "
+              "font-size: 10px; }")
+          .arg(indicatorColor, indicatorBg));
+
+  // Update project settings
+  auto &pm = ProjectManager::instance();
+  if (pm.hasOpenProject()) {
+    auto meta = pm.getMetadata();
+    meta.playbackSourceMode = mode;
+    pm.setMetadata(meta);
+  }
+
+  // Emit signal for other panels to react
+  emit playbackSourceModeChanged(mode);
+
+  // Show transient status
+  QString modeStr;
+  switch (mode) {
+  case PlaybackSourceMode::Script:
+    modeStr = tr("Script (NMScript files)");
+    break;
+  case PlaybackSourceMode::Graph:
+    modeStr = tr("Graph (Story Graph visual data)");
+    break;
+  case PlaybackSourceMode::Mixed:
+    modeStr = tr("Mixed (Script + Graph overrides)");
+    break;
+  }
+  showTransientStatus(tr("Playback source: %1").arg(modeStr), indicatorColor);
 }
 
 } // namespace NovelMind::editor::qt

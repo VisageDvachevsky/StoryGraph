@@ -153,7 +153,8 @@ public:
   [[nodiscard]] QHash<QString, QString> choiceTargets() const {
     return m_choiceTargets;
   }
-  void setChoiceTarget(const QString &choiceOption, const QString &targetNodeId) {
+  void setChoiceTarget(const QString &choiceOption,
+                       const QString &targetNodeId) {
     m_choiceTargets.insert(choiceOption, targetNodeId);
   }
   [[nodiscard]] QString choiceTarget(const QString &choiceOption) const {
@@ -167,7 +168,8 @@ public:
   [[nodiscard]] QHash<QString, QString> conditionTargets() const {
     return m_conditionTargets;
   }
-  void setConditionTarget(const QString &outputLabel, const QString &targetNodeId) {
+  void setConditionTarget(const QString &outputLabel,
+                          const QString &targetNodeId) {
     m_conditionTargets.insert(outputLabel, targetNodeId);
   }
   [[nodiscard]] QString conditionTarget(const QString &outputLabel) const {
@@ -502,9 +504,10 @@ public:
     // Condition Node specific properties
     QString conditionExpression;  // e.g., "has_key && visited_shop"
     QStringList conditionOutputs; // Branch labels, e.g., ["true", "false"]
-    // Branching mappings - maps choice options/condition outputs to target node IDs
-    QHash<QString, QString> choiceTargets;     // e.g., {"Option 1": "node_123"}
-    QHash<QString, QString> conditionTargets;  // e.g., {"true": "node_456"}
+    // Branching mappings - maps choice options/condition outputs to target node
+    // IDs
+    QHash<QString, QString> choiceTargets;    // e.g., {"Option 1": "node_123"}
+    QHash<QString, QString> conditionTargets; // e.g., {"true": "node_456"}
   };
 
   void onInitialize() override;
@@ -589,6 +592,7 @@ private slots:
   void onLocalePreviewChanged(int index);
   void onExportDialogueClicked();
   void onGenerateLocalizationKeysClicked();
+  void onSyncGraphToScript(); // Issue #82: Sync Graph -> Script
 
 private:
   void setupToolBar();
@@ -617,6 +621,9 @@ private:
   QPushButton *m_exportDialogueBtn = nullptr;
   QPushButton *m_generateKeysBtn = nullptr;
   QString m_currentPreviewLocale;
+
+  // Sync controls (issue #82)
+  QPushButton *m_syncGraphToScriptBtn = nullptr;
 };
 
 } // namespace NovelMind::editor::qt

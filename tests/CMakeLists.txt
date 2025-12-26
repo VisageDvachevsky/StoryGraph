@@ -67,6 +67,7 @@ if(NOVELMIND_BUILD_EDITOR)
         integration/test_voice_manager.cpp
         integration/test_project_json.cpp
         integration/test_ui_panel_features.cpp
+        integration/test_playback_source_mode.cpp  # Issue #82
         unit/test_performance_cache.cpp
         unit/test_tutorial_types.cpp
     )

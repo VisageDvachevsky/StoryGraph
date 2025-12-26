@@ -42,6 +42,23 @@ class ProjectManager;
 class EventBus;
 
 /**
+ * @brief Playback source mode for story content
+ *
+ * Determines which data source is used during playback:
+ * - Script: NMScript files (.nms) are the authoritative source
+ * - Graph: Story Graph visual data is the authoritative source
+ * - Mixed: Script is used, but Graph data overrides when present
+ *
+ * This setting is designed to address issue #82, making the playback
+ * source explicit and predictable for users.
+ */
+enum class PlaybackSourceMode : u8 {
+  Script, ///< NMScript files are authoritative (default - original behavior)
+  Graph,  ///< Story Graph visual data is authoritative
+  Mixed   ///< Script + Graph overrides (Graph wins on conflicts)
+};
+
+/**
  * @brief Project metadata structure
  */
 struct ProjectMetadata {
@@ -65,6 +82,9 @@ struct ProjectMetadata {
   // Build settings
   std::string buildPreset = "release";
   std::vector<std::string> targetPlatforms = {"windows", "linux", "macos"};
+
+  // Playback settings (issue #82)
+  PlaybackSourceMode playbackSourceMode = PlaybackSourceMode::Script;
 };
 
 /**
