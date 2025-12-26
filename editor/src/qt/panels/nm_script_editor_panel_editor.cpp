@@ -750,7 +750,6 @@ void NMFindReplaceWidget::highlightAllMatches() {
     return;
   }
 
-  const auto &palette = NMStyleManager::instance().palette();
   QTextCharFormat format;
   format.setBackground(QColor(255, 255, 0, 80)); // Yellow highlight
 
@@ -934,8 +933,6 @@ void NMCommandPalette::onItemActivated(QListWidgetItem *item) {
 
 void NMCommandPalette::updateCommandList(const QString &filter) {
   m_commandList->clear();
-
-  const auto &palette = NMStyleManager::instance().palette();
 
   for (int i = 0; i < m_commands.size(); ++i) {
     const Command &cmd = m_commands[i];
