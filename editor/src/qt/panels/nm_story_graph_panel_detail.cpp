@@ -59,7 +59,153 @@ QString buildGraphBlock(const QStringList &targets) {
   return lines.join("\n");
 }
 
+/// Checks if a Unicode code point is a valid identifier start character.
+/// Matches the same rules as the NMScript lexer for consistency.
+bool isUnicodeIdentifierStart(uint codePoint) {
+  // ASCII letters
+  if ((codePoint >= 'A' && codePoint <= 'Z') ||
+      (codePoint >= 'a' && codePoint <= 'z')) {
+    return true;
+  }
+  // Latin Extended-A, Extended-B, Extended Additional
+  if (codePoint >= 0x00C0 && codePoint <= 0x024F)
+    return true;
+  // Cyrillic (Russian, Ukrainian, etc.)
+  if (codePoint >= 0x0400 && codePoint <= 0x04FF)
+    return true;
+  // Cyrillic Supplement
+  if (codePoint >= 0x0500 && codePoint <= 0x052F)
+    return true;
+  // Greek
+  if (codePoint >= 0x0370 && codePoint <= 0x03FF)
+    return true;
+  // CJK Unified Ideographs (Chinese, Japanese Kanji)
+  if (codePoint >= 0x4E00 && codePoint <= 0x9FFF)
+    return true;
+  // Hiragana
+  if (codePoint >= 0x3040 && codePoint <= 0x309F)
+    return true;
+  // Katakana
+  if (codePoint >= 0x30A0 && codePoint <= 0x30FF)
+    return true;
+  // Korean Hangul
+  if (codePoint >= 0xAC00 && codePoint <= 0xD7AF)
+    return true;
+  // Arabic
+  if (codePoint >= 0x0600 && codePoint <= 0x06FF)
+    return true;
+  // Hebrew
+  if (codePoint >= 0x0590 && codePoint <= 0x05FF)
+    return true;
+
+  return false;
+}
+
+/// Checks if a Unicode code point is valid within an identifier (after start).
+bool isUnicodeIdentifierPart(uint codePoint) {
+  // All identifier start chars are also valid parts
+  if (isUnicodeIdentifierStart(codePoint))
+    return true;
+  // ASCII digits
+  if (codePoint >= '0' && codePoint <= '9')
+    return true;
+  // Unicode combining marks (accents, etc.)
+  if (codePoint >= 0x0300 && codePoint <= 0x036F)
+    return true;
+
+  return false;
+}
+
 } // namespace
+
+bool isValidSpeakerIdentifier(const QString &speaker) {
+  if (speaker.isEmpty()) {
+    return false;
+  }
+
+  // Check first character: must be a letter or underscore
+  const QChar first = speaker.at(0);
+  if (first != '_' && !isUnicodeIdentifierStart(first.unicode())) {
+    return false;
+  }
+
+  // Check remaining characters: must be letters, digits, or underscores
+  for (int i = 1; i < speaker.length(); ++i) {
+    const QChar ch = speaker.at(i);
+    if (ch != '_' && !isUnicodeIdentifierPart(ch.unicode())) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+QString sanitizeSpeakerIdentifier(const QString &speaker) {
+  if (speaker.isEmpty()) {
+    return QStringLiteral("Narrator");
+  }
+
+  // If already valid, check if it has meaningful content (not just underscores)
+  if (isValidSpeakerIdentifier(speaker)) {
+    bool hasNonUnderscore = false;
+    for (const QChar &c : speaker) {
+      if (c != '_') {
+        hasNonUnderscore = true;
+        break;
+      }
+    }
+    if (hasNonUnderscore) {
+      return speaker;
+    }
+    // Fall through to return Narrator for underscore-only identifiers
+    return QStringLiteral("Narrator");
+  }
+
+  QString result;
+  result.reserve(speaker.length() + 1);
+
+  for (int i = 0; i < speaker.length(); ++i) {
+    const QChar ch = speaker.at(i);
+
+    if (i == 0) {
+      // First character must be a letter or underscore
+      if (ch == '_' || isUnicodeIdentifierStart(ch.unicode())) {
+        result += ch;
+      } else if (ch.isDigit()) {
+        // Prepend underscore if starts with digit
+        result += '_';
+        result += ch;
+      } else {
+        // Replace invalid first character with underscore
+        result += '_';
+      }
+    } else {
+      // Subsequent characters can be letters, digits, or underscores
+      if (ch == '_' || isUnicodeIdentifierPart(ch.unicode())) {
+        result += ch;
+      } else {
+        // Replace invalid character with underscore
+        result += '_';
+      }
+    }
+  }
+
+  // Ensure result contains at least one non-underscore character
+  // A speaker name consisting only of underscores is not meaningful
+  bool hasNonUnderscore = false;
+  for (const QChar &c : result) {
+    if (c != '_') {
+      hasNonUnderscore = true;
+      break;
+    }
+  }
+
+  if (result.isEmpty() || !hasNonUnderscore) {
+    return QStringLiteral("Narrator");
+  }
+
+  return result;
+}
 
 bool loadGraphLayout(QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
                      QString &entryScene) {
@@ -534,8 +680,9 @@ bool updateSceneSayStatement(const QString &sceneId, const QString &scriptPath,
   escapedText.replace("\\", "\\\\");
   escapedText.replace("\"", "\\\"");
 
-  // Determine the speaker to use
-  const QString speakerToUse = speaker.isEmpty() ? "Narrator" : speaker;
+  // Sanitize the speaker name to be a valid NMScript identifier (issue #92)
+  // This prevents runtime errors like "Undefined character 'rfsfsddsf' [E3001]"
+  const QString speakerToUse = sanitizeSpeakerIdentifier(speaker);
 
   if (!sayMatch.hasMatch()) {
     // No say statement found in the scene - add one at the beginning
