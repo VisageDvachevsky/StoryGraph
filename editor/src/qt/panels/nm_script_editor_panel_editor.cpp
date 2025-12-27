@@ -161,12 +161,12 @@ protected:
   void mousePressEvent(QMouseEvent *event) override {
     if (event->button() == Qt::LeftButton) {
       // Calculate which line was clicked
-      QTextBlock block = m_editor->firstVisibleBlock();
-      int top = static_cast<int>(m_editor->blockBoundingGeometry(block)
-                                     .translated(m_editor->contentOffset())
+      QTextBlock block = m_editor->getFirstVisibleBlock();
+      int top = static_cast<int>(m_editor->getBlockBoundingGeometry(block)
+                                     .translated(m_editor->getContentOffset())
                                      .top());
-      int bottom =
-          top + static_cast<int>(m_editor->blockBoundingRect(block).height());
+      int bottom = top + static_cast<int>(
+                             m_editor->getBlockBoundingRect(block).height());
 
       while (block.isValid() && top <= event->pos().y()) {
         if (block.isVisible() && bottom >= event->pos().y()) {
@@ -175,8 +175,8 @@ protected:
         }
         block = block.next();
         top = bottom;
-        bottom =
-            top + static_cast<int>(m_editor->blockBoundingRect(block).height());
+        bottom = top + static_cast<int>(
+                           m_editor->getBlockBoundingRect(block).height());
       }
     }
     QWidget::mousePressEvent(event);

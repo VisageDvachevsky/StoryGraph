@@ -373,6 +373,32 @@ public:
   int foldingAreaWidth() const;
 
   /**
+   * @brief Get the first visible block (wrapper for protected method)
+   */
+  [[nodiscard]] QTextBlock getFirstVisibleBlock() const {
+    return firstVisibleBlock();
+  }
+
+  /**
+   * @brief Get block bounding geometry (wrapper for protected method)
+   */
+  [[nodiscard]] QRectF getBlockBoundingGeometry(const QTextBlock &block) const {
+    return blockBoundingGeometry(block);
+  }
+
+  /**
+   * @brief Get block bounding rect (wrapper for protected method)
+   */
+  [[nodiscard]] QRectF getBlockBoundingRect(const QTextBlock &block) const {
+    return blockBoundingRect(block);
+  }
+
+  /**
+   * @brief Get content offset (wrapper for protected method)
+   */
+  [[nodiscard]] QPointF getContentOffset() const { return contentOffset(); }
+
+  /**
    * @brief Insert a code snippet at cursor position
    * @param snippetType Type of snippet: "scene", "choice", "if", "goto"
    */
