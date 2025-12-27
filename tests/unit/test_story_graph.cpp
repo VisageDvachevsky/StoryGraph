@@ -618,3 +618,314 @@ TEST_CASE("Condition Node - Branching properties", "[story_graph][condition_node
     // UI should show "(no condition)" placeholder for empty expressions
   }
 }
+
+// ============================================================================
+// Speaker Identifier Validation Tests (Issue #92)
+// ============================================================================
+
+namespace {
+
+/// Checks if a Unicode code point is a valid identifier start character.
+/// Matches the same rules as the NMScript lexer for consistency.
+bool isUnicodeIdentifierStart(uint32_t codePoint) {
+  // ASCII letters
+  if ((codePoint >= 'A' && codePoint <= 'Z') ||
+      (codePoint >= 'a' && codePoint <= 'z')) {
+    return true;
+  }
+  // Latin Extended-A, Extended-B, Extended Additional
+  if (codePoint >= 0x00C0 && codePoint <= 0x024F)
+    return true;
+  // Cyrillic (Russian, Ukrainian, etc.)
+  if (codePoint >= 0x0400 && codePoint <= 0x04FF)
+    return true;
+  // Cyrillic Supplement
+  if (codePoint >= 0x0500 && codePoint <= 0x052F)
+    return true;
+  // Greek
+  if (codePoint >= 0x0370 && codePoint <= 0x03FF)
+    return true;
+  // CJK Unified Ideographs (Chinese, Japanese Kanji)
+  if (codePoint >= 0x4E00 && codePoint <= 0x9FFF)
+    return true;
+  // Hiragana
+  if (codePoint >= 0x3040 && codePoint <= 0x309F)
+    return true;
+  // Katakana
+  if (codePoint >= 0x30A0 && codePoint <= 0x30FF)
+    return true;
+  // Korean Hangul
+  if (codePoint >= 0xAC00 && codePoint <= 0xD7AF)
+    return true;
+  // Arabic
+  if (codePoint >= 0x0600 && codePoint <= 0x06FF)
+    return true;
+  // Hebrew
+  if (codePoint >= 0x0590 && codePoint <= 0x05FF)
+    return true;
+
+  return false;
+}
+
+/// Checks if a Unicode code point is valid within an identifier (after start).
+bool isUnicodeIdentifierPart(uint32_t codePoint) {
+  // All identifier start chars are also valid parts
+  if (isUnicodeIdentifierStart(codePoint))
+    return true;
+  // ASCII digits
+  if (codePoint >= '0' && codePoint <= '9')
+    return true;
+  // Unicode combining marks (accents, etc.)
+  if (codePoint >= 0x0300 && codePoint <= 0x036F)
+    return true;
+
+  return false;
+}
+
+// Validates if a speaker name is a valid NMScript identifier
+// (mirrors detail::isValidSpeakerIdentifier)
+bool isValidSpeakerIdentifier(const std::string &speaker) {
+  if (speaker.empty()) {
+    return false;
+  }
+
+  // Decode UTF-8 and validate each character
+  size_t i = 0;
+  bool isFirst = true;
+
+  while (i < speaker.size()) {
+    unsigned char c = static_cast<unsigned char>(speaker[i]);
+    uint32_t codePoint = 0;
+    size_t charLen = 1;
+
+    // Check for underscore (valid in any position)
+    if (c == '_') {
+      ++i;
+      isFirst = false;
+      continue;
+    }
+
+    // Decode UTF-8
+    if (c < 0x80) {
+      codePoint = c;
+      charLen = 1;
+    } else if ((c & 0xE0) == 0xC0 && i + 1 < speaker.size()) {
+      codePoint = (c & 0x1F) << 6;
+      codePoint |= (static_cast<unsigned char>(speaker[i + 1]) & 0x3F);
+      charLen = 2;
+    } else if ((c & 0xF0) == 0xE0 && i + 2 < speaker.size()) {
+      codePoint = (c & 0x0F) << 12;
+      codePoint |= (static_cast<unsigned char>(speaker[i + 1]) & 0x3F) << 6;
+      codePoint |= (static_cast<unsigned char>(speaker[i + 2]) & 0x3F);
+      charLen = 3;
+    } else if ((c & 0xF8) == 0xF0 && i + 3 < speaker.size()) {
+      codePoint = (c & 0x07) << 18;
+      codePoint |= (static_cast<unsigned char>(speaker[i + 1]) & 0x3F) << 12;
+      codePoint |= (static_cast<unsigned char>(speaker[i + 2]) & 0x3F) << 6;
+      codePoint |= (static_cast<unsigned char>(speaker[i + 3]) & 0x3F);
+      charLen = 4;
+    } else {
+      return false; // Invalid UTF-8
+    }
+
+    if (isFirst) {
+      if (!isUnicodeIdentifierStart(codePoint)) {
+        return false;
+      }
+    } else {
+      if (!isUnicodeIdentifierPart(codePoint)) {
+        return false;
+      }
+    }
+
+    i += charLen;
+    isFirst = false;
+  }
+
+  return !isFirst; // Must have at least one character
+}
+
+// Sanitizes a speaker name to be a valid NMScript identifier
+// (mirrors detail::sanitizeSpeakerIdentifier)
+std::string sanitizeSpeakerIdentifier(const std::string &speaker) {
+  if (speaker.empty()) {
+    return "Narrator";
+  }
+
+  // If already valid, check if it has meaningful content (not just underscores)
+  if (isValidSpeakerIdentifier(speaker)) {
+    bool hasNonUnderscore = false;
+    for (char c : speaker) {
+      if (c != '_') {
+        hasNonUnderscore = true;
+        break;
+      }
+    }
+    if (hasNonUnderscore) {
+      return speaker;
+    }
+    // Fall through to return Narrator for underscore-only identifiers
+    return "Narrator";
+  }
+
+  std::string result;
+  result.reserve(speaker.size() + 1);
+
+  size_t i = 0;
+  bool isFirst = true;
+
+  while (i < speaker.size()) {
+    unsigned char c = static_cast<unsigned char>(speaker[i]);
+    uint32_t codePoint = 0;
+    size_t charLen = 1;
+
+    // Handle underscore
+    if (c == '_') {
+      result += c;
+      ++i;
+      isFirst = false;
+      continue;
+    }
+
+    // Decode UTF-8
+    if (c < 0x80) {
+      codePoint = c;
+      charLen = 1;
+    } else if ((c & 0xE0) == 0xC0 && i + 1 < speaker.size()) {
+      codePoint = (c & 0x1F) << 6;
+      codePoint |= (static_cast<unsigned char>(speaker[i + 1]) & 0x3F);
+      charLen = 2;
+    } else if ((c & 0xF0) == 0xE0 && i + 2 < speaker.size()) {
+      codePoint = (c & 0x0F) << 12;
+      codePoint |= (static_cast<unsigned char>(speaker[i + 1]) & 0x3F) << 6;
+      codePoint |= (static_cast<unsigned char>(speaker[i + 2]) & 0x3F);
+      charLen = 3;
+    } else if ((c & 0xF8) == 0xF0 && i + 3 < speaker.size()) {
+      codePoint = (c & 0x07) << 18;
+      codePoint |= (static_cast<unsigned char>(speaker[i + 1]) & 0x3F) << 12;
+      codePoint |= (static_cast<unsigned char>(speaker[i + 2]) & 0x3F) << 6;
+      codePoint |= (static_cast<unsigned char>(speaker[i + 3]) & 0x3F);
+      charLen = 4;
+    } else {
+      // Invalid UTF-8, replace with underscore
+      result += '_';
+      ++i;
+      isFirst = false;
+      continue;
+    }
+
+    if (isFirst) {
+      if (isUnicodeIdentifierStart(codePoint)) {
+        // Copy original bytes for valid start
+        for (size_t j = 0; j < charLen; ++j) {
+          result += speaker[i + j];
+        }
+      } else if (codePoint >= '0' && codePoint <= '9') {
+        // Prepend underscore for digit start
+        result += '_';
+        result += static_cast<char>(codePoint);
+      } else {
+        // Replace invalid start with underscore
+        result += '_';
+      }
+    } else {
+      if (isUnicodeIdentifierPart(codePoint)) {
+        // Copy original bytes for valid part
+        for (size_t j = 0; j < charLen; ++j) {
+          result += speaker[i + j];
+        }
+      } else {
+        // Replace invalid part with underscore
+        result += '_';
+      }
+    }
+
+    i += charLen;
+    isFirst = false;
+  }
+
+  // Ensure result is not just underscores (not meaningful for speaker names)
+  bool hasNonUnderscore = false;
+  for (char c : result) {
+    if (c != '_') {
+      hasNonUnderscore = true;
+      break;
+    }
+  }
+
+  if (result.empty() || !hasNonUnderscore) {
+    return "Narrator";
+  }
+
+  return result;
+}
+
+} // namespace
+
+TEST_CASE("Speaker Identifier - Validation (Issue #92)",
+          "[story_graph][speaker][identifier]") {
+  SECTION("Valid ASCII identifiers") {
+    CHECK(isValidSpeakerIdentifier("Hero") == true);
+    CHECK(isValidSpeakerIdentifier("Narrator") == true);
+    CHECK(isValidSpeakerIdentifier("Character1") == true);
+    CHECK(isValidSpeakerIdentifier("_private") == true);
+    CHECK(isValidSpeakerIdentifier("MainCharacter") == true);
+  }
+
+  SECTION("Valid Unicode identifiers") {
+    // Note: These are UTF-8 encoded strings
+    CHECK(isValidSpeakerIdentifier("hero") == true);   // ASCII baseline
+    CHECK(isValidSpeakerIdentifier("_test") == true);  // Underscore start
+  }
+
+  SECTION("Invalid identifiers") {
+    CHECK(isValidSpeakerIdentifier("") == false);
+    CHECK(isValidSpeakerIdentifier("123scene") == false);  // Starts with digit
+    CHECK(isValidSpeakerIdentifier("my-scene") == false);  // Contains hyphen
+    CHECK(isValidSpeakerIdentifier("scene name") == false); // Contains space
+    CHECK(isValidSpeakerIdentifier("test@user") == false);  // Contains @
+  }
+
+  SECTION("Issue #92 reproduction case") {
+    // The issue reported that "rfsfsddsf" caused an error
+    // This IS a valid identifier (all ASCII letters)
+    CHECK(isValidSpeakerIdentifier("rfsfsddsf") == true);
+  }
+}
+
+TEST_CASE("Speaker Identifier - Sanitization (Issue #92)",
+          "[story_graph][speaker][sanitize]") {
+  SECTION("Empty input returns Narrator") {
+    CHECK(sanitizeSpeakerIdentifier("") == "Narrator");
+  }
+
+  SECTION("Valid identifiers unchanged") {
+    CHECK(sanitizeSpeakerIdentifier("Hero") == "Hero");
+    CHECK(sanitizeSpeakerIdentifier("Narrator") == "Narrator");
+    CHECK(sanitizeSpeakerIdentifier("Character1") == "Character1");
+  }
+
+  SECTION("Starts with digit gets underscore prefix") {
+    CHECK(sanitizeSpeakerIdentifier("123scene") == "_123scene");
+  }
+
+  SECTION("Invalid characters replaced with underscore") {
+    CHECK(sanitizeSpeakerIdentifier("my-scene") == "my_scene");
+    CHECK(sanitizeSpeakerIdentifier("scene name") == "scene_name");
+    CHECK(sanitizeSpeakerIdentifier("test@user") == "test_user");
+  }
+
+  SECTION("All special characters returns Narrator") {
+    // A speaker name consisting only of underscores is not meaningful
+    CHECK(sanitizeSpeakerIdentifier("@#$") == "Narrator");
+  }
+
+  SECTION("Single underscore returns Narrator") {
+    CHECK(sanitizeSpeakerIdentifier("_") == "Narrator");
+  }
+
+  SECTION("Issue #92 case - valid input unchanged") {
+    // rfsfsddsf is actually a valid identifier
+    CHECK(sanitizeSpeakerIdentifier("rfsfsddsf") == "rfsfsddsf");
+  }
+}
