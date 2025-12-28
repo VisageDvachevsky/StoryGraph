@@ -427,31 +427,68 @@ QList<BuildWarning> NMBuildSettingsPanel::scanForWarnings() const {
   // Get project path
   QString projectPath = ".";
 
+  // First, run the build system's validation to ensure consistency
+  // between UI warnings and actual build preflight checks
+  editor::BuildSystem buildSystem;
+  auto validationResult =
+      buildSystem.validateProject(projectPath.toStdString());
+  if (validationResult.isOk()) {
+    for (const auto &err : validationResult.value()) {
+      BuildWarning w;
+      w.type = BuildWarningType::BrokenReference;
+      w.message = QString::fromStdString(err);
+      w.filePath = projectPath;
+      w.isCritical = true; // Build system errors are critical
+      warnings.append(w);
+    }
+  }
+
   try {
     fs::path projectDir(projectPath.toStdString());
 
-    // Check for missing project.json
+    // Check for missing project.json (also checked by build system,
+    // but we add it here with more user-friendly message)
     if (!fs::exists(projectDir / "project.json")) {
-      BuildWarning w;
-      w.type = BuildWarningType::MissingAsset;
-      w.message = "Missing project.json configuration file";
-      w.filePath =
-          QString::fromStdString((projectDir / "project.json").string());
-      w.isCritical = true;
-      warnings.append(w);
+      // Only add if not already added by build system validation
+      bool alreadyAdded = false;
+      for (const auto &w : warnings) {
+        if (w.message.contains("project.json")) {
+          alreadyAdded = true;
+          break;
+        }
+      }
+      if (!alreadyAdded) {
+        BuildWarning w;
+        w.type = BuildWarningType::MissingAsset;
+        w.message = "Missing project.json configuration file";
+        w.filePath =
+            QString::fromStdString((projectDir / "project.json").string());
+        w.isCritical = true;
+        warnings.append(w);
+      }
     }
 
     // Check for missing required directories
     std::vector<std::string> requiredDirs = {"assets", "scripts"};
     for (const auto &dir : requiredDirs) {
       if (!fs::exists(projectDir / dir)) {
-        BuildWarning w;
-        w.type = BuildWarningType::MissingAsset;
-        w.message = QString("Missing required directory: %1")
-                        .arg(QString::fromStdString(dir));
-        w.filePath = QString::fromStdString((projectDir / dir).string());
-        w.isCritical = true;
-        warnings.append(w);
+        // Only add if not already added by build system validation
+        bool alreadyAdded = false;
+        for (const auto &w : warnings) {
+          if (w.message.contains(QString::fromStdString(dir))) {
+            alreadyAdded = true;
+            break;
+          }
+        }
+        if (!alreadyAdded) {
+          BuildWarning w;
+          w.type = BuildWarningType::MissingAsset;
+          w.message = QString("Missing required directory: %1")
+                          .arg(QString::fromStdString(dir));
+          w.filePath = QString::fromStdString((projectDir / dir).string());
+          w.isCritical = true;
+          warnings.append(w);
+        }
       }
     }
 
@@ -491,6 +528,49 @@ void NMBuildSettingsPanel::startBuild() {
   editor::BuildConfig config;
   config.projectPath = "."; // Get from project manager
   config.outputPath = m_outputPathEdit->text().toStdString();
+
+  // Run preflight validation before starting build
+  // This ensures consistency between UI validation and build system validation
+  auto validationResult = buildSystem->validateProject(config.projectPath);
+  if (validationResult.isError()) {
+    m_buildStatus = BuildStatus::Failed;
+    QString errorMsg = QString::fromStdString(validationResult.error());
+    appendLog(QString("Preflight validation error: %1").arg(errorMsg));
+    m_progressBar->setFormat("Failed - Validation Error");
+    m_statusLabel->setText(errorMsg);
+    NMMessageDialog::showError(
+        this, tr("Build Cancelled"),
+        tr("Build was cancelled due to preflight validation error:\n\n%1")
+            .arg(errorMsg));
+    return;
+  }
+
+  auto preflightErrors = validationResult.value();
+  if (!preflightErrors.empty()) {
+    // Build a detailed error message explaining why the build was cancelled
+    QString errorList;
+    for (const auto &err : preflightErrors) {
+      errorList += QString("• %1\n").arg(QString::fromStdString(err));
+      appendLog(
+          QString("Preflight error: %1").arg(QString::fromStdString(err)));
+    }
+
+    m_buildStatus = BuildStatus::Failed;
+    m_progressBar->setFormat("Failed - Preflight Errors");
+    m_statusLabel->setText(
+        QString("%1 preflight error(s) found").arg(preflightErrors.size()));
+
+    NMMessageDialog::showError(
+        this, tr("Build Cancelled"),
+        tr("Build was cancelled because the following preflight checks "
+           "failed:\n\n%1\n"
+           "Please fix these issues and try again.\n\n"
+           "Tip: Use Project > Validate to check for issues before building.")
+            .arg(errorList));
+    return;
+  }
+
+  appendLog("Preflight validation passed");
   config.executableName = "MyVisualNovel"; // Get from UI
 
   // Set platform
