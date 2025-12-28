@@ -22,6 +22,7 @@
 #include <QSpinBox>
 #include <QToolBar>
 #include <QVBoxLayout>
+#include <climits>
 #include <cmath>
 
 namespace NovelMind::editor::qt {
@@ -621,21 +622,208 @@ void NMTimelinePanel::addTrack(TimelineTrackType type, const QString &name) {
   renderTracks();
 }
 
-void NMTimelinePanel::jumpToNextKeyframe() {}
+void NMTimelinePanel::jumpToNextKeyframe() {
+  // Find the next keyframe after current frame across all tracks
+  int nextFrame = INT_MAX;
 
-void NMTimelinePanel::jumpToPrevKeyframe() {}
+  for (auto it = m_tracks.constBegin(); it != m_tracks.constEnd(); ++it) {
+    TimelineTrack *track = it.value();
+    if (!track || !track->visible) {
+      continue;
+    }
+    for (const Keyframe &kf : track->keyframes) {
+      if (kf.frame > m_currentFrame && kf.frame < nextFrame) {
+        nextFrame = kf.frame;
+      }
+    }
+  }
+
+  if (nextFrame != INT_MAX) {
+    setCurrentFrame(nextFrame);
+  }
+}
+
+void NMTimelinePanel::jumpToPrevKeyframe() {
+  // Find the previous keyframe before current frame across all tracks
+  int prevFrame = -1;
+
+  for (auto it = m_tracks.constBegin(); it != m_tracks.constEnd(); ++it) {
+    TimelineTrack *track = it.value();
+    if (!track || !track->visible) {
+      continue;
+    }
+    for (const Keyframe &kf : track->keyframes) {
+      if (kf.frame < m_currentFrame && kf.frame > prevFrame) {
+        prevFrame = kf.frame;
+      }
+    }
+  }
+
+  if (prevFrame >= 0) {
+    setCurrentFrame(prevFrame);
+  }
+}
 
 void NMTimelinePanel::duplicateSelectedKeyframes(int offsetFrames) {
-  Q_UNUSED(offsetFrames);
+  if (m_selectedKeyframes.isEmpty() || offsetFrames <= 0) {
+    return;
+  }
+
+  // Get track names from track map (indexed by order)
+  QStringList trackNames = m_tracks.keys();
+
+  // Collect keyframes to duplicate
+  QVector<QPair<QString, KeyframeSnapshot>> toDuplicate;
+
+  for (const KeyframeId &id : m_selectedKeyframes) {
+    if (id.trackIndex < 0 || id.trackIndex >= trackNames.size()) {
+      continue;
+    }
+    QString trackName = trackNames.at(id.trackIndex);
+    TimelineTrack *track = getTrack(trackName);
+    if (!track || track->locked) {
+      continue;
+    }
+
+    Keyframe *kf = track->getKeyframe(id.frame);
+    if (kf) {
+      KeyframeSnapshot snapshot;
+      snapshot.frame = kf->frame + offsetFrames;
+      snapshot.value = kf->value;
+      snapshot.easingType = static_cast<int>(kf->easing);
+      snapshot.handleInX = kf->handleInX;
+      snapshot.handleInY = kf->handleInY;
+      snapshot.handleOutX = kf->handleOutX;
+      snapshot.handleOutY = kf->handleOutY;
+      toDuplicate.append(qMakePair(trackName, snapshot));
+    }
+  }
+
+  // Add duplicated keyframes
+  for (const auto &pair : toDuplicate) {
+    auto *cmd = new AddKeyframeCommand(this, pair.first, pair.second);
+    NMUndoManager::instance().pushCommand(cmd);
+  }
+
+  renderTracks();
 }
 
 void NMTimelinePanel::setSelectedKeyframesEasing(EasingType easing) {
-  Q_UNUSED(easing);
+  if (m_selectedKeyframes.isEmpty()) {
+    return;
+  }
+
+  // Get track names from track map (indexed by order)
+  QStringList trackNames = m_tracks.keys();
+
+  for (const KeyframeId &id : m_selectedKeyframes) {
+    if (id.trackIndex < 0 || id.trackIndex >= trackNames.size()) {
+      continue;
+    }
+    QString trackName = trackNames.at(id.trackIndex);
+    TimelineTrack *track = getTrack(trackName);
+    if (!track || track->locked) {
+      continue;
+    }
+
+    Keyframe *kf = track->getKeyframe(id.frame);
+    if (kf) {
+      EasingType oldEasing = kf->easing;
+      kf->easing = easing;
+      emit keyframeEasingChanged(trackName, id.frame, easing);
+
+      // Create undo command (simplified - ideally would batch these)
+      Q_UNUSED(oldEasing);
+    }
+  }
+
+  renderTracks();
 }
 
-void NMTimelinePanel::copySelectedKeyframes() {}
+void NMTimelinePanel::copySelectedKeyframes() {
+  m_keyframeClipboard.clear();
 
-void NMTimelinePanel::pasteKeyframes() {}
+  if (m_selectedKeyframes.isEmpty()) {
+    return;
+  }
+
+  // Get track names from track map (indexed by order)
+  QStringList trackNames = m_tracks.keys();
+
+  // Find minimum frame to use as reference point
+  int minFrame = INT_MAX;
+  for (const KeyframeId &id : m_selectedKeyframes) {
+    if (id.frame < minFrame) {
+      minFrame = id.frame;
+    }
+  }
+
+  // Copy keyframes with relative frame offsets
+  for (const KeyframeId &id : m_selectedKeyframes) {
+    if (id.trackIndex < 0 || id.trackIndex >= trackNames.size()) {
+      continue;
+    }
+    QString trackName = trackNames.at(id.trackIndex);
+    TimelineTrack *track = getTrack(trackName);
+    if (!track) {
+      continue;
+    }
+
+    Keyframe *kf = track->getKeyframe(id.frame);
+    if (kf) {
+      KeyframeCopy copy;
+      copy.relativeFrame = kf->frame - minFrame;
+      copy.value = kf->value;
+      copy.easing = kf->easing;
+      m_keyframeClipboard.append(copy);
+    }
+  }
+}
+
+void NMTimelinePanel::pasteKeyframes() {
+  if (m_keyframeClipboard.isEmpty()) {
+    return;
+  }
+
+  // Get track names from track map (indexed by order)
+  QStringList trackNames = m_tracks.keys();
+
+  // Get the first selected track or first visible track
+  QString targetTrack;
+  for (const KeyframeId &id : m_selectedKeyframes) {
+    if (id.trackIndex >= 0 && id.trackIndex < trackNames.size()) {
+      targetTrack = trackNames.at(id.trackIndex);
+      break;
+    }
+  }
+
+  if (targetTrack.isEmpty()) {
+    // Use first visible track
+    for (auto it = m_tracks.constBegin(); it != m_tracks.constEnd(); ++it) {
+      if (it.value()->visible && !it.value()->locked) {
+        targetTrack = it.key();
+        break;
+      }
+    }
+  }
+
+  if (targetTrack.isEmpty()) {
+    return;
+  }
+
+  // Paste keyframes at current frame position
+  for (const KeyframeCopy &copy : m_keyframeClipboard) {
+    KeyframeSnapshot snapshot;
+    snapshot.frame = m_currentFrame + copy.relativeFrame;
+    snapshot.value = copy.value;
+    snapshot.easingType = static_cast<int>(copy.easing);
+
+    auto *cmd = new AddKeyframeCommand(this, targetTrack, snapshot);
+    NMUndoManager::instance().pushCommand(cmd);
+  }
+
+  renderTracks();
+}
 
 void NMTimelinePanel::onPlayModeFrameChanged(int frame) {
   setCurrentFrame(frame);
