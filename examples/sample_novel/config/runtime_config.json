@@ -1,0 +1,61 @@
+{
+  "version": "1.0",
+  "game": {
+    "name": "Sample Novel",
+    "version": "1.0.0",
+    "build_number": 1
+  },
+  "window": {
+    "width": 1280,
+    "height": 720,
+    "fullscreen": false,
+    "vsync": true,
+    "resizable": false,
+    "borderless": false
+  },
+  "audio": {
+    "master": 1.0,
+    "music": 0.8,
+    "voice": 0.9,
+    "sfx": 0.8,
+    "ambient": 0.7,
+    "ui": 0.6,
+    "muted": false
+  },
+  "text": {
+    "speed": 40,
+    "auto_advance_ms": 1500,
+    "typewriter": true,
+    "auto_advance": false,
+    "skip_unread": false
+  },
+  "localization": {
+    "default_locale": "en",
+    "current_locale": "en",
+    "available_locales": ["en", "ru"]
+  },
+  "packs": {
+    "directory": "packs",
+    "index_file": "packs_index.json",
+    "encrypted": false
+  },
+  "saves": {
+    "directory": "saves",
+    "enable_compression": true,
+    "enable_encryption": false,
+    "max_slots": 100,
+    "auto_save_enabled": true,
+    "auto_save_interval_ms": 300000
+  },
+  "runtime": {
+    "enable_logging": true,
+    "log_level": "info",
+    "log_directory": "logs"
+  },
+  "debug": {
+    "enable_console": false,
+    "show_fps": false,
+    "show_overlay": false,
+    "hot_reload": false
+  }
+}
