@@ -23,15 +23,20 @@
 #include "NovelMind/runtime/game_launcher.hpp"
 #include <iostream>
 
-int main(int argc, char *argv[]) {
+namespace {
+
+int runGameLauncher(int argc, char *argv[]) {
   NovelMind::runtime::GameLauncher launcher;
 
   // Set up error callback for user-friendly error display
   launcher.setOnError([](const NovelMind::runtime::LauncherError &error) {
     std::cerr << "\n";
-    std::cerr << "╔════════════════════════════════════════════════════════════╗\n";
-    std::cerr << "║                    An Error Occurred                       ║\n";
-    std::cerr << "╚════════════════════════════════════════════════════════════╝\n\n";
+    std::cerr
+        << "╔════════════════════════════════════════════════════════════╗\n";
+    std::cerr
+        << "║                    An Error Occurred                       ║\n";
+    std::cerr
+        << "╚════════════════════════════════════════════════════════════╝\n\n";
     std::cerr << "Error: " << error.message << "\n\n";
 
     if (!error.details.empty()) {
@@ -42,7 +47,8 @@ int main(int argc, char *argv[]) {
       std::cerr << "How to fix:\n  " << error.suggestion << "\n\n";
     }
 
-    std::cerr << "If this problem persists, check the logs folder for more details.\n";
+    std::cerr << "If this problem persists, check the logs folder for more "
+                 "details.\n";
     std::cerr << "\nPress Enter to exit...";
     std::cin.get();
   });
@@ -57,3 +63,8 @@ int main(int argc, char *argv[]) {
   // Run the game
   return launcher.run();
 }
+
+} // namespace
+
+// Standard main for console applications
+int main(int argc, char *argv[]) { return runGameLauncher(argc, argv); }

@@ -36,14 +36,9 @@ set_target_properties(game_launcher PROPERTIES
     OUTPUT_NAME "game_launcher"
 )
 
-# On Windows, use WIN32 to hide the console for release builds
-if(WIN32)
-    if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-        set_target_properties(game_launcher PROPERTIES
-            WIN32_EXECUTABLE TRUE
-        )
-    endif()
-endif()
+# Note: Console window is shown for now. To hide it on Windows Release builds,
+# set WIN32_EXECUTABLE TRUE and use WinMain entry point instead of main.
+# For simplicity, we keep the console visible which aids in debugging.
 
 # On macOS, set properties for app bundle (optional)
 if(APPLE)
