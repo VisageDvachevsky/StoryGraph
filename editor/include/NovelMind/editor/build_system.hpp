@@ -115,9 +115,9 @@ struct BuildConfig {
   CompressionLevel compression = CompressionLevel::Balanced;
 
   // Signing (RSA)
-  bool signPacks = false;                   // Sign packs with RSA for integrity
-  std::string signingPrivateKeyPath;        // Path to RSA private key PEM file
-  std::string signingPublicKeyPath;         // Path to RSA public key for bundling
+  bool signPacks = false;            // Sign packs with RSA for integrity
+  std::string signingPrivateKeyPath; // Path to RSA private key PEM file
+  std::string signingPublicKeyPath;  // Path to RSA public key for bundling
 
   // Features
   bool includeDebugConsole = false;
@@ -139,9 +139,9 @@ struct BuildConfig {
   std::string signingCertificate;
 
   // Determinism - for reproducible builds
-  bool deterministicBuild = true;           // Enable deterministic ordering
-  u64 fixedBuildTimestamp = 0;              // If non-zero, use this instead of current time
-  u32 fixedRandomSeed = 0;                  // If non-zero, use for any randomization
+  bool deterministicBuild = true; // Enable deterministic ordering
+  u64 fixedBuildTimestamp = 0; // If non-zero, use this instead of current time
+  u32 fixedRandomSeed = 0;     // If non-zero, use for any randomization
 };
 
 /**
@@ -242,6 +242,14 @@ class BuildSystem {
 public:
   BuildSystem();
   ~BuildSystem();
+
+  /**
+   * @brief Configure the build system with settings
+   *
+   * This stores the configuration for later use (e.g., for getBuildTimestamp()
+   * before actually starting a build). Call startBuild() to begin the build.
+   */
+  void configure(const BuildConfig &config);
 
   /**
    * @brief Start a build with the given configuration

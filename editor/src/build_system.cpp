@@ -33,7 +33,7 @@
 #include <openssl/sha.h>
 #endif
 
-#include <cstdlib>  // for std::getenv
+#include <cstdlib> // for std::getenv
 
 namespace fs = std::filesystem;
 
@@ -269,8 +269,8 @@ std::array<u8, 32> BuildSystem::calculateSha256(const u8 *data, usize size) {
   return hash;
 }
 
-Result<std::vector<u8>>
-BuildSystem::compressData(const std::vector<u8> &data, CompressionLevel level) {
+Result<std::vector<u8>> BuildSystem::compressData(const std::vector<u8> &data,
+                                                  CompressionLevel level) {
   if (level == CompressionLevel::None || data.empty()) {
     return Result<std::vector<u8>>::ok(data);
   }
@@ -317,10 +317,9 @@ BuildSystem::compressData(const std::vector<u8> &data, CompressionLevel level) {
 #endif
 }
 
-Result<std::vector<u8>>
-BuildSystem::encryptData(const std::vector<u8> &data,
-                         const std::vector<u8> &key,
-                         std::array<u8, 12> &ivOut) {
+Result<std::vector<u8>> BuildSystem::encryptData(const std::vector<u8> &data,
+                                                 const std::vector<u8> &key,
+                                                 std::array<u8, 12> &ivOut) {
   if (key.size() != 32) {
     return Result<std::vector<u8>>::error(
         "Invalid key size: expected 32 bytes for AES-256-GCM");
@@ -437,8 +436,8 @@ Result<std::vector<u8>> BuildSystem::loadEncryptionKeyFromEnv() {
 }
 
 // Load encryption key from file
-Result<std::vector<u8>> BuildSystem::loadEncryptionKeyFromFile(
-    const std::string &path) {
+Result<std::vector<u8>>
+BuildSystem::loadEncryptionKeyFromFile(const std::string &path) {
   std::ifstream file(path, std::ios::binary);
   if (!file.is_open()) {
     return Result<std::vector<u8>>::error("Cannot open key file: " + path);
@@ -535,7 +534,8 @@ u64 BuildSystem::getBuildTimestamp() const {
           .count());
 }
 
-ResourceType BuildSystem::getResourceTypeFromExtension(const std::string &path) {
+ResourceType
+BuildSystem::getResourceTypeFromExtension(const std::string &path) {
   std::string ext = fs::path(path).extension().string();
   std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
@@ -595,6 +595,8 @@ BuildSystem::~BuildSystem() {
     m_buildThread->join();
   }
 }
+
+void BuildSystem::configure(const BuildConfig &config) { m_config = config; }
 
 Result<void> BuildSystem::startBuild(const BuildConfig &config) {
   if (m_buildInProgress) {
@@ -1368,8 +1370,8 @@ Result<void> BuildSystem::packResources() {
   updateProgress(0.95f, "Generating pack index...");
 
   // Helper function to calculate pack hash and size
-  auto getPackInfo = [this](const fs::path &packPath)
-      -> std::tuple<std::string, u64, u32> {
+  auto getPackInfo =
+      [this](const fs::path &packPath) -> std::tuple<std::string, u64, u32> {
     std::string hashHex = "sha256:";
     u64 packSize = 0;
     u32 resourceCount = 0;
@@ -1433,8 +1435,8 @@ Result<void> BuildSystem::packResources() {
     indexFile << "      \"resource_count\": " << baseResCount << ",\n";
     indexFile << "      \"encrypted\": "
               << (m_config.encryptAssets ? "true" : "false") << ",\n";
-    indexFile << "      \"signed\": "
-              << (m_config.signPacks ? "true" : "false") << "\n";
+    indexFile << "      \"signed\": " << (m_config.signPacks ? "true" : "false")
+              << "\n";
     indexFile << "    }";
 
     // Build load_order array
@@ -1444,7 +1446,8 @@ Result<void> BuildSystem::packResources() {
     for (const auto &lang : m_config.includedLanguages) {
       std::string packName = "Lang_" + lang + ".nmres";
       if (fs::exists(packsDir / packName)) {
-        auto [langHash, langSize, langResCount] = getPackInfo(packsDir / packName);
+        auto [langHash, langSize, langResCount] =
+            getPackInfo(packsDir / packName);
 
         indexFile << ",\n";
         indexFile << "    {\n";
@@ -1608,7 +1611,8 @@ Result<void> BuildSystem::signAndFinalize() {
         std::ifstream file(packPath, std::ios::binary);
         if (!file.is_open()) {
           endStep(false, "Cannot read pack file: " + packPath);
-          return Result<void>::error("Pack file verification failed: " + packPath);
+          return Result<void>::error("Pack file verification failed: " +
+                                     packPath);
         }
 
         // Verify pack file size is at least header + footer size
@@ -1617,8 +1621,8 @@ Result<void> BuildSystem::signAndFinalize() {
         file.seekg(0, std::ios::beg);
 
         if (fileSize < 96) { // 64 byte header + 32 byte footer minimum
-          m_progress.warnings.push_back(
-              "Pack file too small (corrupt?): " + packPath);
+          m_progress.warnings.push_back("Pack file too small (corrupt?): " +
+                                        packPath);
           file.close();
           continue;
         }
@@ -1627,16 +1631,17 @@ Result<void> BuildSystem::signAndFinalize() {
         u8 header[64];
         file.read(reinterpret_cast<char *>(header), 64);
         if (file.gcount() != 64) {
-          m_progress.warnings.push_back(
-              "Failed to read pack header: " + packPath);
+          m_progress.warnings.push_back("Failed to read pack header: " +
+                                        packPath);
           file.close();
           continue;
         }
 
         // Verify magic number (should be "NMRS")
-        if (std::strncmp(reinterpret_cast<const char *>(header), "NMRS", 4) != 0) {
-          m_progress.warnings.push_back(
-              "Pack file has invalid magic number: " + packPath);
+        if (std::strncmp(reinterpret_cast<const char *>(header), "NMRS", 4) !=
+            0) {
+          m_progress.warnings.push_back("Pack file has invalid magic number: " +
+                                        packPath);
           file.close();
           continue;
         }
@@ -1645,16 +1650,18 @@ Result<void> BuildSystem::signAndFinalize() {
         u16 versionMajor = *reinterpret_cast<u16 *>(header + 4);
         u16 versionMinor = *reinterpret_cast<u16 *>(header + 6);
         if (versionMajor > 1) {
-          m_progress.warnings.push_back(
-              "Pack file has unsupported version " + std::to_string(versionMajor) +
-              "." + std::to_string(versionMinor) + ": " + packPath);
+          m_progress.warnings.push_back("Pack file has unsupported version " +
+                                        std::to_string(versionMajor) + "." +
+                                        std::to_string(versionMinor) + ": " +
+                                        packPath);
         }
 
         // Read total file size from header and compare
         u64 headerFileSize = *reinterpret_cast<u64 *>(header + 40);
         if (static_cast<i64>(headerFileSize) != fileSize) {
           m_progress.warnings.push_back(
-              "Pack file size mismatch (header: " + std::to_string(headerFileSize) +
+              "Pack file size mismatch (header: " +
+              std::to_string(headerFileSize) +
               ", actual: " + std::to_string(fileSize) + "): " + packPath);
         }
 
@@ -1663,8 +1670,8 @@ Result<void> BuildSystem::signAndFinalize() {
         char footerMagic[4];
         file.read(footerMagic, 4);
         if (std::strncmp(footerMagic, "NMRF", 4) != 0) {
-          m_progress.warnings.push_back(
-              "Pack file has invalid footer magic: " + packPath);
+          m_progress.warnings.push_back("Pack file has invalid footer magic: " +
+                                        packPath);
         } else {
           // Read and verify tables CRC32
           u32 storedCrc;
@@ -1675,8 +1682,9 @@ Result<void> BuildSystem::signAndFinalize() {
           // At minimum, verify CRC is non-zero if pack has resources
           u32 resourceCount = *reinterpret_cast<u32 *>(header + 12);
           if (resourceCount > 0 && storedCrc == 0) {
-            m_progress.warnings.push_back(
-                "Pack file has zero CRC with non-empty resources (suspicious): " + packPath);
+            m_progress.warnings.push_back("Pack file has zero CRC with "
+                                          "non-empty resources (suspicious): " +
+                                          packPath);
           }
         }
 
@@ -1942,9 +1950,9 @@ Result<void> BuildSystem::compileBytecode(const std::string &outputPath) {
         file.close();
 
         // Record mapping: bytecode_offset, source_file, line, column
-        fs::path relativePath =
-            fs::relative(scriptPath, m_config.projectPath);
-        scriptMapEntries.emplace_back(currentOffset, relativePath.string(), 1, 0);
+        fs::path relativePath = fs::relative(scriptPath, m_config.projectPath);
+        scriptMapEntries.emplace_back(currentOffset, relativePath.string(), 1,
+                                      0);
 
         u32 size = static_cast<u32>(source.size());
         output.write(reinterpret_cast<const char *>(&size), sizeof(size));
@@ -2255,7 +2263,8 @@ Result<void> BuildSystem::buildPack(const std::string &outputPath,
       u64 alignment =
           (entry.compressedSize > 4096) ? LARGE_ALIGNMENT : SMALL_ALIGNMENT;
       // Align current offset
-      currentDataOffset = ((currentDataOffset + alignment - 1) / alignment) * alignment;
+      currentDataOffset =
+          ((currentDataOffset + alignment - 1) / alignment) * alignment;
       dataOffsets.push_back(currentDataOffset);
       currentDataOffset += entry.compressedSize;
     }
@@ -2273,15 +2282,16 @@ Result<void> BuildSystem::buildPack(const std::string &outputPath,
     // Calculate section sizes and offsets
     u64 headerSize = 64;
     u64 resourceTableSize = 48 * entries.size();
-    u64 stringTableSize =
-        4 + (4 * entries.size()) + currentStringOffset; // count + offsets + data
+    u64 stringTableSize = 4 + (4 * entries.size()) +
+                          currentStringOffset; // count + offsets + data
     u64 footerSize = 32;
 
     u64 resourceTableOffset = headerSize;
     u64 stringTableOffset = resourceTableOffset + resourceTableSize;
     u64 dataOffset = stringTableOffset + stringTableSize;
     // Align data section start
-    dataOffset = ((dataOffset + SMALL_ALIGNMENT - 1) / SMALL_ALIGNMENT) * SMALL_ALIGNMENT;
+    dataOffset = ((dataOffset + SMALL_ALIGNMENT - 1) / SMALL_ALIGNMENT) *
+                 SMALL_ALIGNMENT;
 
     u64 totalFileSize = dataOffset + currentDataOffset + footerSize;
 
@@ -2331,8 +2341,7 @@ Result<void> BuildSystem::buildPack(const std::string &outputPath,
     headerBuffer.insert(headerBuffer.end(),
                         reinterpret_cast<u8 *>(&stringTableOffset),
                         reinterpret_cast<u8 *>(&stringTableOffset) + 8);
-    headerBuffer.insert(headerBuffer.end(),
-                        reinterpret_cast<u8 *>(&dataOffset),
+    headerBuffer.insert(headerBuffer.end(), reinterpret_cast<u8 *>(&dataOffset),
                         reinterpret_cast<u8 *>(&dataOffset) + 8);
 
     // Header: total file size (8 bytes)
@@ -2495,8 +2504,8 @@ Result<void> BuildSystem::buildPack(const std::string &outputPath,
       allResourceData.insert(allResourceData.end(), entry.data.begin(),
                              entry.data.end());
     }
-    auto fullHash = calculateSha256(allResourceData.data(),
-                                    allResourceData.size());
+    auto fullHash =
+        calculateSha256(allResourceData.data(), allResourceData.size());
 
     // Update header with content hash
     output.seekp(0x30); // Offset of content hash in header
@@ -2695,13 +2704,15 @@ Result<void> BuildSystem::buildWebBundle(const std::string &outputPath) {
     html << "  </style>\n";
     html << "</head>\n";
     html << "<body>\n";
-    html << "  <div class=\"loading\" id=\"status\">Loading " << m_config.executableName
-         << " (v" << m_config.version << ")...</div>\n";
+    html << "  <div class=\"loading\" id=\"status\">Loading "
+         << m_config.executableName << " (v" << m_config.version
+         << ")...</div>\n";
     html << "  <canvas id=\"canvas\" width=\"1280\" height=\"720\" "
             "style=\"display:none;\"></canvas>\n";
     html << "  <script>\n";
     html << "    // NovelMind WebAssembly runtime placeholder\n";
-    html << "    // In production, this loads the Emscripten-compiled runtime\n";
+    html
+        << "    // In production, this loads the Emscripten-compiled runtime\n";
     html << "    document.getElementById('status').textContent = 'Web build "
             "placeholder - runtime not yet bundled';\n";
     html << "  </script>\n";
@@ -2714,14 +2725,16 @@ Result<void> BuildSystem::buildWebBundle(const std::string &outputPath) {
   fs::path stagingPacks = fs::path(outputPath) / "packs";
   if (fs::exists(stagingPacks)) {
     fs::copy(stagingPacks, webPath / "packs",
-             fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+             fs::copy_options::recursive |
+                 fs::copy_options::overwrite_existing);
   }
 
   // Copy config
   fs::path stagingConfig = fs::path(outputPath) / "config";
   if (fs::exists(stagingConfig)) {
     fs::copy(stagingConfig, webPath / "config",
-             fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+             fs::copy_options::recursive |
+                 fs::copy_options::overwrite_existing);
   }
 
   logMessage("Web bundle created at: " + webPath.string(), false);
@@ -2741,18 +2754,24 @@ Result<void> BuildSystem::buildAndroidBundle(const std::string &outputPath) {
   std::ofstream manifest(manifestPath);
   if (manifest.is_open()) {
     manifest << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
-    manifest << "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n";
-    manifest << "    package=\"com.novelmind." << m_config.executableName << "\">\n";
+    manifest
+        << "<manifest "
+           "xmlns:android=\"http://schemas.android.com/apk/res/android\"\n";
+    manifest << "    package=\"com.novelmind." << m_config.executableName
+             << "\">\n";
     manifest << "    <application\n";
     manifest << "        android:label=\"" << m_config.executableName << "\"\n";
     manifest << "        android:theme=\"@style/Theme.NovelMind\">\n";
     manifest << "        <activity\n";
     manifest << "            android:name=\".MainActivity\"\n";
     manifest << "            android:exported=\"true\"\n";
-    manifest << "            android:configChanges=\"orientation|screenSize\">\n";
+    manifest
+        << "            android:configChanges=\"orientation|screenSize\">\n";
     manifest << "            <intent-filter>\n";
-    manifest << "                <action android:name=\"android.intent.action.MAIN\" />\n";
-    manifest << "                <category android:name=\"android.intent.category.LAUNCHER\" />\n";
+    manifest << "                <action "
+                "android:name=\"android.intent.action.MAIN\" />\n";
+    manifest << "                <category "
+                "android:name=\"android.intent.category.LAUNCHER\" />\n";
     manifest << "            </intent-filter>\n";
     manifest << "        </activity>\n";
     manifest << "    </application>\n";
@@ -2771,10 +2790,12 @@ Result<void> BuildSystem::buildAndroidBundle(const std::string &outputPath) {
     gradle << "    id 'com.android.application'\n";
     gradle << "}\n\n";
     gradle << "android {\n";
-    gradle << "    namespace 'com.novelmind." << m_config.executableName << "'\n";
+    gradle << "    namespace 'com.novelmind." << m_config.executableName
+           << "'\n";
     gradle << "    compileSdk 34\n\n";
     gradle << "    defaultConfig {\n";
-    gradle << "        applicationId 'com.novelmind." << m_config.executableName << "'\n";
+    gradle << "        applicationId 'com.novelmind." << m_config.executableName
+           << "'\n";
     gradle << "        minSdk 24\n";
     gradle << "        targetSdk 34\n";
     gradle << "        versionCode " << m_config.buildNumber << "\n";
@@ -2788,10 +2809,12 @@ Result<void> BuildSystem::buildAndroidBundle(const std::string &outputPath) {
   fs::path stagingPacks = fs::path(outputPath) / "packs";
   if (fs::exists(stagingPacks)) {
     fs::copy(stagingPacks, assetsPath / "packs",
-             fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+             fs::copy_options::recursive |
+                 fs::copy_options::overwrite_existing);
   }
 
-  logMessage("Android project structure created at: " + androidPath.string(), false);
+  logMessage("Android project structure created at: " + androidPath.string(),
+             false);
   return Result<void>::ok();
 }
 
@@ -2847,11 +2870,13 @@ Result<void> BuildSystem::buildIOSBundle(const std::string &outputPath) {
   std::ofstream pbxproj(pbxprojPath);
   if (pbxproj.is_open()) {
     pbxproj << "// NovelMind iOS Project\n";
-    pbxproj << "// Generated by NovelMind Build System v" << m_config.version << "\n";
+    pbxproj << "// Generated by NovelMind Build System v" << m_config.version
+            << "\n";
     pbxproj << "// Build Number: " << m_config.buildNumber << "\n";
     pbxproj << "// \n";
     pbxproj << "// This is a placeholder. In production, this would contain\n";
-    pbxproj << "// a complete Xcode project configuration for building the iOS app.\n";
+    pbxproj << "// a complete Xcode project configuration for building the iOS "
+               "app.\n";
     pbxproj.close();
   }
 
@@ -2859,17 +2884,20 @@ Result<void> BuildSystem::buildIOSBundle(const std::string &outputPath) {
   fs::path stagingPacks = fs::path(outputPath) / "packs";
   if (fs::exists(stagingPacks)) {
     fs::copy(stagingPacks, resourcesPath / "packs",
-             fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+             fs::copy_options::recursive |
+                 fs::copy_options::overwrite_existing);
   }
 
   // Copy config
   fs::path stagingConfig = fs::path(outputPath) / "config";
   if (fs::exists(stagingConfig)) {
     fs::copy(stagingConfig, resourcesPath / "config",
-             fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+             fs::copy_options::recursive |
+                 fs::copy_options::overwrite_existing);
   }
 
-  logMessage("iOS Xcode project structure created at: " + iosPath.string(), false);
+  logMessage("iOS Xcode project structure created at: " + iosPath.string(),
+             false);
   return Result<void>::ok();
 }
 
