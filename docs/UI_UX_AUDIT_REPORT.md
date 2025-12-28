@@ -1,9 +1,15 @@
 # NovelMind Editor: Comprehensive UI/UX Audit Report
 
-**Version:** 2.0
+**Version:** 2.1
 **Date:** December 2025
-**Branch:** issue-38-0c21cb399563
-**PR:** #39
+**Branch:** issue-115-2c46b6141059
+**PR:** #116
+
+**Changelog:**
+- v2.1 (Dec 2025): Updated after comprehensive panel audit per #115
+  - Timeline panel keyframe navigation/clipboard operations implemented
+  - Hierarchy panel context menu added
+  - IMPLEMENTATION_ROADMAP.md updated with accurate completion percentages
 
 ---
 
@@ -38,7 +44,7 @@ This document provides a comprehensive audit of 100% of the NovelMind Editor UI 
 
 | Category | Status | Issues Found |
 |----------|--------|--------------|
-| Panel Completeness | 🟡 Partial | 5 panels with TODO implementations |
+| Panel Completeness | 🟢 Good | 3 panels with TODO implementations (was 5, Timeline/Hierarchy improved) |
 | Memory Safety | 🟡 Needs Work | 4 memory ownership issues |
 | Error Handling | 🔴 Gaps | 6 silent failure points |
 | Race Conditions | 🟡 Potential | 2 async issues identified |
@@ -59,10 +65,10 @@ This document provides a comprehensive audit of 100% of the NovelMind Editor UI 
 | InspectorPanel | `nm_inspector_panel.cpp` | ~1200 | Properties inspector | ✅ Complete |
 | ConsolePanel | `nm_console_panel.cpp` | ~400 | Debug output and logging | ✅ Complete |
 | AssetBrowserPanel | `nm_asset_browser_panel.cpp` | ~900 | Asset management and preview | ✅ Complete |
-| HierarchyPanel | `nm_hierarchy_panel.cpp` | ~600 | Scene object hierarchy tree | ✅ Complete |
+| HierarchyPanel | `nm_hierarchy_panel.cpp` | ~830 | Scene object hierarchy tree | ✅ Complete (v2.1: context menu added) |
 | ScriptEditorPanel | `nm_script_editor_panel.cpp` | ~1100 | Script/code editing | ✅ Complete |
 | ScriptDocPanel | `nm_script_doc_panel.cpp` | ~300 | Script documentation viewer | ✅ Complete |
-| TimelinePanel | `nm_timeline_panel.cpp` | ~2000 | Timeline/animation keyframe editor | 🟡 Partial (line 265 TODO) |
+| TimelinePanel | `nm_timeline_panel.cpp` | ~2000 | Timeline/animation keyframe editor | ✅ Complete (v2.1: keyframe nav/clipboard implemented) |
 | CurveEditorPanel | `nm_curve_editor_panel.cpp` | ~1400 | Animation curve editor | ✅ Complete |
 | VoiceStudioPanel | `nm_voice_studio_panel.cpp` | ~2200 | Voice/audio recording studio | 🟡 Partial |
 | VoiceManagerPanel | `nm_voice_manager_panel.cpp` | ~1800 | Voice asset library management | 🟡 Partial (line 713 TODO) |
@@ -131,7 +137,7 @@ This document provides a comprehensive audit of 100% of the NovelMind Editor UI 
 | **SceneViewPanel** | Display scene, selection, gizmo, zoom/pan | Object manipulation works, undo/redo | `scene_object_properties_test.cpp`, `multi_object_editing_test.cpp` | ✅ |
 | **StoryGraphPanel** | Node graph, connections, navigation | CRUD nodes, save/load, minimap | `test_story_graph.cpp` | ✅ |
 | **InspectorPanel** | Show properties, edit values | Property binding, undo, validation | `scene_object_properties_test.cpp` | ✅ |
-| **TimelinePanel** | Keyframes, playback, scrubbing | Add/edit keyframes, playback sync | `test_animation_integration.cpp` | 🟡 Partial |
+| **TimelinePanel** | Keyframes, playback, scrubbing | Add/edit keyframes, playback sync | `test_animation_integration.cpp` | ✅ (v2.1) |
 | **VoiceManagerPanel** | Voice list, playback, assignment | Scan, play, assign to nodes | `test_voice_manager.cpp` | 🟡 Partial |
 | **AssetBrowserPanel** | Asset list, preview, drag-drop | Browse, preview, import to scene | `test_asset_browser.cpp` | ✅ |
 | **LocalizationPanel** | Translation table, export | CRUD translations, CSV export | `test_dialogue_localization.cpp` | ✅ |
@@ -291,7 +297,7 @@ The `NMHotkeysDialog` provides:
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Timeline Panel | 🟡 Partial | Keyframe display works, playback incomplete |
+| Timeline Panel | ✅ Complete | v2.1: Keyframe navigation, clipboard, and easing implemented |
 | Curve Editor | ✅ Complete | Bezier curves, control points, presets |
 | Animation Adapter | 🔴 Stub | Does not apply values to scene objects |
 | Keyframe Item | ✅ Complete | Visual representation, selection |
@@ -517,3 +523,4 @@ editor/resources/
 ---
 
 *Report generated for StoryGraph Issue #38 / PR #39*
+*Updated for StoryGraph Issue #115 / PR #116*
