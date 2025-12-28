@@ -102,6 +102,11 @@ add_library(engine_core STATIC
 
     # VFS Multi-Pack
     src/vfs/multi_pack_manager.cpp
+
+    # Runtime
+    src/runtime/config_manager.cpp
+    src/runtime/game_settings.cpp
+    src/runtime/game_launcher.cpp
 )
 
 set_source_files_properties(
