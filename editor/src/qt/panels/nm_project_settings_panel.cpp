@@ -607,6 +607,10 @@ void NMProjectSettingsPanel::loadFromProject() {
   // Use radio buttons instead of combo box
   {
     QSignalBlocker blocker(m_workflowButtonGroup);
+  // Load workflow mode from playbackSourceMode (issue #100)
+  // Use QSignalBlocker to prevent signal loops during programmatic updates
+  if (m_workflowCombo) {
+    int workflowIndex = 0; // Default to Visual-First (Graph)
     switch (meta.playbackSourceMode) {
     case PlaybackSourceMode::Script:
       if (m_scriptModeRadio) {
@@ -624,11 +628,16 @@ void NMProjectSettingsPanel::loadFromProject() {
       }
       break;
     }
+    // Block signals to prevent feedback loop with PlayToolbar
+    QSignalBlocker blocker(m_workflowCombo);
+    m_workflowCombo->setCurrentIndex(workflowIndex);
     updateWorkflowDescription();
   }
 
   // Load resolution
+  // Use signal blocker to prevent unintended signal emission during load
   if (m_resolutionCombo) {
+    QSignalBlocker blocker(m_resolutionCombo);
     QString resolution = QString::fromStdString(meta.targetResolution);
     int idx = m_resolutionCombo->findText(resolution, Qt::MatchStartsWith);
     if (idx >= 0) {
@@ -638,11 +647,13 @@ void NMProjectSettingsPanel::loadFromProject() {
 
   // Load fullscreen default
   if (m_fullscreenDefault) {
+    QSignalBlocker blocker(m_fullscreenDefault);
     m_fullscreenDefault->setChecked(meta.fullscreenDefault);
   }
 
   // Load default locale
   if (m_defaultLocaleCombo) {
+    QSignalBlocker blocker(m_defaultLocaleCombo);
     QString locale = QString::fromStdString(meta.defaultLocale);
     int idx = m_defaultLocaleCombo->findText(locale, Qt::MatchStartsWith);
     if (idx >= 0) {
