@@ -408,6 +408,11 @@ void NMRecordingStudioPanel::setupTakeManagement() {
   m_takesList->setMaximumHeight(100);
   connect(m_takesList, &QListWidget::currentRowChanged, this,
           &NMRecordingStudioPanel::onTakeSelected);
+  // Double-click to set active take
+  connect(m_takesList, &QListWidget::itemDoubleClicked, this,
+          [this]([[maybe_unused]] QListWidgetItem *item) {
+            onSetActiveClicked();
+          });
   layout->addWidget(m_takesList, 1);
 
   // Take controls
@@ -421,6 +426,8 @@ void NMRecordingStudioPanel::setupTakeManagement() {
 
   m_setActiveBtn = new QPushButton(tr("Set Active"), group);
   m_setActiveBtn->setEnabled(false);
+  connect(m_setActiveBtn, &QPushButton::clicked, this,
+          &NMRecordingStudioPanel::onSetActiveClicked);
   controlsLayout->addWidget(m_setActiveBtn);
 
   m_deleteTakeBtn = new QPushButton(tr("Delete"), group);
@@ -743,6 +750,48 @@ void NMRecordingStudioPanel::onDeleteTakeClicked() {
 
   NOVELMIND_LOG_INFO(std::string("[RecordingStudio] Deleted take #") +
                      std::to_string(take.takeNumber) + " for line " +
+                     m_currentLineId);
+}
+
+void NMRecordingStudioPanel::onSetActiveClicked() {
+  if (!m_manifest || m_currentLineId.empty()) {
+    return;
+  }
+
+  // Get selected take index
+  int selectedIndex = m_takesList ? m_takesList->currentRow() : -1;
+  if (selectedIndex < 0) {
+    NOVELMIND_LOG_WARN("[RecordingStudio] No take selected to set as active");
+    return;
+  }
+
+  // Get takes for current line
+  auto takes = m_manifest->getTakes(m_currentLineId, m_currentLocale);
+  if (selectedIndex >= static_cast<int>(takes.size())) {
+    NOVELMIND_LOG_WARN("[RecordingStudio] Take index out of range");
+    return;
+  }
+
+  // Set the selected take as active
+  auto result = m_manifest->setActiveTake(m_currentLineId, m_currentLocale,
+                                          static_cast<uint32_t>(selectedIndex));
+  if (result.isError()) {
+    NOVELMIND_LOG_WARN(std::string("[RecordingStudio] Failed to set active take: ") +
+                       result.error());
+    QMessageBox::warning(this, tr("Set Active Error"),
+                         tr("Failed to set active take: %1")
+                             .arg(QString::fromStdString(result.error())));
+    return;
+  }
+
+  // Refresh the take list to show the new active status
+  updateTakeList();
+
+  // Emit signal for external listeners
+  emit activeTakeChanged(QString::fromStdString(m_currentLineId), selectedIndex);
+
+  NOVELMIND_LOG_INFO(std::string("[RecordingStudio] Set take #") +
+                     std::to_string(selectedIndex + 1) + " as active for line " +
                      m_currentLineId);
 }
 

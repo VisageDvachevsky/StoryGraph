@@ -125,6 +125,7 @@ private slots:
   void onPrevLineClicked();
   void onTakeSelected(int index);
   void onDeleteTakeClicked();
+  void onSetActiveClicked();
   void onInputVolumeChanged(int value);
 
   // Recorder callbacks
