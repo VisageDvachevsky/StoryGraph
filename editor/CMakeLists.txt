@@ -68,6 +68,13 @@ add_library(novelmind_editor STATIC
     src/build_system.cpp
     src/build_size_analyzer.cpp
 
+    # Panel Mediators (EventBus-based decoupled communication)
+    src/mediators/selection_mediator.cpp
+    src/mediators/workflow_mediator.cpp
+    src/mediators/property_mediator.cpp
+    src/mediators/playback_mediator.cpp
+    src/mediators/panel_mediators.cpp
+
     # Performance optimization components
     src/qt/lazy_thumbnail_loader.cpp
     src/qt/timeline_render_cache.cpp
@@ -213,6 +220,14 @@ add_library(novelmind_editor STATIC
     include/NovelMind/editor/guided_learning/tutorial_manager.hpp
     include/NovelMind/editor/guided_learning/help_overlay.hpp
     include/NovelMind/editor/guided_learning/tutorial_subsystem.hpp
+
+    # Panel Events and Mediators headers
+    include/NovelMind/editor/events/panel_events.hpp
+    include/NovelMind/editor/mediators/selection_mediator.hpp
+    include/NovelMind/editor/mediators/workflow_mediator.hpp
+    include/NovelMind/editor/mediators/property_mediator.hpp
+    include/NovelMind/editor/mediators/playback_mediator.hpp
+    include/NovelMind/editor/mediators/panel_mediators.hpp
 
     # Qt Resources
     resources/editor_resources.qrc
