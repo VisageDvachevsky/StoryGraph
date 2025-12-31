@@ -5,6 +5,7 @@
 #include "NovelMind/editor/qt/performance_metrics.hpp"
 
 #include <QBrush>
+#include <QMutexLocker>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QElapsedTimer>
@@ -583,42 +584,46 @@ void NMTimelinePanel::stepForward() { setCurrentFrame(m_currentFrame + 1); }
 void NMTimelinePanel::stepBackward() { setCurrentFrame(m_currentFrame - 1); }
 
 void NMTimelinePanel::addTrack(TimelineTrackType type, const QString &name) {
-  if (m_tracks.contains(name))
-    return;
+  {
+    QMutexLocker locker(&m_tracksMutex);
+    if (m_tracks.contains(name))
+      return;
 
-  TimelineTrack *track = new TimelineTrack();
-  track->name = name;
-  track->type = type;
+    TimelineTrack *track = new TimelineTrack();
+    track->name = name;
+    track->type = type;
 
-  // Assign color based on type
-  switch (type) {
-  case TimelineTrackType::Audio:
-    track->color = QColor("#4CAF50");
-    break;
-  case TimelineTrackType::Animation:
-    track->color = QColor("#2196F3");
-    break;
-  case TimelineTrackType::Event:
-    track->color = QColor("#FF9800");
-    break;
-  case TimelineTrackType::Camera:
-    track->color = QColor("#9C27B0");
-    break;
-  case TimelineTrackType::Character:
-    track->color = QColor("#F44336");
-    break;
-  case TimelineTrackType::Effect:
-    track->color = QColor("#00BCD4");
-    break;
-  case TimelineTrackType::Dialogue:
-    track->color = QColor("#8BC34A");
-    break;
-  case TimelineTrackType::Variable:
-    track->color = QColor("#9E9E9E");
-    break;
-  }
+    // Assign color based on type
+    switch (type) {
+    case TimelineTrackType::Audio:
+      track->color = QColor("#4CAF50");
+      break;
+    case TimelineTrackType::Animation:
+      track->color = QColor("#2196F3");
+      break;
+    case TimelineTrackType::Event:
+      track->color = QColor("#FF9800");
+      break;
+    case TimelineTrackType::Camera:
+      track->color = QColor("#9C27B0");
+      break;
+    case TimelineTrackType::Character:
+      track->color = QColor("#F44336");
+      break;
+    case TimelineTrackType::Effect:
+      track->color = QColor("#00BCD4");
+      break;
+    case TimelineTrackType::Dialogue:
+      track->color = QColor("#8BC34A");
+      break;
+    case TimelineTrackType::Variable:
+      track->color = QColor("#9E9E9E");
+      break;
+    }
 
-  m_tracks[name] = track;
+    m_tracks[name] = track;
+  } // Lock released here
+
   renderTracks();
 }
 
@@ -669,37 +674,44 @@ void NMTimelinePanel::duplicateSelectedKeyframes(int offsetFrames) {
     return;
   }
 
-  // Get track names from track map (indexed by order)
-  QStringList trackNames = m_tracks.keys();
-
-  // Collect keyframes to duplicate
+  // Collect keyframes to duplicate with thread-safe access to tracks
   QVector<QPair<QString, KeyframeSnapshot>> toDuplicate;
 
-  for (const KeyframeId &id : m_selectedKeyframes) {
-    if (id.trackIndex < 0 || id.trackIndex >= trackNames.size()) {
-      continue;
-    }
-    QString trackName = trackNames.at(id.trackIndex);
-    TimelineTrack *track = getTrack(trackName);
-    if (!track || track->locked) {
-      continue;
-    }
+  {
+    // Create atomic copy of track names under lock to prevent TOCTOU race
+    QMutexLocker locker(&m_tracksMutex);
+    QStringList trackNamesCopy = m_tracks.keys();
 
-    Keyframe *kf = track->getKeyframe(id.frame);
-    if (kf) {
-      KeyframeSnapshot snapshot;
-      snapshot.frame = kf->frame + offsetFrames;
-      snapshot.value = kf->value;
-      snapshot.easingType = static_cast<int>(kf->easing);
-      snapshot.handleInX = kf->handleInX;
-      snapshot.handleInY = kf->handleInY;
-      snapshot.handleOutX = kf->handleOutX;
-      snapshot.handleOutY = kf->handleOutY;
-      toDuplicate.append(qMakePair(trackName, snapshot));
-    }
-  }
+    for (const KeyframeId &id : m_selectedKeyframes) {
+      // Bounds check against the atomic copy
+      if (id.trackIndex < 0 || id.trackIndex >= trackNamesCopy.size()) {
+        continue;
+      }
 
-  // Add duplicated keyframes
+      QString trackName = trackNamesCopy.at(id.trackIndex);
+
+      // Get track while still holding lock
+      TimelineTrack *track = m_tracks.value(trackName, nullptr);
+      if (!track || track->locked) {
+        continue;
+      }
+
+      Keyframe *kf = track->getKeyframe(id.frame);
+      if (kf) {
+        KeyframeSnapshot snapshot;
+        snapshot.frame = kf->frame + offsetFrames;
+        snapshot.value = kf->value;
+        snapshot.easingType = static_cast<int>(kf->easing);
+        snapshot.handleInX = kf->handleInX;
+        snapshot.handleInY = kf->handleInY;
+        snapshot.handleOutX = kf->handleOutX;
+        snapshot.handleOutY = kf->handleOutY;
+        toDuplicate.append(qMakePair(trackName, snapshot));
+      }
+    }
+  } // Lock released here
+
+  // Add duplicated keyframes (outside lock to avoid holding lock during undo)
   for (const auto &pair : toDuplicate) {
     auto *cmd = new AddKeyframeCommand(this, pair.first, pair.second);
     NMUndoManager::instance().pushCommand(cmd);
@@ -713,28 +725,40 @@ void NMTimelinePanel::setSelectedKeyframesEasing(EasingType easing) {
     return;
   }
 
-  // Get track names from track map (indexed by order)
-  QStringList trackNames = m_tracks.keys();
+  // Collect easing changes to emit signals outside lock
+  QVector<QPair<QString, int>> easingChanges;
 
-  for (const KeyframeId &id : m_selectedKeyframes) {
-    if (id.trackIndex < 0 || id.trackIndex >= trackNames.size()) {
-      continue;
-    }
-    QString trackName = trackNames.at(id.trackIndex);
-    TimelineTrack *track = getTrack(trackName);
-    if (!track || track->locked) {
-      continue;
-    }
+  {
+    // Thread-safe access to tracks
+    QMutexLocker locker(&m_tracksMutex);
+    QStringList trackNamesCopy = m_tracks.keys();
 
-    Keyframe *kf = track->getKeyframe(id.frame);
-    if (kf) {
-      EasingType oldEasing = kf->easing;
-      kf->easing = easing;
-      emit keyframeEasingChanged(trackName, id.frame, easing);
+    for (const KeyframeId &id : m_selectedKeyframes) {
+      if (id.trackIndex < 0 || id.trackIndex >= trackNamesCopy.size()) {
+        continue;
+      }
 
-      // Create undo command (simplified - ideally would batch these)
-      Q_UNUSED(oldEasing);
+      QString trackName = trackNamesCopy.at(id.trackIndex);
+      TimelineTrack *track = m_tracks.value(trackName, nullptr);
+      if (!track || track->locked) {
+        continue;
+      }
+
+      Keyframe *kf = track->getKeyframe(id.frame);
+      if (kf) {
+        EasingType oldEasing = kf->easing;
+        kf->easing = easing;
+        easingChanges.append(qMakePair(trackName, id.frame));
+
+        // Create undo command (simplified - ideally would batch these)
+        Q_UNUSED(oldEasing);
+      }
     }
+  } // Lock released here
+
+  // Emit signals outside lock
+  for (const auto &change : easingChanges) {
+    emit keyframeEasingChanged(change.first, change.second, easing);
   }
 
   renderTracks();
@@ -747,9 +771,6 @@ void NMTimelinePanel::copySelectedKeyframes() {
     return;
   }
 
-  // Get track names from track map (indexed by order)
-  QStringList trackNames = m_tracks.keys();
-
   // Find minimum frame to use as reference point
   int minFrame = INT_MAX;
   for (const KeyframeId &id : m_selectedKeyframes) {
@@ -758,26 +779,33 @@ void NMTimelinePanel::copySelectedKeyframes() {
     }
   }
 
-  // Copy keyframes with relative frame offsets
-  for (const KeyframeId &id : m_selectedKeyframes) {
-    if (id.trackIndex < 0 || id.trackIndex >= trackNames.size()) {
-      continue;
-    }
-    QString trackName = trackNames.at(id.trackIndex);
-    TimelineTrack *track = getTrack(trackName);
-    if (!track) {
-      continue;
-    }
+  {
+    // Thread-safe access to tracks
+    QMutexLocker locker(&m_tracksMutex);
+    QStringList trackNamesCopy = m_tracks.keys();
 
-    Keyframe *kf = track->getKeyframe(id.frame);
-    if (kf) {
-      KeyframeCopy copy;
-      copy.relativeFrame = kf->frame - minFrame;
-      copy.value = kf->value;
-      copy.easing = kf->easing;
-      m_keyframeClipboard.append(copy);
+    // Copy keyframes with relative frame offsets
+    for (const KeyframeId &id : m_selectedKeyframes) {
+      if (id.trackIndex < 0 || id.trackIndex >= trackNamesCopy.size()) {
+        continue;
+      }
+
+      QString trackName = trackNamesCopy.at(id.trackIndex);
+      TimelineTrack *track = m_tracks.value(trackName, nullptr);
+      if (!track) {
+        continue;
+      }
+
+      Keyframe *kf = track->getKeyframe(id.frame);
+      if (kf) {
+        KeyframeCopy copy;
+        copy.relativeFrame = kf->frame - minFrame;
+        copy.value = kf->value;
+        copy.easing = kf->easing;
+        m_keyframeClipboard.append(copy);
+      }
     }
-  }
+  } // Lock released here
 }
 
 void NMTimelinePanel::pasteKeyframes() {
@@ -785,33 +813,37 @@ void NMTimelinePanel::pasteKeyframes() {
     return;
   }
 
-  // Get track names from track map (indexed by order)
-  QStringList trackNames = m_tracks.keys();
-
-  // Get the first selected track or first visible track
   QString targetTrack;
-  for (const KeyframeId &id : m_selectedKeyframes) {
-    if (id.trackIndex >= 0 && id.trackIndex < trackNames.size()) {
-      targetTrack = trackNames.at(id.trackIndex);
-      break;
-    }
-  }
 
-  if (targetTrack.isEmpty()) {
-    // Use first visible track
-    for (auto it = m_tracks.constBegin(); it != m_tracks.constEnd(); ++it) {
-      if (it.value()->visible && !it.value()->locked) {
-        targetTrack = it.key();
+  {
+    // Thread-safe access to tracks
+    QMutexLocker locker(&m_tracksMutex);
+    QStringList trackNamesCopy = m_tracks.keys();
+
+    // Get the first selected track or first visible track
+    for (const KeyframeId &id : m_selectedKeyframes) {
+      if (id.trackIndex >= 0 && id.trackIndex < trackNamesCopy.size()) {
+        targetTrack = trackNamesCopy.at(id.trackIndex);
         break;
       }
     }
-  }
+
+    if (targetTrack.isEmpty()) {
+      // Use first visible track
+      for (auto it = m_tracks.constBegin(); it != m_tracks.constEnd(); ++it) {
+        if (it.value()->visible && !it.value()->locked) {
+          targetTrack = it.key();
+          break;
+        }
+      }
+    }
+  } // Lock released here
 
   if (targetTrack.isEmpty()) {
     return;
   }
 
-  // Paste keyframes at current frame position
+  // Paste keyframes at current frame position (outside lock)
   for (const KeyframeCopy &copy : m_keyframeClipboard) {
     KeyframeSnapshot snapshot;
     snapshot.frame = m_currentFrame + copy.relativeFrame;
@@ -849,18 +881,25 @@ void NMTimelinePanel::setGridSize(int frames) {
 }
 
 void NMTimelinePanel::removeTrack(const QString &name) {
-  if (!m_tracks.contains(name))
-    return;
+  {
+    QMutexLocker locker(&m_tracksMutex);
+    if (!m_tracks.contains(name))
+      return;
 
-  delete m_tracks[name];
-  m_tracks.remove(name);
+    delete m_tracks[name];
+    m_tracks.remove(name);
+  } // Lock released here
+
   renderTracks();
 }
 
 void NMTimelinePanel::addKeyframeAtCurrent(const QString &trackName,
                                            const QVariant &value) {
-  if (!m_tracks.contains(trackName))
-    return;
+  {
+    QMutexLocker locker(&m_tracksMutex);
+    if (!m_tracks.contains(trackName))
+      return;
+  } // Lock released here
 
   // Create snapshot for undo
   KeyframeSnapshot snapshot;
@@ -1293,6 +1332,7 @@ bool NMTimelinePanel::eventFilter(QObject *obj, QEvent *event) {
 // =============================================================================
 
 TimelineTrack *NMTimelinePanel::getTrack(const QString &name) const {
+  QMutexLocker locker(&m_tracksMutex);
   auto it = m_tracks.find(name);
   if (it != m_tracks.end()) {
     return it.value();

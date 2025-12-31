@@ -58,6 +58,15 @@ const int DEFAULT_VOLUMES[] = {
 };
 
 constexpr int NUM_CHANNELS = 6; // Excluding Master
+
+// Compile-time validation of array sizes to prevent out-of-bounds access
+// Arrays need at least NUM_CHANNELS + 1 elements (Master + channels)
+static_assert(sizeof(CHANNEL_COLORS) / sizeof(CHANNEL_COLORS[0]) >= NUM_CHANNELS + 1,
+              "CHANNEL_COLORS array must have at least NUM_CHANNELS + 1 elements");
+static_assert(sizeof(CHANNEL_NAMES) / sizeof(CHANNEL_NAMES[0]) >= NUM_CHANNELS + 1,
+              "CHANNEL_NAMES array must have at least NUM_CHANNELS + 1 elements");
+static_assert(sizeof(DEFAULT_VOLUMES) / sizeof(DEFAULT_VOLUMES[0]) >= NUM_CHANNELS + 1,
+              "DEFAULT_VOLUMES array must have at least NUM_CHANNELS + 1 elements");
 } // namespace
 
 // ============================================================================
