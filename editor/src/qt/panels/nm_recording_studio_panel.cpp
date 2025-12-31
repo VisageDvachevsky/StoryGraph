@@ -1,14 +1,18 @@
 /**
  * @file nm_recording_studio_panel.cpp
  * @brief Recording Studio panel implementation
+ *
+ * Uses IAudioPlayer interface for take playback (issue #150)
  */
 
 #include "NovelMind/editor/qt/panels/nm_recording_studio_panel.hpp"
 #include "NovelMind/audio/audio_recorder.hpp"
 #include "NovelMind/audio/voice_manifest.hpp"
 #include "NovelMind/core/logger.hpp"
+#include "NovelMind/editor/interfaces/IAudioPlayer.hpp"
+#include "NovelMind/editor/interfaces/QtAudioPlayer.hpp"
+#include "NovelMind/editor/interfaces/ServiceLocator.hpp"
 
-#include <QAudioOutput>
 #include <QComboBox>
 #include <QFile>
 #include <QGridLayout>
@@ -17,7 +21,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
-#include <QMediaPlayer>
 #include <QMessageBox>
 #include <QPainter>
 #include <QProgressBar>
@@ -119,9 +122,25 @@ void VUMeterWidget::paintEvent(QPaintEvent *event) {
 // NMRecordingStudioPanel Implementation
 // ============================================================================
 
-NMRecordingStudioPanel::NMRecordingStudioPanel(QWidget *parent)
+NMRecordingStudioPanel::NMRecordingStudioPanel(QWidget *parent,
+                                               IAudioPlayer *audioPlayer)
     : NMDockPanel(tr("Recording Studio"), parent) {
   setPanelId("recording_studio");
+
+  // Use injected audio player or create one
+  if (audioPlayer) {
+    m_audioPlayer = audioPlayer;
+  } else {
+    // Try ServiceLocator first, otherwise create QtAudioPlayer
+    auto *locatorPlayer = ServiceLocator::getAudioPlayer();
+    if (locatorPlayer) {
+      m_audioPlayer = locatorPlayer;
+    } else {
+      // Create our own QtAudioPlayer
+      m_ownedAudioPlayer = std::make_unique<QtAudioPlayer>(this);
+      m_audioPlayer = m_ownedAudioPlayer.get();
+    }
+  }
 }
 
 NMRecordingStudioPanel::~NMRecordingStudioPanel() {
@@ -173,19 +192,17 @@ void NMRecordingStudioPanel::onInitialize() {
         Qt::QueuedConnection);
   });
 
-  // Initialize media player for take playback
-  m_audioOutput = new QAudioOutput(this);
-  m_audioOutput->setVolume(1.0);
-  m_mediaPlayer = new QMediaPlayer(this);
-  m_mediaPlayer->setAudioOutput(m_audioOutput);
-
-  connect(m_mediaPlayer, &QMediaPlayer::playbackStateChanged, this,
-          [this](QMediaPlayer::PlaybackState state) {
-            m_isPlayingTake = (state == QMediaPlayer::PlayingState);
-            if (m_playTakeBtn) {
-              m_playTakeBtn->setText(m_isPlayingTake ? tr("Stop") : tr("Play"));
-            }
-          });
+  // Set up audio player callbacks (issue #150 - using IAudioPlayer interface)
+  if (m_audioPlayer) {
+    m_audioPlayer->setVolume(1.0f);
+    m_audioPlayer->setOnPlaybackStateChanged(
+        [this](AudioPlaybackState state) {
+          m_isPlayingTake = (state == AudioPlaybackState::Playing);
+          if (m_playTakeBtn) {
+            m_playTakeBtn->setText(m_isPlayingTake ? tr("Stop") : tr("Play"));
+          }
+        });
+  }
 
   // Refresh device list
   refreshDeviceList();
@@ -622,13 +639,13 @@ void NMRecordingStudioPanel::onCancelClicked() {
 }
 
 void NMRecordingStudioPanel::onPlayClicked() {
-  if (!m_mediaPlayer || !m_manifest || m_currentLineId.empty()) {
+  if (!m_audioPlayer || !m_manifest || m_currentLineId.empty()) {
     return;
   }
 
   // If already playing, stop
   if (m_isPlayingTake) {
-    m_mediaPlayer->stop();
+    m_audioPlayer->stop();
     return;
   }
 
@@ -657,16 +674,16 @@ void NMRecordingStudioPanel::onPlayClicked() {
     return;
   }
 
-  // Play the file
-  m_mediaPlayer->setSource(QUrl::fromLocalFile(filePath));
-  m_mediaPlayer->play();
+  // Play the file using IAudioPlayer interface (issue #150)
+  m_audioPlayer->load(take.filePath);
+  m_audioPlayer->play();
   NOVELMIND_LOG_INFO(std::string("[RecordingStudio] Playing take: ") +
                      take.filePath);
 }
 
 void NMRecordingStudioPanel::onPlayStopClicked() {
-  if (m_mediaPlayer && m_isPlayingTake) {
-    m_mediaPlayer->stop();
+  if (m_audioPlayer && m_isPlayingTake) {
+    m_audioPlayer->stop();
   }
 }
 
@@ -716,8 +733,8 @@ void NMRecordingStudioPanel::onDeleteTakeClicked() {
   }
 
   // Stop playback if this take is playing
-  if (m_mediaPlayer && m_isPlayingTake) {
-    m_mediaPlayer->stop();
+  if (m_audioPlayer && m_isPlayingTake) {
+    m_audioPlayer->stop();
   }
 
   // Delete the file
