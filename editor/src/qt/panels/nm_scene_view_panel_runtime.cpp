@@ -5,6 +5,8 @@
 #include "nm_scene_view_overlays.hpp"
 
 #include <QDebug>
+#include <memory>
+#include <new>
 
 namespace NovelMind::editor::qt {
 
@@ -254,23 +256,27 @@ void NMSceneViewPanel::applyRuntimeSnapshot(
       id = QString("runtime_%1_%2").arg(baseId).arg(runtimeIndex++);
     }
 
-    // MEM-4 fix: Validate allocation before use
-    auto *obj = new NMSceneObject(id, toQtType(state.type));
-    if (!obj) {
-      qWarning() << "[SceneViewPanel] Failed to allocate runtime object:" << id;
+    // MEM-4 fix: Use unique_ptr for exception-safe allocation
+    // Note: new throws std::bad_alloc on failure, it doesn't return nullptr
+    try {
+      auto objPtr = std::make_unique<NMSceneObject>(id, toQtType(state.type));
+      auto *obj = objPtr.get();
+      obj->setName(objectNameFromState(state));
+      obj->setPos(QPointF(state.x, state.y));
+      obj->setZValue(state.zOrder);
+      obj->setRotation(state.rotation);
+      obj->setScaleXY(state.scaleX, state.scaleY);
+      obj->setOpacity(state.alpha);
+      obj->setVisible(state.visible);
+      obj->setPixmap(
+          loadPixmapForAsset(textureHintFromState(state), obj->objectType()));
+      m_scene->addSceneObject(objPtr.release()); // Scene takes ownership
+      m_runtimeObjectIds << id;
+    } catch (const std::bad_alloc &e) {
+      qWarning() << "[SceneViewPanel] Failed to allocate runtime object:" << id
+                 << "-" << e.what();
       continue;
     }
-    obj->setName(objectNameFromState(state));
-    obj->setPos(QPointF(state.x, state.y));
-    obj->setZValue(state.zOrder);
-    obj->setRotation(state.rotation);
-    obj->setScaleXY(state.scaleX, state.scaleY);
-    obj->setOpacity(state.alpha);
-    obj->setVisible(state.visible);
-    obj->setPixmap(
-        loadPixmapForAsset(textureHintFromState(state), obj->objectType()));
-    m_scene->addSceneObject(obj);
-    m_runtimeObjectIds << id;
   }
 
   m_runtimePreviewActive = true;
