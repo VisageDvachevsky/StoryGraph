@@ -150,6 +150,7 @@ private slots:
   void onPrevLineClicked();
   void onTakeSelected(int index);
   void onDeleteTakeClicked();
+  void onSetActiveClicked();
   void onSetActiveTakeClicked();
   void onTakeDoubleClicked(QListWidgetItem *item);
   void onTakesContextMenu(const QPoint &pos);
