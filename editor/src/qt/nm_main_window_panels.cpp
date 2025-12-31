@@ -23,6 +23,7 @@
 #include "NovelMind/editor/qt/panels/nm_timeline_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp"
+#include "NovelMind/editor/qt/panels/nm_animation_adapter.hpp"
 
 #include <QAction>
 #include <QDockWidget>
@@ -115,6 +116,15 @@ void NMMainWindow::setupPanels() {
   if (m_sceneViewPanel && m_hierarchyPanel) {
     m_hierarchyPanel->setScene(m_sceneViewPanel->graphicsScene());
     m_hierarchyPanel->setSceneViewPanel(m_sceneViewPanel);
+  }
+
+  // Create animation adapter to connect Timeline and Scene View
+  // This adapter applies interpolated animation values to scene objects
+  // during timeline playback and triggers viewport updates
+  m_animationAdapter = new NMAnimationAdapter(nullptr, this);
+  if (m_timelinePanel && m_sceneViewPanel) {
+    m_animationAdapter->connectTimeline(m_timelinePanel);
+    m_animationAdapter->connectSceneView(m_sceneViewPanel);
   }
 
   // Phase 5 - Play-In-Editor panels

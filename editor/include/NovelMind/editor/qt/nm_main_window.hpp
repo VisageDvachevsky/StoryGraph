@@ -56,6 +56,7 @@ class NMCurveEditorPanel;
 class NMBuildSettingsPanel;
 class NMVoiceStudioPanel;
 class NMAudioMixerPanel;
+class NMAnimationAdapter;
 class NMProjectSettingsPanel;
 
 /**
@@ -485,6 +486,7 @@ private:
   NMBuildSettingsPanel *m_buildSettingsPanel = nullptr;
   NMVoiceStudioPanel *m_voiceStudioPanel = nullptr;
   NMAudioMixerPanel *m_audioMixerPanel = nullptr;
+  NMAnimationAdapter *m_animationAdapter = nullptr;
   NMProjectSettingsPanel *m_projectSettingsPanel = nullptr;
 
   // =========================================================================
