@@ -13,6 +13,7 @@
 #include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_localization_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_play_toolbar_panel.hpp"
+#include "NovelMind/editor/qt/panels/nm_project_settings_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_scene_palette_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
@@ -22,6 +23,7 @@
 #include "NovelMind/editor/qt/panels/nm_timeline_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp"
+#include "NovelMind/editor/qt/panels/nm_animation_adapter.hpp"
 
 #include <QAction>
 #include <QDockWidget>
@@ -116,6 +118,15 @@ void NMMainWindow::setupPanels() {
     m_hierarchyPanel->setSceneViewPanel(m_sceneViewPanel);
   }
 
+  // Create animation adapter to connect Timeline and Scene View
+  // This adapter applies interpolated animation values to scene objects
+  // during timeline playback and triggers viewport updates
+  m_animationAdapter = new NMAnimationAdapter(nullptr, this);
+  if (m_timelinePanel && m_sceneViewPanel) {
+    m_animationAdapter->connectTimeline(m_timelinePanel);
+    m_animationAdapter->connectSceneView(m_sceneViewPanel);
+  }
+
   // Phase 5 - Play-In-Editor panels
   m_playToolbarPanel = new NMPlayToolbarPanel(this);
   m_playToolbarPanel->setObjectName("PlayToolbarPanel");
@@ -124,6 +135,19 @@ void NMMainWindow::setupPanels() {
   m_debugOverlayPanel = new NMDebugOverlayPanel(this);
   m_debugOverlayPanel->setObjectName("DebugOverlayPanel");
   m_debugOverlayPanel->setWindowIcon(iconMgr.getIcon("panel-diagnostics", 16));
+
+  // Project Settings panel (issue #125)
+  m_projectSettingsPanel = new NMProjectSettingsPanel(this);
+  m_projectSettingsPanel->setObjectName("ProjectSettingsPanel");
+  m_projectSettingsPanel->setWindowIcon(iconMgr.getIcon("settings", 16));
+
+  // Connect Project Settings <-> Play Toolbar bidirectional sync (issue #125)
+  // When Project Settings changes workflow mode, update Play Toolbar
+  connect(m_projectSettingsPanel, &NMProjectSettingsPanel::workflowModeChanged,
+          m_playToolbarPanel, &NMPlayToolbarPanel::setSourceMode);
+  // When Play Toolbar changes workflow mode, update Project Settings
+  connect(m_playToolbarPanel, &NMPlayToolbarPanel::playbackSourceModeChanged,
+          m_projectSettingsPanel, &NMProjectSettingsPanel::setWorkflowMode);
 
   // Add panels to the main window
   addDockWidget(Qt::LeftDockWidgetArea, m_scenePalettePanel);
@@ -143,6 +167,7 @@ void NMMainWindow::setupPanels() {
   addDockWidget(Qt::BottomDockWidgetArea, m_issuesPanel);
   addDockWidget(Qt::BottomDockWidgetArea, m_diagnosticsPanel);
   addDockWidget(Qt::RightDockWidgetArea, m_scriptDocPanel);
+  addDockWidget(Qt::RightDockWidgetArea, m_projectSettingsPanel); // Issue #125
   addDockWidget(Qt::TopDockWidgetArea, m_playToolbarPanel); // Phase 5
 
   // Central area: Scene View and Story Graph as tabs
@@ -168,6 +193,7 @@ void NMMainWindow::setupPanels() {
   tabifyDockWidget(m_inspectorPanel, m_audioMixerPanel);
   tabifyDockWidget(m_inspectorPanel, m_localizationPanel);
   tabifyDockWidget(m_inspectorPanel, m_scriptDocPanel);
+  tabifyDockWidget(m_inspectorPanel, m_projectSettingsPanel); // Issue #125
   m_inspectorPanel->raise();
 
   // Tab the bottom panels
@@ -221,6 +247,7 @@ void NMMainWindow::configureDocking() {
   configureDock(m_issuesPanel);
   configureDock(m_diagnosticsPanel);
   configureDock(m_sceneDialogueGraphPanel);
+  configureDock(m_projectSettingsPanel); // Issue #125
 
   applyDockLockState(m_layoutLocked);
   applyTabbedDockMode(m_tabbedDockOnly);
