@@ -38,8 +38,6 @@ class QLineEdit;
 class QTimer;
 class QStackedWidget;
 class QGroupBox;
-class QMediaPlayer;
-class QAudioOutput;
 
 namespace NovelMind::audio {
 class VoiceManifest;
@@ -48,6 +46,10 @@ struct LevelMeter;
 struct RecordingResult;
 struct VoiceManifestLine;
 } // namespace NovelMind::audio
+
+namespace NovelMind::editor {
+class IAudioPlayer;
+} // namespace NovelMind::editor
 
 namespace NovelMind::editor::qt {
 
@@ -74,12 +76,24 @@ private:
 
 /**
  * @brief Recording Studio panel
+ *
+ * Uses IAudioPlayer interface for take playback, enabling:
+ * - Unit testing without audio hardware
+ * - Mocking for CI/CD environments
+ * - Easy swap of audio backends
  */
 class NMRecordingStudioPanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMRecordingStudioPanel(QWidget *parent = nullptr);
+  /**
+   * @brief Construct panel with optional audio player injection
+   * @param parent Parent widget
+   * @param audioPlayer Optional audio player for dependency injection
+   *                    If nullptr, uses ServiceLocator or creates QtAudioPlayer
+   */
+  explicit NMRecordingStudioPanel(QWidget *parent = nullptr,
+                                  IAudioPlayer *audioPlayer = nullptr);
   ~NMRecordingStudioPanel() override;
 
   void onInitialize() override;
@@ -208,9 +222,9 @@ private:
   bool m_isRecording = false;
   float m_recordingStartTime = 0.0f;
 
-  // Playback
-  QMediaPlayer *m_mediaPlayer = nullptr;
-  QAudioOutput *m_audioOutput = nullptr;
+  // Playback - using IAudioPlayer interface (issue #150)
+  std::unique_ptr<IAudioPlayer> m_ownedAudioPlayer; // If we created it
+  IAudioPlayer *m_audioPlayer = nullptr;            // Interface pointer
   bool m_isPlayingTake = false;
 };
 
