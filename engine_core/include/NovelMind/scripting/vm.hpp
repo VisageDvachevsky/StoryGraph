@@ -72,7 +72,8 @@ private:
   bool m_running;
   bool m_paused;
   bool m_waiting;
-  mutable bool m_halted; // mutable to allow getString to halt VM on error
+  bool m_halted;
+  bool m_skipNextIncrement; // Used for JUMP to address 0
   i32 m_choiceResult;
 };
 
