@@ -35,6 +35,7 @@ add_executable(unit_tests
     unit/test_script_runtime_transition.cpp
     unit/test_runtime_config.cpp
     unit/test_division_safety.cpp
+    unit/test_audio_recorder.cpp
 )
 
 target_link_libraries(unit_tests
