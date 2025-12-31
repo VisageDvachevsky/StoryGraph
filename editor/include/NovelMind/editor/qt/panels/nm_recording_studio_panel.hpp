@@ -11,7 +11,15 @@
  * - Take management (record multiple takes, select active)
  * - Integration with Voice Manifest
  *
- * Uses IAudioPlayer interface for audio playback (issue #150)
+ * Signal Flow:
+ * - Outgoing: recordingCompleted(QString, QString) - emitted when recording
+ * finishes
+ * - Outgoing: activeTakeChanged(QString, int) - emitted when active take
+ * changes
+ * - Outgoing: requestNextLine() / requestPrevLine() - for navigation between
+ * lines
+ * - Uses QSignalBlocker in refreshDeviceList() and updateTakeList() to prevent
+ *   feedback loops during programmatic combo box and list widget updates
  */
 
 #include "NovelMind/editor/qt/nm_dock_panel.hpp"

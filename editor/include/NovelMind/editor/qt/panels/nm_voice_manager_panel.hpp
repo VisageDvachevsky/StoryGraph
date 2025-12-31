@@ -11,6 +11,14 @@
  * - Actor assignment and metadata management
  * - Missing voice detection
  * - Async duration probing with caching
+ *
+ * Signal Flow:
+ * - Outgoing: voiceLineSelected(QString) - emitted when user selects a voice
+ * line
+ * - Outgoing: voiceFileChanged(QString, QString) - emitted when voice file is
+ * assigned
+ * - Uses QSignalBlocker in updateVoiceList() to prevent feedback loops during
+ *   programmatic tree widget updates
  */
 
 #include "NovelMind/audio/voice_manifest.hpp"

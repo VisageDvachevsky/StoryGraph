@@ -25,6 +25,7 @@
 #include <QPainter>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QSignalBlocker>
 #include <QSlider>
 #include <QSplitter>
 #include <QTextEdit>
@@ -488,6 +489,10 @@ void NMRecordingStudioPanel::refreshDeviceList() {
     return;
   }
 
+  // Block signals to prevent onInputDeviceChanged from triggering during
+  // programmatic updates, which could cause feedback loops
+  QSignalBlocker blocker(m_inputDeviceCombo);
+
   m_inputDeviceCombo->clear();
   m_inputDeviceCombo->addItem(tr("(Default Device)"), QString());
 
@@ -532,6 +537,10 @@ void NMRecordingStudioPanel::updateTakeList() {
   if (!m_takesList) {
     return;
   }
+
+  // Block signals to prevent onTakeSelected from triggering during
+  // programmatic updates, which could cause feedback loops
+  QSignalBlocker blocker(m_takesList);
 
   m_takesList->clear();
 

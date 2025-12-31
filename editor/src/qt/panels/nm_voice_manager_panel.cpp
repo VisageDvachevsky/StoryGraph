@@ -22,6 +22,7 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QRegularExpression>
+#include <QSignalBlocker>
 #include <QSlider>
 #include <QSplitter>
 #include <QTextStream>
@@ -571,6 +572,10 @@ void NMVoiceManagerPanel::updateVoiceList() {
   if (!m_voiceTree || !m_manifest) {
     return;
   }
+
+  // Block signals to prevent onLineSelected from triggering during
+  // programmatic updates, which could cause feedback loops
+  QSignalBlocker blocker(m_voiceTree);
 
   m_voiceTree->clear();
 
@@ -1411,8 +1416,9 @@ void NMVoiceManagerPanel::onEditLineMetadata() {
   NMVoiceMetadataDialog::MetadataResult result;
   bool ok = NMVoiceMetadataDialog::getMetadata(
       this, dialogueId, currentTags, QString::fromStdString(line->notes),
-      QString::fromStdString(line->speaker), QString::fromStdString(line->scene),
-      result, availableSpeakers, availableScenes, suggestedTags);
+      QString::fromStdString(line->speaker),
+      QString::fromStdString(line->scene), result, availableSpeakers,
+      availableScenes, suggestedTags);
 
   if (ok) {
     // Update tags
