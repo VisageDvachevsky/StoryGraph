@@ -17,6 +17,7 @@
 #include <QKeyEvent>
 #include <QLabel>
 #include <QListWidget>
+#include <QMutexLocker>
 #include <QPen>
 #include <QPushButton>
 #include <QSlider>
@@ -674,13 +675,30 @@ void NMTimelinePanel::duplicateSelectedKeyframes(int offsetFrames) {
     return;
   }
 
-  // Collect keyframes to duplicate with thread-safe access to tracks
+  // Get thread-safe atomic copy of track names to prevent TOCTOU race condition
+  // This ensures the track names snapshot is consistent throughout the
+  // operation
+  const QStringList trackNamesCopy = getTrackNamesSafe();
+
+  // Collect keyframes to duplicate
   QVector<QPair<QString, KeyframeSnapshot>> toDuplicate;
 
-  {
-    // Create atomic copy of track names under lock to prevent TOCTOU race
-    QMutexLocker locker(&m_tracksMutex);
-    QStringList trackNamesCopy = m_tracks.keys();
+  for (const KeyframeId &id : m_selectedKeyframes) {
+    if (id.trackIndex < 0 || id.trackIndex >= trackNamesCopy.size()) {
+      continue;
+    }
+    QString trackName = trackNamesCopy.at(id.trackIndex);
+
+    // Get track with mutex protection
+    TimelineTrack *track = nullptr;
+    {
+      QMutexLocker locker(&m_tracksMutex);
+      track = m_tracks.value(trackName, nullptr);
+    }
+
+    if (!track || track->locked) {
+      continue;
+    }
 
     for (const KeyframeId &id : m_selectedKeyframes) {
       // Bounds check against the atomic copy
@@ -725,24 +743,25 @@ void NMTimelinePanel::setSelectedKeyframesEasing(EasingType easing) {
     return;
   }
 
-  // Collect easing changes to emit signals outside lock
-  QVector<QPair<QString, int>> easingChanges;
+  // Get thread-safe atomic copy of track names to prevent TOCTOU race condition
+  const QStringList trackNamesCopy = getTrackNamesSafe();
 
-  {
-    // Thread-safe access to tracks
-    QMutexLocker locker(&m_tracksMutex);
-    QStringList trackNamesCopy = m_tracks.keys();
+  for (const KeyframeId &id : m_selectedKeyframes) {
+    if (id.trackIndex < 0 || id.trackIndex >= trackNamesCopy.size()) {
+      continue;
+    }
+    QString trackName = trackNamesCopy.at(id.trackIndex);
 
-    for (const KeyframeId &id : m_selectedKeyframes) {
-      if (id.trackIndex < 0 || id.trackIndex >= trackNamesCopy.size()) {
-        continue;
-      }
+    // Get track with mutex protection
+    TimelineTrack *track = nullptr;
+    {
+      QMutexLocker locker(&m_tracksMutex);
+      track = m_tracks.value(trackName, nullptr);
+    }
 
-      QString trackName = trackNamesCopy.at(id.trackIndex);
-      TimelineTrack *track = m_tracks.value(trackName, nullptr);
-      if (!track || track->locked) {
-        continue;
-      }
+    if (!track || track->locked) {
+      continue;
+    }
 
       Keyframe *kf = track->getKeyframe(id.frame);
       if (kf) {
@@ -771,6 +790,9 @@ void NMTimelinePanel::copySelectedKeyframes() {
     return;
   }
 
+  // Get thread-safe atomic copy of track names to prevent TOCTOU race condition
+  const QStringList trackNamesCopy = getTrackNamesSafe();
+
   // Find minimum frame to use as reference point
   int minFrame = INT_MAX;
   for (const KeyframeId &id : m_selectedKeyframes) {
@@ -779,22 +801,23 @@ void NMTimelinePanel::copySelectedKeyframes() {
     }
   }
 
-  {
-    // Thread-safe access to tracks
-    QMutexLocker locker(&m_tracksMutex);
-    QStringList trackNamesCopy = m_tracks.keys();
+  // Copy keyframes with relative frame offsets
+  for (const KeyframeId &id : m_selectedKeyframes) {
+    if (id.trackIndex < 0 || id.trackIndex >= trackNamesCopy.size()) {
+      continue;
+    }
+    QString trackName = trackNamesCopy.at(id.trackIndex);
 
-    // Copy keyframes with relative frame offsets
-    for (const KeyframeId &id : m_selectedKeyframes) {
-      if (id.trackIndex < 0 || id.trackIndex >= trackNamesCopy.size()) {
-        continue;
-      }
+    // Get track with mutex protection
+    TimelineTrack *track = nullptr;
+    {
+      QMutexLocker locker(&m_tracksMutex);
+      track = m_tracks.value(trackName, nullptr);
+    }
 
-      QString trackName = trackNamesCopy.at(id.trackIndex);
-      TimelineTrack *track = m_tracks.value(trackName, nullptr);
-      if (!track) {
-        continue;
-      }
+    if (!track) {
+      continue;
+    }
 
       Keyframe *kf = track->getKeyframe(id.frame);
       if (kf) {
@@ -813,17 +836,24 @@ void NMTimelinePanel::pasteKeyframes() {
     return;
   }
 
+  // Get thread-safe atomic copy of track names to prevent TOCTOU race condition
+  const QStringList trackNamesCopy = getTrackNamesSafe();
+
+  // Get the first selected track or first visible track
   QString targetTrack;
+  for (const KeyframeId &id : m_selectedKeyframes) {
+    if (id.trackIndex >= 0 && id.trackIndex < trackNamesCopy.size()) {
+      targetTrack = trackNamesCopy.at(id.trackIndex);
+      break;
+    }
+  }
 
-  {
-    // Thread-safe access to tracks
+  if (targetTrack.isEmpty()) {
+    // Use first visible track (with mutex protection)
     QMutexLocker locker(&m_tracksMutex);
-    QStringList trackNamesCopy = m_tracks.keys();
-
-    // Get the first selected track or first visible track
-    for (const KeyframeId &id : m_selectedKeyframes) {
-      if (id.trackIndex >= 0 && id.trackIndex < trackNamesCopy.size()) {
-        targetTrack = trackNamesCopy.at(id.trackIndex);
+    for (auto it = m_tracks.constBegin(); it != m_tracks.constEnd(); ++it) {
+      if (it.value()->visible && !it.value()->locked) {
+        targetTrack = it.key();
         break;
       }
     }
@@ -1375,6 +1405,11 @@ void NMTimelinePanel::recordRenderMetrics(double renderTimeMs, int itemCount) {
         PerformanceMetrics::METRIC_TIMELINE_CACHE_HIT,
         static_cast<int>(stats.hitRate() * 100));
   }
+}
+
+QStringList NMTimelinePanel::getTrackNamesSafe() const {
+  QMutexLocker locker(&m_tracksMutex);
+  return m_tracks.keys();
 }
 
 } // namespace NovelMind::editor::qt

@@ -23,6 +23,7 @@
 #include <QGraphicsView>
 #include <QHash>
 #include <QMap>
+#include <QMutex>
 #include <QSet>
 #include <QToolBar>
 #include <QUndoStack>
@@ -402,10 +403,16 @@ private:
   double m_lastRenderTimeMs = 0.0;
   int m_lastSceneItemCount = 0;
 
+  // Thread safety for track access (protects m_tracks map)
+  mutable QMutex m_tracksMutex;
+
   // Helper methods for cached rendering
   void invalidateRenderCache();
   void invalidateTrackCache(int trackIndex);
   void recordRenderMetrics(double renderTimeMs, int itemCount);
+
+  // Thread-safe helper to get a copy of track names
+  QStringList getTrackNamesSafe() const;
 };
 
 } // namespace NovelMind::editor::qt
