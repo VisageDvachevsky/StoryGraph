@@ -95,4 +95,28 @@ if(NOVELMIND_BUILD_EDITOR)
         PROPERTIES
             TIMEOUT 60
     )
+
+    # Abstraction interface unit tests (issue #150)
+    # These tests verify the mock implementations work correctly
+    add_executable(abstraction_interface_tests
+        unit/test_abstraction_interfaces.cpp
+    )
+
+    target_link_libraries(abstraction_interface_tests
+        PRIVATE
+            engine_core
+            novelmind_editor
+            Catch2::Catch2WithMain
+            novelmind_compiler_options
+    )
+
+    target_include_directories(abstraction_interface_tests
+        PRIVATE
+            ${CMAKE_SOURCE_DIR}/editor/include
+    )
+
+    catch_discover_tests(abstraction_interface_tests
+        PROPERTIES
+            TIMEOUT 60
+    )
 endif()
