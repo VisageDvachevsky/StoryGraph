@@ -1,8 +1,10 @@
 #include "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp"
+#include "NovelMind/editor/interfaces/IAudioPlayer.hpp"
+#include "NovelMind/editor/interfaces/QtAudioPlayer.hpp"
+#include "NovelMind/editor/interfaces/ServiceLocator.hpp"
 #include "NovelMind/editor/project_manager.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
 
-#include <QAudioOutput>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDateTime>
@@ -20,6 +22,7 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QRegularExpression>
+#include <QSignalBlocker>
 #include <QSlider>
 #include <QSplitter>
 #include <QTextStream>
@@ -38,13 +41,29 @@ namespace fs = std::filesystem;
 
 namespace NovelMind::editor::qt {
 
-NMVoiceManagerPanel::NMVoiceManagerPanel(QWidget *parent)
+NMVoiceManagerPanel::NMVoiceManagerPanel(QWidget *parent,
+                                         IAudioPlayer *audioPlayer)
     : NMDockPanel("Voice Manager", parent),
       m_manifest(std::make_unique<NovelMind::audio::VoiceManifest>()) {
   // Initialize manifest with default locale
   m_manifest->setDefaultLocale("en");
   m_manifest->addLocale("en");
   m_currentLocale = "en";
+
+  // Use injected audio player or create one (issue #150)
+  if (audioPlayer) {
+    m_audioPlayer = audioPlayer;
+  } else {
+    // Try ServiceLocator first, otherwise create QtAudioPlayer
+    auto *locatorPlayer = ServiceLocator::getAudioPlayer();
+    if (locatorPlayer) {
+      m_audioPlayer = locatorPlayer;
+    } else {
+      // Create our own QtAudioPlayer
+      m_ownedAudioPlayer = std::make_unique<QtAudioPlayer>(this);
+      m_audioPlayer = m_ownedAudioPlayer.get();
+    }
+  }
 }
 
 NMVoiceManagerPanel::~NMVoiceManagerPanel() {
@@ -314,32 +333,23 @@ void NMVoiceManagerPanel::setupPreviewBar() {
 }
 
 void NMVoiceManagerPanel::setupMediaPlayer() {
-  // Guard against multiple initialization (MEM-3 fix)
-  if (m_mediaPlayer) {
-    return; // Already initialized
+  // Set up audio player callbacks (issue #150 - using IAudioPlayer interface)
+  if (m_audioPlayer) {
+    m_audioPlayer->setVolume(static_cast<f32>(m_volume));
+
+    m_audioPlayer->setOnPlaybackStateChanged(
+        [this](AudioPlaybackState state) { onPlaybackStateChanged(); });
+    m_audioPlayer->setOnMediaStatusChanged(
+        [this](AudioMediaStatus status) { onMediaStatusChanged(); });
+    m_audioPlayer->setOnDurationChanged(
+        [this](i64 duration) { onDurationChanged(static_cast<qint64>(duration)); });
+    m_audioPlayer->setOnPositionChanged(
+        [this](i64 position) { onPositionChanged(static_cast<qint64>(position)); });
+    m_audioPlayer->setOnError(
+        [this](const std::string &error) { onMediaErrorOccurred(); });
   }
 
-  // Create audio output with parent ownership
-  m_audioOutput = new QAudioOutput(this);
-  m_audioOutput->setVolume(static_cast<float>(m_volume));
-
-  // Create media player with parent ownership
-  m_mediaPlayer = new QMediaPlayer(this);
-  m_mediaPlayer->setAudioOutput(m_audioOutput);
-
-  // Connect signals once during initialization (not on each play)
-  connect(m_mediaPlayer, &QMediaPlayer::playbackStateChanged, this,
-          &NMVoiceManagerPanel::onPlaybackStateChanged);
-  connect(m_mediaPlayer, &QMediaPlayer::mediaStatusChanged, this,
-          &NMVoiceManagerPanel::onMediaStatusChanged);
-  connect(m_mediaPlayer, &QMediaPlayer::durationChanged, this,
-          &NMVoiceManagerPanel::onDurationChanged);
-  connect(m_mediaPlayer, &QMediaPlayer::positionChanged, this,
-          &NMVoiceManagerPanel::onPositionChanged);
-  connect(m_mediaPlayer, &QMediaPlayer::errorOccurred, this,
-          &NMVoiceManagerPanel::onMediaErrorOccurred);
-
-  // Create separate player for duration probing
+  // Create separate player for duration probing (still uses QMediaPlayer)
   m_probePlayer = new QMediaPlayer(this);
 
   // Connect probe player signals
@@ -568,6 +578,10 @@ void NMVoiceManagerPanel::updateVoiceList() {
   if (!m_voiceTree || !m_manifest) {
     return;
   }
+
+  // Block signals to prevent onLineSelected from triggering during
+  // programmatic updates, which could cause feedback loops
+  QSignalBlocker blocker(m_voiceTree);
 
   m_voiceTree->clear();
 
@@ -837,14 +851,19 @@ bool NMVoiceManagerPanel::playVoiceFile(const QString &filePath) {
     return false;
   }
 
+  if (!m_audioPlayer) {
+    setPlaybackError(tr("Audio player not available"));
+    return false;
+  }
+
   // Stop any current playback first
   stopPlayback();
 
   m_currentlyPlayingFile = filePath;
 
-  // Set the source and play
-  m_mediaPlayer->setSource(QUrl::fromLocalFile(filePath));
-  m_mediaPlayer->play();
+  // Set the source and play using IAudioPlayer interface (issue #150)
+  m_audioPlayer->load(filePath.toStdString());
+  m_audioPlayer->play();
 
   m_isPlaying = true;
 
@@ -857,9 +876,9 @@ bool NMVoiceManagerPanel::playVoiceFile(const QString &filePath) {
 }
 
 void NMVoiceManagerPanel::stopPlayback() {
-  if (m_mediaPlayer) {
-    m_mediaPlayer->stop();
-    m_mediaPlayer->setSource(QUrl()); // Clear source
+  if (m_audioPlayer) {
+    m_audioPlayer->stop();
+    m_audioPlayer->clearSource(); // Clear source
   }
 
   m_isPlaying = false;
@@ -918,15 +937,15 @@ QString NMVoiceManagerPanel::formatDuration(qint64 ms) const {
       .arg(tenths);
 }
 
-// Qt Multimedia signal handlers
+// Audio player signal handlers (using IAudioPlayer interface - issue #150)
 void NMVoiceManagerPanel::onPlaybackStateChanged() {
-  if (!m_mediaPlayer)
+  if (!m_audioPlayer)
     return;
 
-  QMediaPlayer::PlaybackState state = m_mediaPlayer->playbackState();
+  AudioPlaybackState state = m_audioPlayer->getPlaybackState();
 
   switch (state) {
-  case QMediaPlayer::StoppedState:
+  case AudioPlaybackState::Stopped:
     m_isPlaying = false;
     // Only reset UI if we're not switching tracks
     if (m_currentlyPlayingFile.isEmpty()) {
@@ -934,7 +953,7 @@ void NMVoiceManagerPanel::onPlaybackStateChanged() {
     }
     break;
 
-  case QMediaPlayer::PlayingState:
+  case AudioPlaybackState::Playing:
     m_isPlaying = true;
     if (m_playBtn)
       m_playBtn->setEnabled(false);
@@ -942,37 +961,37 @@ void NMVoiceManagerPanel::onPlaybackStateChanged() {
       m_stopBtn->setEnabled(true);
     break;
 
-  case QMediaPlayer::PausedState:
+  case AudioPlaybackState::Paused:
     // Currently not exposing pause, but handle it gracefully
     break;
   }
 }
 
 void NMVoiceManagerPanel::onMediaStatusChanged() {
-  if (!m_mediaPlayer)
+  if (!m_audioPlayer)
     return;
 
-  QMediaPlayer::MediaStatus status = m_mediaPlayer->mediaStatus();
+  AudioMediaStatus status = m_audioPlayer->getMediaStatus();
 
   switch (status) {
-  case QMediaPlayer::EndOfMedia:
+  case AudioMediaStatus::EndOfMedia:
     // Playback finished naturally
     m_currentlyPlayingFile.clear();
     resetPlaybackUI();
     break;
 
-  case QMediaPlayer::InvalidMedia:
+  case AudioMediaStatus::InvalidMedia:
     setPlaybackError(tr("Invalid or unsupported media format"));
     m_currentlyPlayingFile.clear();
     resetPlaybackUI();
     break;
 
-  case QMediaPlayer::NoMedia:
-  case QMediaPlayer::LoadingMedia:
-  case QMediaPlayer::LoadedMedia:
-  case QMediaPlayer::StalledMedia:
-  case QMediaPlayer::BufferingMedia:
-  case QMediaPlayer::BufferedMedia:
+  case AudioMediaStatus::NoMedia:
+  case AudioMediaStatus::Loading:
+  case AudioMediaStatus::Loaded:
+  case AudioMediaStatus::Stalled:
+  case AudioMediaStatus::Buffering:
+  case AudioMediaStatus::Buffered:
     // Normal states, no action needed
     break;
   }
@@ -987,7 +1006,7 @@ void NMVoiceManagerPanel::onDurationChanged(qint64 duration) {
 
   // Update duration label
   if (m_durationLabel) {
-    qint64 position = m_mediaPlayer ? m_mediaPlayer->position() : 0;
+    qint64 position = m_audioPlayer ? static_cast<qint64>(m_audioPlayer->getPositionMs()) : 0;
     m_durationLabel->setText(QString("%1 / %2")
                                  .arg(formatDuration(position))
                                  .arg(formatDuration(duration)));
@@ -1007,10 +1026,10 @@ void NMVoiceManagerPanel::onPositionChanged(qint64 position) {
 }
 
 void NMVoiceManagerPanel::onMediaErrorOccurred() {
-  if (!m_mediaPlayer)
+  if (!m_audioPlayer)
     return;
 
-  QString errorMsg = m_mediaPlayer->errorString();
+  QString errorMsg = QString::fromStdString(m_audioPlayer->getErrorString());
   if (errorMsg.isEmpty()) {
     errorMsg = tr("Unknown playback error");
   }
@@ -1245,8 +1264,8 @@ void NMVoiceManagerPanel::onShowOnlyUnmatched(bool checked) {
 
 void NMVoiceManagerPanel::onVolumeChanged(int value) {
   m_volume = value / 100.0;
-  if (m_audioOutput) {
-    m_audioOutput->setVolume(static_cast<float>(m_volume));
+  if (m_audioPlayer) {
+    m_audioPlayer->setVolume(static_cast<f32>(m_volume));
   }
 }
 
