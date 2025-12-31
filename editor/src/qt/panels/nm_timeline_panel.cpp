@@ -741,34 +741,19 @@ void NMTimelinePanel::duplicateSelectedKeyframes(int offsetFrames) {
       continue;
     }
 
-    for (const KeyframeId &id : m_selectedKeyframes) {
-      // Bounds check against the atomic copy
-      if (id.trackIndex < 0 || id.trackIndex >= trackNamesCopy.size()) {
-        continue;
-      }
-
-      QString trackName = trackNamesCopy.at(id.trackIndex);
-
-      // Get track while still holding lock
-      TimelineTrack *track = m_tracks.value(trackName, nullptr);
-      if (!track || track->locked) {
-        continue;
-      }
-
-      Keyframe *kf = track->getKeyframe(id.frame);
-      if (kf) {
-        KeyframeSnapshot snapshot;
-        snapshot.frame = kf->frame + offsetFrames;
-        snapshot.value = kf->value;
-        snapshot.easingType = static_cast<int>(kf->easing);
-        snapshot.handleInX = kf->handleInX;
-        snapshot.handleInY = kf->handleInY;
-        snapshot.handleOutX = kf->handleOutX;
-        snapshot.handleOutY = kf->handleOutY;
-        toDuplicate.append(qMakePair(trackName, snapshot));
-      }
+    Keyframe *kf = track->getKeyframe(id.frame);
+    if (kf) {
+      KeyframeSnapshot snapshot;
+      snapshot.frame = kf->frame + offsetFrames;
+      snapshot.value = kf->value;
+      snapshot.easingType = static_cast<int>(kf->easing);
+      snapshot.handleInX = kf->handleInX;
+      snapshot.handleInY = kf->handleInY;
+      snapshot.handleOutX = kf->handleOutX;
+      snapshot.handleOutY = kf->handleOutY;
+      toDuplicate.append(qMakePair(trackName, snapshot));
     }
-  } // Lock released here
+  }
 
   // Add duplicated keyframes (outside lock to avoid holding lock during undo)
   for (const auto &pair : toDuplicate) {
@@ -787,6 +772,9 @@ void NMTimelinePanel::setSelectedKeyframesEasing(EasingType easing) {
   // Get thread-safe atomic copy of track names to prevent TOCTOU race condition
   const QStringList trackNamesCopy = getTrackNamesSafe();
 
+  // Collect changes to emit signals outside of mutex lock
+  QVector<QPair<QString, int>> easingChanges;
+
   for (const KeyframeId &id : m_selectedKeyframes) {
     if (id.trackIndex < 0 || id.trackIndex >= trackNamesCopy.size()) {
       continue;
@@ -804,17 +792,16 @@ void NMTimelinePanel::setSelectedKeyframesEasing(EasingType easing) {
       continue;
     }
 
-      Keyframe *kf = track->getKeyframe(id.frame);
-      if (kf) {
-        EasingType oldEasing = kf->easing;
-        kf->easing = easing;
-        easingChanges.append(qMakePair(trackName, id.frame));
+    Keyframe *kf = track->getKeyframe(id.frame);
+    if (kf) {
+      EasingType oldEasing = kf->easing;
+      kf->easing = easing;
+      easingChanges.append(qMakePair(trackName, id.frame));
 
-        // Create undo command (simplified - ideally would batch these)
-        Q_UNUSED(oldEasing);
-      }
+      // Create undo command (simplified - ideally would batch these)
+      Q_UNUSED(oldEasing);
     }
-  } // Lock released here
+  }
 
   // Emit signals outside lock
   for (const auto &change : easingChanges) {
@@ -860,16 +847,15 @@ void NMTimelinePanel::copySelectedKeyframes() {
       continue;
     }
 
-      Keyframe *kf = track->getKeyframe(id.frame);
-      if (kf) {
-        KeyframeCopy copy;
-        copy.relativeFrame = kf->frame - minFrame;
-        copy.value = kf->value;
-        copy.easing = kf->easing;
-        m_keyframeClipboard.append(copy);
-      }
+    Keyframe *kf = track->getKeyframe(id.frame);
+    if (kf) {
+      KeyframeCopy copy;
+      copy.relativeFrame = kf->frame - minFrame;
+      copy.value = kf->value;
+      copy.easing = kf->easing;
+      m_keyframeClipboard.append(copy);
     }
-  } // Lock released here
+  }
 }
 
 void NMTimelinePanel::pasteKeyframes() {
@@ -1821,6 +1807,8 @@ void NMTimelinePanel::onKeyframeDragStarted(const KeyframeId &id) {
 void NMTimelinePanel::onKeyframeDragEnded() {
   m_isDraggingSelection = false;
   m_dragStartFrames.clear();
+}
+
 QStringList NMTimelinePanel::getTrackNamesSafe() const {
   QMutexLocker locker(&m_tracksMutex);
   return m_tracks.keys();

@@ -72,7 +72,7 @@ private:
   bool m_running;
   bool m_paused;
   bool m_waiting;
-  bool m_halted;
+  mutable bool m_halted;  // mutable to allow setting in const getString() on error
   bool m_skipNextIncrement; // Used for JUMP to address 0
   i32 m_choiceResult;
 };
