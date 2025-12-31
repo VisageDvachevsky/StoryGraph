@@ -235,9 +235,9 @@ void NMBezierCurveEditorDialog::buildUi() {
   QPointF startScenePos = normalizedToScene(0.0, 0.0);
   QPointF endScenePos = normalizedToScene(1.0, 1.0);
 
-  auto *startPoint = new NMBezierControlPointItem(
-      NMBezierControlPointItem::StartPoint, startScenePos.x(),
-      startScenePos.y());
+  auto *startPoint =
+      new NMBezierControlPointItem(NMBezierControlPointItem::StartPoint,
+                                   startScenePos.x(), startScenePos.y());
   startPoint->setDraggable(false);
   m_curveScene->addItem(startPoint);
 
@@ -247,8 +247,10 @@ void NMBezierCurveEditorDialog::buildUi() {
   m_curveScene->addItem(endPoint);
 
   // Create control point handles
-  QPointF cp1Scene = normalizedToScene(m_controlPoint1.x(), m_controlPoint1.y());
-  QPointF cp2Scene = normalizedToScene(m_controlPoint2.x(), m_controlPoint2.y());
+  QPointF cp1Scene =
+      normalizedToScene(m_controlPoint1.x(), m_controlPoint1.y());
+  QPointF cp2Scene =
+      normalizedToScene(m_controlPoint2.x(), m_controlPoint2.y());
 
   // Handle lines
   m_handleLine1 = m_curveScene->addLine(
@@ -275,8 +277,8 @@ void NMBezierCurveEditorDialog::buildUi() {
   m_curveScene->addItem(m_cp2Item);
 
   // Initial curve path
-  m_curvePathItem = m_curveScene->addPath(
-      QPainterPath(), QPen(QColor("#33cc66"), 2.5));
+  m_curvePathItem =
+      m_curveScene->addPath(QPainterPath(), QPen(QColor("#33cc66"), 2.5));
   m_curvePathItem->setZValue(1);
 }
 
@@ -392,8 +394,10 @@ void NMBezierCurveEditorDialog::onSpinBoxChanged() {
   m_controlPoint2 = QPointF(m_cp2XSpin->value(), m_cp2YSpin->value());
 
   // Update visual positions
-  QPointF cp1Scene = normalizedToScene(m_controlPoint1.x(), m_controlPoint1.y());
-  QPointF cp2Scene = normalizedToScene(m_controlPoint2.x(), m_controlPoint2.y());
+  QPointF cp1Scene =
+      normalizedToScene(m_controlPoint1.x(), m_controlPoint1.y());
+  QPointF cp2Scene =
+      normalizedToScene(m_controlPoint2.x(), m_controlPoint2.y());
 
   m_cp1Item->setPos(cp1Scene);
   m_cp2Item->setPos(cp2Scene);
@@ -444,8 +448,10 @@ void NMBezierCurveEditorDialog::updateCurveVisualization() {
   QRectF rect = usableRect();
   QPointF startScenePos = normalizedToScene(0.0, 0.0);
   QPointF endScenePos = normalizedToScene(1.0, 1.0);
-  QPointF cp1Scene = normalizedToScene(m_controlPoint1.x(), m_controlPoint1.y());
-  QPointF cp2Scene = normalizedToScene(m_controlPoint2.x(), m_controlPoint2.y());
+  QPointF cp1Scene =
+      normalizedToScene(m_controlPoint1.x(), m_controlPoint1.y());
+  QPointF cp2Scene =
+      normalizedToScene(m_controlPoint2.x(), m_controlPoint2.y());
 
   // Update handle lines
   m_handleLine1->setLine(startScenePos.x(), startScenePos.y(), cp1Scene.x(),
