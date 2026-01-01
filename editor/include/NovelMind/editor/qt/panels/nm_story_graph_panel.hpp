@@ -455,8 +455,18 @@ protected:
   void mouseMoveEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void drawForeground(QPainter *painter, const QRectF &rect) override;
+  void hideEvent(QHideEvent *event) override;
 
 private:
+  /**
+   * @brief Reset all drag/pan/connection state
+   *
+   * Called from hideEvent to ensure drag state doesn't persist when the widget
+   * is hidden (e.g., when parent panel is closed during a drag operation).
+   * Issue #172 fix: Prevents undefined behavior from stale drag state.
+   */
+  void resetDragState();
+
   qreal m_zoomLevel = 1.0;
   bool m_isPanning = false;
   QPoint m_lastPanPoint;
