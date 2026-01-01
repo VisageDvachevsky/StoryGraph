@@ -418,7 +418,7 @@ private:
   std::vector<f32> m_recordBuffer;
   std::atomic<u64> m_samplesRecorded{0};
 
-  // Callbacks (protected by m_callbackMutex)
+  // Callbacks (protected by m_callbackMutex for thread-safe access from audio thread)
   mutable std::mutex m_callbackMutex;
   OnLevelUpdate m_onLevelUpdate;
   OnRecordingStateChanged m_onStateChanged;

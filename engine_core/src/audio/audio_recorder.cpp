@@ -359,7 +359,7 @@ Result<void> AudioRecorder::startRecording(const std::string &outputPath) {
     m_encoder.reset();
     setState(RecordingState::Error);
 
-    // Copy callback under lock
+    // Copy callback while holding lock
     OnRecordingError errorCallback;
     {
       std::lock_guard<std::mutex> lock(m_callbackMutex);
@@ -549,8 +549,7 @@ void AudioRecorder::updateLevelMeter(const f32 *samples, u32 sampleCount) {
     m_currentLevel.clipping = peak >= 1.0f;
   }
 
-  // Fire callback on level update (copy callback under lock to avoid holding
-  // lock during call)
+  // Fire callback on level update (copy callback while holding lock to avoid deadlock)
   OnLevelUpdate callback;
   {
     std::lock_guard<std::mutex> lock(m_callbackMutex);
@@ -647,7 +646,7 @@ void AudioRecorder::finalizeRecording() {
 
   setState(RecordingState::Idle);
 
-  // Fire callback only if not cancelled (copy callback under lock)
+  // Fire callback only if not cancelled (copy callback while holding lock)
   if (!m_cancelRequested) {
     OnRecordingComplete callback;
     {
@@ -681,7 +680,7 @@ void AudioRecorder::processRecording() {
 void AudioRecorder::setState(RecordingState state) {
   m_state = state;
 
-  // Copy callback under lock to avoid holding lock during call
+  // Copy callback while holding lock to avoid holding mutex during callback
   OnRecordingStateChanged callback;
   {
     std::lock_guard<std::mutex> lock(m_callbackMutex);
