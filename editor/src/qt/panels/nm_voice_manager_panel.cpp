@@ -50,20 +50,8 @@ NMVoiceManagerPanel::NMVoiceManagerPanel(QWidget *parent,
   m_manifest->addLocale("en");
   m_currentLocale = "en";
 
-  // Use injected audio player or create one (issue #150)
-  if (audioPlayer) {
-    m_audioPlayer = audioPlayer;
-  } else {
-    // Try ServiceLocator first, otherwise create QtAudioPlayer
-    auto *locatorPlayer = ServiceLocator::getAudioPlayer();
-    if (locatorPlayer) {
-      m_audioPlayer = locatorPlayer;
-    } else {
-      // Create our own QtAudioPlayer
-      m_ownedAudioPlayer = std::make_unique<QtAudioPlayer>(this);
-      m_audioPlayer = m_ownedAudioPlayer.get();
-    }
-  }
+  // VM-2: Set up callbacks for auto-refresh
+  setupManifestCallbacks();
 }
 
 NMVoiceManagerPanel::~NMVoiceManagerPanel() {
@@ -382,6 +370,9 @@ void NMVoiceManagerPanel::scanProject() {
     m_manifest->addLocale("en");
   }
 
+  // VM-2: Set up callbacks for auto-refresh
+  setupManifestCallbacks();
+
   m_voiceFiles.clear();
   m_durationCache.clear(); // Clear cache on full rescan
 
@@ -579,9 +570,12 @@ void NMVoiceManagerPanel::updateVoiceList() {
     return;
   }
 
-  // Block signals to prevent onLineSelected from triggering during
-  // programmatic updates, which could cause feedback loops
-  QSignalBlocker blocker(m_voiceTree);
+  // VM-4: Save current selection before clearing
+  QString selectedLineId;
+  auto *currentItem = m_voiceTree->currentItem();
+  if (currentItem) {
+    selectedLineId = currentItem->data(0, Qt::UserRole).toString();
+  }
 
   m_voiceTree->clear();
 
@@ -752,6 +746,14 @@ void NMVoiceManagerPanel::updateVoiceList() {
       const QString tagsJoined = tagList.join(QStringLiteral(", "));
       item->setText(8, tagsJoined);
       item->setToolTip(8, tagsJoined);
+    }
+  }
+
+  // VM-4: Restore selection if line still visible
+  if (!selectedLineId.isEmpty()) {
+    int row = findRowByLineId(selectedLineId);
+    if (row >= 0) {
+      m_voiceTree->setCurrentItem(m_voiceTree->topLevelItem(row));
     }
   }
 }
@@ -1045,60 +1047,109 @@ void NMVoiceManagerPanel::startDurationProbing() {
     return;
   }
 
-  // RACE-1 fix: Stop any in-progress probing before restarting
-  if (m_isProbing) {
-    // Cancel current probe by clearing the queue and resetting state
-    m_probeQueue.clear();
-    m_isProbing = false;
-    m_currentProbeFile.clear();
+  // RACE-1 fix: Atomic check-and-cancel for thread safety
+  bool wasProbing = m_isProbing.exchange(false);
+
+  if (wasProbing) {
+    // Cancel current probe
     if (m_probePlayer) {
       m_probePlayer->stop();
     }
+
+    // Clear queue under lock
+    {
+      std::lock_guard<std::mutex> lock(m_probeMutex);
+      m_probeQueue.clear();
+      m_currentProbeFile.clear();
+    }
   }
 
-  // Clear the probe queue and add all voice files for current locale
-  m_probeQueue.clear();
+  // Build queue under lock to prevent concurrent modification
+  {
+    std::lock_guard<std::mutex> lock(m_probeMutex);
+    m_probeQueue.clear();
 
-  for (const auto &line : m_manifest->getLines()) {
-    auto *localeFile = line.getFile(m_currentLocale.toStdString());
-    if (localeFile && !localeFile->filePath.empty()) {
-      QString filePath = QString::fromStdString(localeFile->filePath);
-      // Check if we have a valid cached duration
-      double cached = getCachedDuration(filePath);
-      if (cached <= 0) {
-        m_probeQueue.enqueue(filePath);
+    // Copy manifest lines to avoid iterator invalidation during iteration
+    auto lines = m_manifest->getLines();
+
+    for (const auto &line : lines) {
+      auto *localeFile = line.getFile(m_currentLocale.toStdString());
+      if (localeFile && !localeFile->filePath.empty()) {
+        QString filePath = QString::fromStdString(localeFile->filePath);
+        // Check if we have a valid cached duration
+        double cached = getCachedDuration(filePath);
+        if (cached <= 0) {
+          m_probeQueue.enqueue(filePath);
+        }
       }
     }
   }
 
-  // Start processing
-  if (!m_probeQueue.isEmpty() && !m_isProbing) {
-    processNextDurationProbe();
+  // Start probing with atomic guard to prevent double-start
+  bool queueNotEmpty = false;
+  {
+    std::lock_guard<std::mutex> lock(m_probeMutex);
+    queueNotEmpty = !m_probeQueue.isEmpty();
+  }
+
+  if (queueNotEmpty) {
+    bool expected = false;
+    if (m_isProbing.compare_exchange_strong(expected, true)) {
+      // Successfully acquired probing lock
+      processNextDurationProbe();
+    }
+    // If compare_exchange fails, another thread started probing - that's fine
   }
 }
 
 void NMVoiceManagerPanel::processNextDurationProbe() {
-  if (m_probeQueue.isEmpty()) {
-    m_isProbing = false;
-    m_currentProbeFile.clear();
-    // Update the list with newly probed durations
-    updateDurationsInList();
+  // Check atomic flag first
+  if (!m_isProbing.load()) {
     return;
   }
 
-  m_isProbing = true;
-  m_currentProbeFile = m_probeQueue.dequeue();
+  QString nextFile;
+
+  // Dequeue under lock
+  {
+    std::lock_guard<std::mutex> lock(m_probeMutex);
+
+    if (m_probeQueue.isEmpty()) {
+      m_isProbing.store(false);
+      m_currentProbeFile.clear();
+      // Update the list with newly probed durations (outside lock to avoid deadlock)
+      QMetaObject::invokeMethod(this, &NMVoiceManagerPanel::updateDurationsInList,
+                                Qt::QueuedConnection);
+      return;
+    }
+
+    nextFile = m_probeQueue.dequeue();
+    m_currentProbeFile = nextFile;
+  }
 
   if (!m_probePlayer) {
-    m_isProbing = false;
+    m_isProbing.store(false);
     return;
   }
 
-  m_probePlayer->setSource(QUrl::fromLocalFile(m_currentProbeFile));
+  // Probe outside lock to avoid deadlock
+  m_probePlayer->setSource(QUrl::fromLocalFile(nextFile));
 }
 
 void NMVoiceManagerPanel::onProbeDurationFinished() {
-  if (!m_probePlayer || m_currentProbeFile.isEmpty() || !m_manifest) {
+  if (!m_probePlayer || !m_manifest) {
+    processNextDurationProbe();
+    return;
+  }
+
+  // Read current file under lock
+  QString filePath;
+  {
+    std::lock_guard<std::mutex> lock(m_probeMutex);
+    filePath = m_currentProbeFile;
+  }
+
+  if (filePath.isEmpty()) {
     processNextDurationProbe();
     return;
   }
@@ -1106,10 +1157,10 @@ void NMVoiceManagerPanel::onProbeDurationFinished() {
   qint64 durationMs = m_probePlayer->duration();
   if (durationMs > 0) {
     double durationSec = static_cast<double>(durationMs) / 1000.0;
-    cacheDuration(m_currentProbeFile, durationSec);
+    cacheDuration(filePath, durationSec);
 
     // Update the duration in manifest for current locale
-    std::string currentFilePath = m_currentProbeFile.toStdString();
+    std::string currentFilePath = filePath.toStdString();
     for (auto &line : m_manifest->getLines()) {
       auto *localeFile = line.getFile(m_currentLocale.toStdString());
       if (localeFile && localeFile->filePath == currentFilePath) {
@@ -1597,6 +1648,213 @@ void NMVoiceManagerPanel::onSetLineStatus() {
       updateStatistics();
     }
   }
+}
+
+// ============================================================================
+// VM-2: Auto-Refresh Implementation
+// ============================================================================
+
+void NMVoiceManagerPanel::onRecordingCompleted(const QString &lineId,
+                                               const QString &locale) {
+  if (VERBOSE_LOGGING) {
+#ifdef QT_DEBUG
+    qDebug() << "Recording completed:" << lineId << "(" << locale << ")";
+#endif
+  }
+
+  // Find row for this line
+  int row = findRowByLineId(lineId);
+
+  if (row >= 0) {
+    // Update status column only (avoid full refresh to preserve filters)
+    updateRowStatus(row, lineId, locale);
+
+    // Flash row to indicate update
+    flashRow(row);
+  } else {
+    // Line not visible (filtered out) - just update statistics
+    // Don't refresh table as it would show the line despite active filters
+  }
+
+  // Update statistics
+  updateStatistics();
+}
+
+void NMVoiceManagerPanel::onFileStatusChanged(const QString &lineId,
+                                              const QString &locale) {
+  if (VERBOSE_LOGGING) {
+#ifdef QT_DEBUG
+    qDebug() << "File status changed:" << lineId << "(" << locale << ")";
+#endif
+  }
+
+  // Only update if it's for the current locale
+  if (locale != m_currentLocale) {
+    return;
+  }
+
+  // Find row for this line
+  int row = findRowByLineId(lineId);
+
+  if (row >= 0) {
+    // Update status column only
+    updateRowStatus(row, lineId, locale);
+
+    // Flash row to indicate update
+    flashRow(row);
+  }
+
+  // Update statistics
+  updateStatistics();
+}
+
+// ============================================================================
+// VM-4: Selection and Row Management
+// ============================================================================
+
+int NMVoiceManagerPanel::findRowByLineId(const QString &lineId) const {
+  if (!m_voiceTree) {
+    return -1;
+  }
+
+  for (int i = 0; i < m_voiceTree->topLevelItemCount(); ++i) {
+    auto *item = m_voiceTree->topLevelItem(i);
+    if (item && item->data(0, Qt::UserRole).toString() == lineId) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+void NMVoiceManagerPanel::updateRowStatus(int row, const QString &lineId,
+                                          const QString &locale) {
+  if (!m_voiceTree || !m_manifest || row < 0 ||
+      row >= m_voiceTree->topLevelItemCount()) {
+    return;
+  }
+
+  auto *item = m_voiceTree->topLevelItem(row);
+  if (!item) {
+    return;
+  }
+
+  auto *line = m_manifest->getLine(lineId.toStdString());
+  if (!line) {
+    return;
+  }
+
+  std::string localeStr =
+      locale.isEmpty() ? m_currentLocale.toStdString() : locale.toStdString();
+  auto *localeFile = line->getFile(localeStr);
+
+  // Update status column (column 7)
+  NovelMind::audio::VoiceLineStatus status =
+      localeFile ? localeFile->status
+                 : NovelMind::audio::VoiceLineStatus::Missing;
+
+  QString statusText;
+  QColor statusColor;
+  switch (status) {
+  case NovelMind::audio::VoiceLineStatus::Missing:
+    statusText = tr("Missing");
+    statusColor = QColor(200, 60, 60);
+    break;
+  case NovelMind::audio::VoiceLineStatus::Recorded:
+    statusText = tr("Recorded");
+    statusColor = QColor(60, 180, 200);
+    break;
+  case NovelMind::audio::VoiceLineStatus::Imported:
+    statusText = tr("Imported");
+    statusColor = QColor(200, 180, 60);
+    break;
+  case NovelMind::audio::VoiceLineStatus::NeedsReview:
+    statusText = tr("Needs Review");
+    statusColor = QColor(200, 120, 60);
+    break;
+  case NovelMind::audio::VoiceLineStatus::Approved:
+    statusText = tr("Approved");
+    statusColor = QColor(60, 180, 60);
+    break;
+  }
+  item->setText(7, statusText);
+  item->setForeground(7, statusColor);
+
+  // Update voice file column (column 4)
+  if (localeFile && !localeFile->filePath.empty()) {
+    QString filePath = QString::fromStdString(localeFile->filePath);
+    item->setText(4, QFileInfo(filePath).fileName());
+    item->setToolTip(4, filePath);
+  } else {
+    item->setText(4, tr("(none)"));
+    item->setToolTip(4, QString());
+  }
+
+  // Update duration column (column 6)
+  if (localeFile && localeFile->duration > 0) {
+    qint64 durationMs = static_cast<qint64>(localeFile->duration * 1000);
+    item->setText(6, formatDuration(durationMs));
+  } else {
+    item->setText(6, QString());
+  }
+}
+
+void NMVoiceManagerPanel::flashRow(int row) {
+  if (!m_voiceTree || row < 0 || row >= m_voiceTree->topLevelItemCount()) {
+    return;
+  }
+
+  auto *item = m_voiceTree->topLevelItem(row);
+  if (!item) {
+    return;
+  }
+
+  // Store original background color (use first cell as reference)
+  QBrush originalBrush = item->background(0);
+  QColor flashColor(100, 200, 100, 100); // Light green
+
+  // Apply flash color to all cells in row
+  for (int col = 0; col < m_voiceTree->columnCount(); ++col) {
+    item->setBackground(col, flashColor);
+  }
+
+  // Reset to original color after 500ms
+  QTimer::singleShot(500, this, [this, row, originalBrush]() {
+    if (!m_voiceTree || row >= m_voiceTree->topLevelItemCount()) {
+      return;
+    }
+    auto *item = m_voiceTree->topLevelItem(row);
+    if (item) {
+      for (int col = 0; col < m_voiceTree->columnCount(); ++col) {
+        item->setBackground(col, originalBrush);
+      }
+    }
+  });
+}
+
+void NMVoiceManagerPanel::setupManifestCallbacks() {
+  if (!m_manifest) {
+    return;
+  }
+
+  // Set up callback for status changes
+  m_manifest->setOnStatusChanged(
+      [this](const std::string &lineId, const std::string &locale,
+             [[maybe_unused]] NovelMind::audio::VoiceLineStatus status) {
+        // Use QMetaObject::invokeMethod to ensure thread safety
+        // This will post the call to the Qt event loop
+        QMetaObject::invokeMethod(
+            this, "onFileStatusChanged", Qt::QueuedConnection,
+            Q_ARG(QString, QString::fromStdString(lineId)),
+            Q_ARG(QString, QString::fromStdString(locale)));
+      });
+
+  // Set up callback for line changes
+  m_manifest->setOnLineChanged([this](const std::string &lineId) {
+    // Line content changed - may need to update display
+    QMetaObject::invokeMethod(this, "onFileStatusChanged", Qt::QueuedConnection,
+                              Q_ARG(QString, QString::fromStdString(lineId)),
+                              Q_ARG(QString, m_currentLocale));
+  });
 }
 
 } // namespace NovelMind::editor::qt

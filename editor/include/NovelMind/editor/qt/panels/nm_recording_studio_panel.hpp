@@ -150,6 +150,7 @@ private slots:
   void onPrevLineClicked();
   void onTakeSelected(int index);
   void onDeleteTakeClicked();
+  void onSetActiveClicked();
   void onSetActiveTakeClicked();
   void onTakeDoubleClicked(QListWidgetItem *item);
   void onTakesContextMenu(const QPoint &pos);
@@ -165,12 +166,14 @@ private:
   void setupUI();
   void setupDeviceSection();
   void setupLevelMeterSection();
+  void setupFormatSection();
   void setupRecordingControls();
   void setupLineInfoSection();
   void setupTakeManagement();
   void setupNavigationSection();
 
   void refreshDeviceList();
+  void onFormatChanged();
   void updateLineInfo();
   void updateTakeList();
   void updateTakesHeader(int totalTakes, int activeTakeNum);
@@ -189,6 +192,12 @@ private:
   VUMeterWidget *m_vuMeter = nullptr;
   QLabel *m_levelDbLabel = nullptr;
   QLabel *m_clippingWarning = nullptr;
+  QLabel *m_levelStatusLabel = nullptr;  // "Good level", "Too quiet", etc.
+
+  // Recording format selection
+  QComboBox *m_sampleRateCombo = nullptr;
+  QComboBox *m_bitDepthCombo = nullptr;
+  QComboBox *m_channelsCombo = nullptr;
 
   // Recording controls
   QPushButton *m_recordBtn = nullptr;
@@ -232,6 +241,9 @@ private:
   std::unique_ptr<IAudioPlayer> m_ownedAudioPlayer; // If we created it
   IAudioPlayer *m_audioPlayer = nullptr;            // Interface pointer
   bool m_isPlayingTake = false;
+
+  // Level status tracking
+  bool m_clippingWarningShown = false;  // Prevents repeated beeps
 };
 
 } // namespace NovelMind::editor::qt

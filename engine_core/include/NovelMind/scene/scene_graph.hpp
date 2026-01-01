@@ -207,17 +207,21 @@ protected:
                              const std::string &oldValue,
                              const std::string &newValue);
 
+  // Protected access for derived classes
+  renderer::Transform2D m_transform;
+  f32 m_anchorX = 0.5f;
+  f32 m_anchorY = 0.5f;
+  f32 m_alpha = 1.0f;
+  bool m_visible = true;
+  resource::ResourceManager *m_resources = nullptr;
+  localization::LocalizationManager *m_localization = nullptr;
+
 private:
   // Recursive helper with depth limit to prevent stack overflow
   SceneObjectBase *findChildRecursive(const std::string &id, int depth);
 
   std::string m_id;
   SceneObjectType m_type;
-  renderer::Transform2D m_transform;
-  f32 m_anchorX = 0.5f;
-  f32 m_anchorY = 0.5f;
-  f32 m_alpha = 1.0f;
-  bool m_visible = true;
   i32 m_zOrder = 0;
 
   SceneObjectBase *m_parent = nullptr;
@@ -230,8 +234,6 @@ private:
 
   // Observer for change notifications (set by SceneGraph)
   ISceneObserver *m_observer = nullptr;
-  resource::ResourceManager *m_resources = nullptr;
-  localization::LocalizationManager *m_localization = nullptr;
   friend class SceneGraph;
 };
 

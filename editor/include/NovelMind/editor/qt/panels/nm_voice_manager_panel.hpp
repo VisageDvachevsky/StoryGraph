@@ -30,7 +30,9 @@
 #include <QToolBar>
 #include <QWidget>
 
+#include <atomic>
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 
 // Forward declarations for Qt Multimedia (still needed for duration probing)
@@ -153,6 +155,21 @@ signals:
    */
   void playbackError(const QString &errorMessage);
 
+public slots:
+  /**
+   * @brief Handle recording completion from Voice Studio
+   * @param lineId Voice line ID that was recorded
+   * @param locale Locale of the recording
+   */
+  void onRecordingCompleted(const QString &lineId, const QString &locale);
+
+  /**
+   * @brief Handle file status change from manifest
+   * @param lineId Voice line ID that changed
+   * @param locale Locale that changed
+   */
+  void onFileStatusChanged(const QString &lineId, const QString &locale);
+
 private slots:
   void onScanClicked();
   void onAutoMatchClicked();
@@ -214,6 +231,12 @@ private:
   void cacheDuration(const QString &filePath, double duration);
   void updateDurationsInList();
 
+  // Selection and row management (VM-4)
+  int findRowByLineId(const QString &lineId) const;
+  void updateRowStatus(int row, const QString &lineId, const QString &locale);
+  void flashRow(int row);
+  void setupManifestCallbacks();
+
   // UI Elements
   QSplitter *m_splitter = nullptr;
   QTreeWidget *m_voiceTree = nullptr;
@@ -238,7 +261,8 @@ private:
   QPointer<QMediaPlayer> m_probePlayer;
   QQueue<QString> m_probeQueue;
   QString m_currentProbeFile;
-  bool m_isProbing = false;
+  std::atomic<bool> m_isProbing{false};    // Thread-safe flag for probing state
+  mutable std::mutex m_probeMutex;         // Mutex for queue and file access
   static constexpr int MAX_CONCURRENT_PROBES = 1; // One at a time for stability
 
   // Duration cache: path -> {duration, mtime}

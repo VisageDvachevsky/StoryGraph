@@ -56,6 +56,8 @@ class NMCurveEditorPanel;
 class NMBuildSettingsPanel;
 class NMVoiceStudioPanel;
 class NMAudioMixerPanel;
+class NMAnimationAdapter;
+class NMProjectSettingsPanel;
 
 /**
  * @brief Main application window for the NovelMind Editor
@@ -145,6 +147,9 @@ public:
   }
   [[nodiscard]] NMAudioMixerPanel *audioMixerPanel() const {
     return m_audioMixerPanel;
+  }
+  [[nodiscard]] NMProjectSettingsPanel *projectSettingsPanel() const {
+    return m_projectSettingsPanel;
   }
 
   // =========================================================================
@@ -481,6 +486,8 @@ private:
   NMBuildSettingsPanel *m_buildSettingsPanel = nullptr;
   NMVoiceStudioPanel *m_voiceStudioPanel = nullptr;
   NMAudioMixerPanel *m_audioMixerPanel = nullptr;
+  NMAnimationAdapter *m_animationAdapter = nullptr;
+  NMProjectSettingsPanel *m_projectSettingsPanel = nullptr;
 
   // =========================================================================
   // State
