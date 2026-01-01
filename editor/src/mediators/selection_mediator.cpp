@@ -5,6 +5,7 @@
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
 
 #include <QDebug>
+#include <QFileInfo>
 
 namespace NovelMind::editor::mediators {
 

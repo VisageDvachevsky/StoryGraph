@@ -2,6 +2,7 @@
 #include "NovelMind/core/logger.hpp"
 #include "NovelMind/editor/guided_learning/anchor_registry.hpp"
 #include "NovelMind/editor/guided_learning/tutorial_subsystem.hpp"
+#include "NovelMind/editor/mediators/panel_mediators.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/nm_settings_dialog.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"

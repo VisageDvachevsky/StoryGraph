@@ -530,7 +530,6 @@ void NMRecordingStudioPanel::setupTakeManagement() {
           [this]([[maybe_unused]] QListWidgetItem *item) {
             onSetActiveClicked();
           });
-  layout->addWidget(m_takesList, 1);
   connect(m_takesList, &QListWidget::itemDoubleClicked, this,
           &NMRecordingStudioPanel::onTakeDoubleClicked);
   connect(m_takesList, &QListWidget::customContextMenuRequested, this,
@@ -549,7 +548,6 @@ void NMRecordingStudioPanel::setupTakeManagement() {
   m_setActiveBtn = new QPushButton(tr("Set Active"), group);
   m_setActiveBtn->setEnabled(false);
   connect(m_setActiveBtn, &QPushButton::clicked, this,
-          &NMRecordingStudioPanel::onSetActiveClicked);
           &NMRecordingStudioPanel::onSetActiveTakeClicked);
   controlsLayout->addWidget(m_setActiveBtn);
 
@@ -1053,6 +1051,9 @@ void NMRecordingStudioPanel::onDeleteTakeClicked() {
 }
 
 void NMRecordingStudioPanel::onSetActiveClicked() {
+  onSetActiveTakeClicked();
+}
+
 void NMRecordingStudioPanel::onSetActiveTakeClicked() {
   if (!m_manifest || m_currentLineId.empty()) {
     return;
@@ -1069,6 +1070,11 @@ void NMRecordingStudioPanel::onSetActiveTakeClicked() {
   auto takes = m_manifest->getTakes(m_currentLineId, m_currentLocale);
   if (selectedIndex >= static_cast<int>(takes.size())) {
     NOVELMIND_LOG_WARN("[RecordingStudio] Take index out of range");
+    return;
+  }
+
+  // Don't set active if already active
+  if (takes[static_cast<size_t>(selectedIndex)].isActive) {
     return;
   }
 
@@ -1092,42 +1098,6 @@ void NMRecordingStudioPanel::onSetActiveTakeClicked() {
 
   NOVELMIND_LOG_INFO(std::string("[RecordingStudio] Set take #") +
                      std::to_string(selectedIndex + 1) + " as active for line " +
-                     m_currentLineId);
-}
-
-  int selectedIndex = m_takesList ? m_takesList->currentRow() : -1;
-  if (selectedIndex < 0) {
-    return;
-  }
-
-  auto takes = m_manifest->getTakes(m_currentLineId, m_currentLocale);
-  if (selectedIndex >= static_cast<int>(takes.size())) {
-    return;
-  }
-
-  // Don't set active if already active
-  if (takes[static_cast<size_t>(selectedIndex)].isActive) {
-    return;
-  }
-
-  // Set the active take via manifest
-  auto result = m_manifest->setActiveTake(m_currentLineId, m_currentLocale,
-                                          static_cast<u32>(selectedIndex));
-  if (result.isError()) {
-    NOVELMIND_LOG_WARN("[RecordingStudio] Failed to set active take: {}",
-                       result.error());
-    return;
-  }
-
-  // Refresh UI
-  updateTakeList();
-
-  // Emit signal for voice manager
-  emit activeTakeChanged(QString::fromStdString(m_currentLineId),
-                         selectedIndex);
-
-  NOVELMIND_LOG_INFO("[RecordingStudio] Set take {} as active for line {}",
-                     takes[static_cast<size_t>(selectedIndex)].takeNumber,
                      m_currentLineId);
 }
 

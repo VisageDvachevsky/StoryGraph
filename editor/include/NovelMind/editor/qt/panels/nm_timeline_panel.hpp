@@ -423,6 +423,9 @@ private:
   QAction *m_snapToGridAction = nullptr;
   QComboBox *m_gridIntervalCombo = nullptr;
 
+  // Thread-safe helper to get track names snapshot
+  [[nodiscard]] QStringList getTrackNamesSafe() const;
+
   static constexpr int TRACK_HEIGHT = 32;
   static constexpr int TRACK_HEADER_WIDTH = 150;
   static constexpr int TIMELINE_MARGIN = 20;
