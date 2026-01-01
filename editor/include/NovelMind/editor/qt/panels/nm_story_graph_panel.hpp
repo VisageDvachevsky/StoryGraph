@@ -629,6 +629,7 @@ private slots:
   void onExportDialogueClicked();
   void onGenerateLocalizationKeysClicked();
   void onSyncGraphToScript(); // Issue #82: Sync Graph -> Script
+  void onSyncScriptToGraph(); // Issue #127: Sync Script -> Graph
 
 private:
   void setupToolBar();
@@ -636,6 +637,7 @@ private:
   void setupNodePalette();
   void updateNodeBreakpoints();
   void updateCurrentNode(const QString &nodeId);
+  void updateSyncButtonsVisibility(); // Issue #127: Mode-aware button visibility
 
   NMStoryGraphScene *m_scene = nullptr;
   NMStoryGraphView *m_view = nullptr;
@@ -658,8 +660,9 @@ private:
   QPushButton *m_generateKeysBtn = nullptr;
   QString m_currentPreviewLocale;
 
-  // Sync controls (issue #82)
+  // Sync controls (issue #82, #127)
   QPushButton *m_syncGraphToScriptBtn = nullptr;
+  QPushButton *m_syncScriptToGraphBtn = nullptr; // Issue #127
 
   // Read-only mode for workflow enforcement (issue #117)
   bool m_readOnly = false;
