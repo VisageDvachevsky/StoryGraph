@@ -41,6 +41,7 @@ add_executable(unit_tests
     unit/test_audio_manager.cpp
     unit/test_pack_reader.cpp
     unit/test_benchmarks.cpp
+    unit/test_audio_manager.cpp
 )
 
 target_link_libraries(unit_tests
@@ -79,6 +80,7 @@ if(NOVELMIND_BUILD_EDITOR)
         integration/test_scene_workflow.cpp  # Issue #179
         unit/test_performance_cache.cpp
         unit/test_tutorial_types.cpp
+        unit/test_state_machine_robustness.cpp  # Issue #173: State machine fixes
     )
 
     target_link_libraries(integration_tests
