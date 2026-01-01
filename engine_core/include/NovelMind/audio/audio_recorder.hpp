@@ -108,6 +108,21 @@ struct RecordingResult {
 
 /**
  * @brief Callback types
+ *
+ * IMPORTANT: These callbacks are invoked from the audio thread, NOT the main/UI
+ * thread. If you need to update UI elements, you MUST use thread-safe
+ * mechanisms:
+ * - Qt: Use QMetaObject::invokeMethod(..., Qt::QueuedConnection)
+ * - Other frameworks: Post to main thread event queue
+ *
+ * Example (Qt):
+ * @code
+ * recorder.setOnLevelUpdate([this](const LevelMeter& level) {
+ *     QMetaObject::invokeMethod(m_progressBar, [=] {
+ *         m_progressBar->setValue(level.rmsLevelDb);
+ *     }, Qt::QueuedConnection);
+ * });
+ * @endcode
  */
 using OnLevelUpdate = std::function<void(const LevelMeter &level)>;
 using OnRecordingStateChanged = std::function<void(RecordingState state)>;
@@ -415,8 +430,15 @@ private:
   std::atomic<bool> m_processingActive{false};
 
   // Thread safety for concurrent stop/cancel operations
-  mutable std::mutex m_resourceMutex;        // Protects m_encoder and m_captureDevice during stop/cancel
-  std::atomic<bool> m_cancelRequested{false}; // Signals background thread to abort
+  // Lock ordering to prevent deadlocks (always acquire in this order):
+  // 1. m_callbackMutex (if needed)
+  // 2. m_resourceMutex (if needed)
+  // 3. m_recordMutex (if needed)
+  // 4. m_levelMutex (if needed)
+  mutable std::mutex m_resourceMutex; // Protects m_encoder and m_captureDevice
+                                      // during stop/cancel
+  std::atomic<bool> m_cancelRequested{
+      false}; // Signals background thread to abort
 
   // Helper methods for thread-safe operations
   void joinProcessingThread();

@@ -423,7 +423,8 @@ void AudioRecorder::cancelRecording() {
 
   setState(RecordingState::Canceling);
 
-  // Wait for background thread to finish (it will check m_cancelRequested and exit early)
+  // Wait for background thread to finish (it will check m_cancelRequested and
+  // exit early)
   joinProcessingThread();
 
   // Now safe to cleanup resources - background thread has completed
