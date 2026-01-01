@@ -224,8 +224,8 @@ void AudioManager::update(f64 deltaTime) {
       m_masterFadeDuration = 0.0f;
     } else {
       f32 t = m_masterFadeTimer / m_masterFadeDuration;
-      m_masterFadeVolume =
-          m_masterFadeStartVolume + (m_masterFadeTarget - m_masterFadeStartVolume) * t;
+      m_masterFadeVolume = m_masterFadeStartVolume +
+                           (m_masterFadeTarget - m_masterFadeStartVolume) * t;
     }
   }
 
