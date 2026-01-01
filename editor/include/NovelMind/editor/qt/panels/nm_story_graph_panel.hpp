@@ -447,6 +447,12 @@ signals:
   void nodeClicked(uint64_t nodeId);
   void nodeDoubleClicked(uint64_t nodeId);
   void requestConnection(uint64_t fromNodeId, uint64_t toNodeId);
+  /**
+   * @brief Emitted when a valid script file is dropped on the view
+   * @param scriptPath Path to the dropped script file
+   * @param position Scene position where the file was dropped
+   */
+  void scriptFileDropped(const QString &scriptPath, const QPointF &position);
 
 protected:
   void wheelEvent(QWheelEvent *event) override;
@@ -455,8 +461,22 @@ protected:
   void mouseMoveEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void drawForeground(QPainter *painter, const QRectF &rect) override;
+  // Issue #173: Drag-and-drop validation for StoryFlow editor
+  void dragEnterEvent(QDragEnterEvent *event) override;
+  void dragMoveEvent(QDragMoveEvent *event) override;
+  void dropEvent(QDropEvent *event) override;
+  void hideEvent(QHideEvent *event) override;
 
 private:
+  /**
+   * @brief Reset all drag/pan/connection state
+   *
+   * Called from hideEvent to ensure drag state doesn't persist when the widget
+   * is hidden (e.g., when parent panel is closed during a drag operation).
+   * Issue #172 fix: Prevents undefined behavior from stale drag state.
+   */
+  void resetDragState();
+
   qreal m_zoomLevel = 1.0;
   bool m_isPanning = false;
   QPoint m_lastPanPoint;
@@ -550,6 +570,14 @@ public:
   void onUpdate(double deltaTime) override;
   Q_SLOT void rebuildFromProjectScripts();
 
+  // PERF-5: Incremental graph update methods (avoid full rebuild)
+  void updateSingleNode(const QString &nodeIdString, const LayoutNode &data);
+  void addSingleConnection(const QString &fromNodeIdString,
+                           const QString &toNodeIdString);
+  void removeSingleConnection(const QString &fromNodeIdString,
+                              const QString &toNodeIdString);
+  void updateNodePosition(const QString &nodeIdString, const QPointF &newPos);
+
   [[nodiscard]] NMStoryGraphScene *graphScene() const { return m_scene; }
   [[nodiscard]] NMStoryGraphView *graphView() const { return m_view; }
   [[nodiscard]] NMStoryGraphMinimap *minimap() const { return m_minimap; }
@@ -629,6 +657,7 @@ private slots:
   void onExportDialogueClicked();
   void onGenerateLocalizationKeysClicked();
   void onSyncGraphToScript(); // Issue #82: Sync Graph -> Script
+  void onSyncScriptToGraph(); // Issue #127: Sync Script -> Graph
 
 private:
   void setupToolBar();
@@ -636,6 +665,7 @@ private:
   void setupNodePalette();
   void updateNodeBreakpoints();
   void updateCurrentNode(const QString &nodeId);
+  void updateSyncButtonsVisibility(); // Issue #127: Mode-aware button visibility
 
   NMStoryGraphScene *m_scene = nullptr;
   NMStoryGraphView *m_view = nullptr;
@@ -658,8 +688,9 @@ private:
   QPushButton *m_generateKeysBtn = nullptr;
   QString m_currentPreviewLocale;
 
-  // Sync controls (issue #82)
+  // Sync controls (issue #82, #127)
   QPushButton *m_syncGraphToScriptBtn = nullptr;
+  QPushButton *m_syncScriptToGraphBtn = nullptr; // Issue #127
 
   // Read-only mode for workflow enforcement (issue #117)
   bool m_readOnly = false;
