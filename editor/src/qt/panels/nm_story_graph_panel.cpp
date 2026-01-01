@@ -356,20 +356,34 @@ void NMStoryGraphPanel::setupToolBar() {
           &NMStoryGraphPanel::onExportDialogueClicked);
   m_toolBar->addWidget(m_exportDialogueBtn);
 
-  // Sync section (issue #82)
+  // Sync section (issue #82, #127)
   m_toolBar->addSeparator();
 
   m_syncGraphToScriptBtn = new QPushButton(tr("Sync to Script"), m_toolBar);
   m_syncGraphToScriptBtn->setToolTip(
       tr("Synchronize Story Graph changes to NMScript files.\n"
-         "This writes graph node data (speaker, dialogue) to .nms files."));
+         "This writes graph node data (speaker, dialogue) to .nms files.\n"
+         "Use in Graph Mode when the Story Graph is the source of truth."));
   connect(m_syncGraphToScriptBtn, &QPushButton::clicked, this,
           &NMStoryGraphPanel::onSyncGraphToScript);
   m_toolBar->addWidget(m_syncGraphToScriptBtn);
 
+  // Issue #127: Sync Script to Graph button
+  m_syncScriptToGraphBtn = new QPushButton(tr("Sync to Graph"), m_toolBar);
+  m_syncScriptToGraphBtn->setToolTip(
+      tr("Import NMScript content to Story Graph.\n"
+         "This parses .nms script files and creates/updates graph nodes.\n"
+         "Use in Script Mode to visualize script content."));
+  connect(m_syncScriptToGraphBtn, &QPushButton::clicked, this,
+          &NMStoryGraphPanel::onSyncScriptToGraph);
+  m_toolBar->addWidget(m_syncScriptToGraphBtn);
+
   if (auto *layout = qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
     layout->insertWidget(0, m_scrollableToolBar);
   }
+
+  // Initialize button visibility based on current workflow mode
+  updateSyncButtonsVisibility();
 }
 
 void NMStoryGraphPanel::setupContent() {
@@ -565,22 +579,92 @@ void NMStoryGraphPanel::setReadOnly(bool readOnly, const QString &reason) {
     m_generateKeysBtn->setEnabled(!readOnly);
   }
 
-  // Sync button is always enabled - it's how you sync changes
-  if (m_syncGraphToScriptBtn) {
-    m_syncGraphToScriptBtn->setEnabled(true);
-    if (readOnly) {
-      m_syncGraphToScriptBtn->setToolTip(
-          tr("Story Graph is read-only in Script Mode.\n"
-             "Script files are authoritative."));
-    } else {
-      m_syncGraphToScriptBtn->setToolTip(
-          tr("Synchronize Story Graph changes to NMScript files.\n"
-             "This writes graph node data (speaker, dialogue) to .nms files."));
-    }
-  }
+  // Update sync buttons based on workflow mode (issue #127)
+  updateSyncButtonsVisibility();
 
   qDebug() << "[StoryGraph] Read-only mode:" << readOnly
            << "reason:" << reason;
+}
+
+void NMStoryGraphPanel::updateSyncButtonsVisibility() {
+  // Issue #127: Mode-specific button visibility
+  // - Script Mode: Only "Sync to Graph" visible (Scripts are authoritative)
+  // - Graph Mode: Only "Sync to Script" visible (Graph is authoritative)
+  // - Mixed Mode: Both visible with appropriate tooltips
+
+  const auto &pm = ProjectManager::instance();
+  if (!pm.hasOpenProject()) {
+    // No project - show both buttons with default state
+    if (m_syncGraphToScriptBtn) {
+      m_syncGraphToScriptBtn->setVisible(true);
+      m_syncGraphToScriptBtn->setEnabled(false);
+    }
+    if (m_syncScriptToGraphBtn) {
+      m_syncScriptToGraphBtn->setVisible(true);
+      m_syncScriptToGraphBtn->setEnabled(false);
+    }
+    return;
+  }
+
+  const PlaybackSourceMode mode = pm.getMetadata().playbackSourceMode;
+
+  switch (mode) {
+  case PlaybackSourceMode::Script:
+    // In Script Mode, scripts are authoritative.
+    // User can sync script content to graph for visualization.
+    if (m_syncGraphToScriptBtn) {
+      m_syncGraphToScriptBtn->setVisible(false);
+    }
+    if (m_syncScriptToGraphBtn) {
+      m_syncScriptToGraphBtn->setVisible(true);
+      m_syncScriptToGraphBtn->setEnabled(true);
+      m_syncScriptToGraphBtn->setToolTip(
+          tr("Import NMScript content to Story Graph.\n"
+             "In Script Mode, scripts are authoritative.\n"
+             "This updates the graph visualization from script files."));
+    }
+    break;
+
+  case PlaybackSourceMode::Graph:
+    // In Graph Mode, graph is authoritative.
+    // User can sync graph content to scripts for export/backup.
+    if (m_syncGraphToScriptBtn) {
+      m_syncGraphToScriptBtn->setVisible(true);
+      m_syncGraphToScriptBtn->setEnabled(true);
+      m_syncGraphToScriptBtn->setToolTip(
+          tr("Export Story Graph content to NMScript files.\n"
+             "In Graph Mode, the graph is authoritative.\n"
+             "This generates scripts from graph node data."));
+    }
+    if (m_syncScriptToGraphBtn) {
+      m_syncScriptToGraphBtn->setVisible(false);
+    }
+    break;
+
+  case PlaybackSourceMode::Mixed:
+    // In Mixed Mode, both sources are used.
+    // Both sync operations are available.
+    if (m_syncGraphToScriptBtn) {
+      m_syncGraphToScriptBtn->setVisible(true);
+      m_syncGraphToScriptBtn->setEnabled(true);
+      m_syncGraphToScriptBtn->setToolTip(
+          tr("Export Story Graph content to NMScript files.\n"
+             "In Mixed Mode, graph overrides take priority.\n"
+             "Use this to backup graph changes to scripts."));
+    }
+    if (m_syncScriptToGraphBtn) {
+      m_syncScriptToGraphBtn->setVisible(true);
+      m_syncScriptToGraphBtn->setEnabled(true);
+      m_syncScriptToGraphBtn->setToolTip(
+          tr("Import NMScript content to Story Graph.\n"
+             "In Mixed Mode, scripts provide base content.\n"
+             "Graph changes will override script content."));
+    }
+    break;
+  }
+
+  qDebug() << "[StoryGraph] Updated sync button visibility for mode:"
+           << static_cast<int>(mode);
 }
 
 // ============================================================================
