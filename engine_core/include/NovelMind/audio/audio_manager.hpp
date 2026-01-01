@@ -16,6 +16,7 @@
 
 #include "NovelMind/core/result.hpp"
 #include "NovelMind/core/types.hpp"
+#include <atomic>
 #include <functional>
 #include <memory>
 #include <queue>
@@ -168,7 +169,7 @@ public:
 private:
   friend class AudioManager;
 
-  PlaybackState m_state = PlaybackState::Stopped;
+  std::atomic<PlaybackState> m_state{PlaybackState::Stopped};
   f32 m_volume = 1.0f;
   f32 m_targetVolume = 1.0f;
   f32 m_pitch = 1.0f;
