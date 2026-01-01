@@ -336,8 +336,19 @@ Result<void> AudioRecorder::startRecording(const std::string &outputPath) {
     try {
       fs::create_directories(outPath.parent_path());
     } catch (const fs::filesystem_error &e) {
-      return Result<void>::error("Failed to create output directory: " +
-                                 std::string(e.what()));
+      const std::string errorMsg =
+          "Failed to create output directory: " + std::string(e.what());
+      if (m_onRecordingError) {
+        m_onRecordingError(errorMsg);
+      }
+      return Result<void>::error(errorMsg);
+    } catch (const std::exception &e) {
+      const std::string errorMsg =
+          "Failed to create output directory: " + std::string(e.what());
+      if (m_onRecordingError) {
+        m_onRecordingError(errorMsg);
+      }
+      return Result<void>::error(errorMsg);
     }
   }
 
@@ -416,7 +427,8 @@ void AudioRecorder::cancelRecording() {
 
   setState(RecordingState::Canceling);
 
-  // Wait for background thread to finish (it will check m_cancelRequested and exit early)
+  // Wait for background thread to finish (it will check m_cancelRequested and
+  // exit early)
   joinProcessingThread();
 
   // Now safe to cleanup resources - background thread has completed
@@ -426,7 +438,18 @@ void AudioRecorder::cancelRecording() {
   if (!m_outputPath.empty() && fs::exists(m_outputPath)) {
     try {
       fs::remove(m_outputPath);
-    } catch (...) {
+    } catch (const fs::filesystem_error &e) {
+      // Log error but don't fail cancellation - file cleanup is best-effort
+      if (m_onRecordingError) {
+        m_onRecordingError("Failed to delete incomplete recording file: " +
+                           std::string(e.what()));
+      }
+    } catch (const std::exception &e) {
+      // Log error but don't fail cancellation - file cleanup is best-effort
+      if (m_onRecordingError) {
+        m_onRecordingError("Failed to delete incomplete recording file: " +
+                           std::string(e.what()));
+      }
     }
   }
 

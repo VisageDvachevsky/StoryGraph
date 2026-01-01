@@ -326,15 +326,23 @@ void NMVoiceManagerPanel::setupMediaPlayer() {
     m_audioPlayer->setVolume(static_cast<f32>(m_volume));
 
     m_audioPlayer->setOnPlaybackStateChanged(
-        [this](AudioPlaybackState state) { onPlaybackStateChanged(); });
+        [this]([[maybe_unused]] AudioPlaybackState state) {
+          onPlaybackStateChanged();
+        });
     m_audioPlayer->setOnMediaStatusChanged(
-        [this](AudioMediaStatus status) { onMediaStatusChanged(); });
-    m_audioPlayer->setOnDurationChanged(
-        [this](i64 duration) { onDurationChanged(static_cast<qint64>(duration)); });
-    m_audioPlayer->setOnPositionChanged(
-        [this](i64 position) { onPositionChanged(static_cast<qint64>(position)); });
+        [this]([[maybe_unused]] AudioMediaStatus status) {
+          onMediaStatusChanged();
+        });
+    m_audioPlayer->setOnDurationChanged([this](i64 duration) {
+      onDurationChanged(static_cast<qint64>(duration));
+    });
+    m_audioPlayer->setOnPositionChanged([this](i64 position) {
+      onPositionChanged(static_cast<qint64>(position));
+    });
     m_audioPlayer->setOnError(
-        [this](const std::string &error) { onMediaErrorOccurred(); });
+        [this]([[maybe_unused]] const std::string &error) {
+          onMediaErrorOccurred();
+        });
   }
 
   // Create separate player for duration probing (still uses QMediaPlayer)
@@ -1008,7 +1016,8 @@ void NMVoiceManagerPanel::onDurationChanged(qint64 duration) {
 
   // Update duration label
   if (m_durationLabel) {
-    qint64 position = m_audioPlayer ? static_cast<qint64>(m_audioPlayer->getPositionMs()) : 0;
+    qint64 position =
+        m_audioPlayer ? static_cast<qint64>(m_audioPlayer->getPositionMs()) : 0;
     m_durationLabel->setText(QString("%1 / %2")
                                  .arg(formatDuration(position))
                                  .arg(formatDuration(duration)));
@@ -1117,8 +1126,10 @@ void NMVoiceManagerPanel::processNextDurationProbe() {
     if (m_probeQueue.isEmpty()) {
       m_isProbing.store(false);
       m_currentProbeFile.clear();
-      // Update the list with newly probed durations (outside lock to avoid deadlock)
-      QMetaObject::invokeMethod(this, &NMVoiceManagerPanel::updateDurationsInList,
+      // Update the list with newly probed durations (outside lock to avoid
+      // deadlock)
+      QMetaObject::invokeMethod(this,
+                                &NMVoiceManagerPanel::updateDurationsInList,
                                 Qt::QueuedConnection);
       return;
     }
