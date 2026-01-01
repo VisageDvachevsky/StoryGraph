@@ -23,25 +23,36 @@ using namespace NovelMind;
 // Mock renderer for integration tests
 class IntegrationMockRenderer : public renderer::IRenderer {
 public:
+    Result<void> initialize(platform::IWindow& window) override {
+        return Result<void>::ok();
+    }
+    void shutdown() override {}
+    void beginFrame() override {}
+    void endFrame() override {}
     void clear(const renderer::Color& color) override { clearCalls++; }
-    void present() override { presentCalls++; }
-    void drawQuad(f32 x, f32 y, f32 w, f32 h, const renderer::Color& color) override {
+    void setBlendMode(renderer::BlendMode mode) override {}
+    void drawSprite(const renderer::Texture& texture, const renderer::Transform2D& transform,
+                    const renderer::Color& tint) override {
+        drawTextureCalls++;
+    }
+    void drawSprite(const renderer::Texture& texture, const renderer::Rect& sourceRect,
+                    const renderer::Transform2D& transform, const renderer::Color& tint) override {
+        drawTextureCalls++;
+    }
+    void drawRect(const renderer::Rect& rect, const renderer::Color& color) override {
         drawQuadCalls++;
     }
-    void drawTexture(const std::string& id, f32 x, f32 y, f32 w, f32 h,
-                     const renderer::Color& tint) override {
-        drawTextureCalls++;
-        lastTextureId = id;
+    void fillRect(const renderer::Rect& rect, const renderer::Color& color) override {
+        drawQuadCalls++;
     }
-    void drawText(const std::string& text, f32 x, f32 y, const std::string& font,
+    void drawText(const renderer::Font& font, const std::string& text, f32 x, f32 y,
                   const renderer::Color& color) override {
         drawTextCalls++;
         lastText = text;
     }
-    void setViewport(f32 x, f32 y, f32 w, f32 h) override {}
-    [[nodiscard]] std::pair<f32, f32> getViewportSize() const override {
-        return {1920, 1080};
-    }
+    void setFade(f32 alpha, const renderer::Color& color) override {}
+    [[nodiscard]] i32 getWidth() const override { return 1920; }
+    [[nodiscard]] i32 getHeight() const override { return 1080; }
 
     int clearCalls = 0;
     int presentCalls = 0;

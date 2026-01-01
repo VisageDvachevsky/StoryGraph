@@ -29,17 +29,25 @@ using namespace NovelMind;
 // Mock renderer for benchmarking
 class BenchmarkRenderer : public renderer::IRenderer {
 public:
-    void clear(const renderer::Color& color) override {}
-    void present() override {}
-    void drawQuad(f32 x, f32 y, f32 w, f32 h, const renderer::Color& color) override {}
-    void drawTexture(const std::string& id, f32 x, f32 y, f32 w, f32 h,
-                     const renderer::Color& tint) override {}
-    void drawText(const std::string& text, f32 x, f32 y, const std::string& font,
-                  const renderer::Color& color) override {}
-    void setViewport(f32 x, f32 y, f32 w, f32 h) override {}
-    [[nodiscard]] std::pair<f32, f32> getViewportSize() const override {
-        return {1920, 1080};
+    Result<void> initialize(platform::IWindow& window) override {
+        return Result<void>::ok();
     }
+    void shutdown() override {}
+    void beginFrame() override {}
+    void endFrame() override {}
+    void clear(const renderer::Color& color) override {}
+    void setBlendMode(renderer::BlendMode mode) override {}
+    void drawSprite(const renderer::Texture& texture, const renderer::Transform2D& transform,
+                    const renderer::Color& tint) override {}
+    void drawSprite(const renderer::Texture& texture, const renderer::Rect& sourceRect,
+                    const renderer::Transform2D& transform, const renderer::Color& tint) override {}
+    void drawRect(const renderer::Rect& rect, const renderer::Color& color) override {}
+    void fillRect(const renderer::Rect& rect, const renderer::Color& color) override {}
+    void drawText(const renderer::Font& font, const std::string& text, f32 x, f32 y,
+                  const renderer::Color& color) override {}
+    void setFade(f32 alpha, const renderer::Color& color) override {}
+    [[nodiscard]] i32 getWidth() const override { return 1920; }
+    [[nodiscard]] i32 getHeight() const override { return 1080; }
 };
 
 class TestObject : public SceneObjectBase {
