@@ -14,6 +14,7 @@
 
 #include "NovelMind/editor/qt/nm_dock_panel.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
+#include <atomic>
 #include <QDragEnterEvent>
 #include <QDragMoveEvent>
 #include <QDropEvent>
@@ -521,7 +522,7 @@ private:
   QString m_assetsRoot;
   QString m_currentSceneId;
   bool m_isLoadingScene = false;
-  bool m_playModeActive = false;
+  std::atomic<bool> m_playModeActive{false};
   bool m_followPlayModeNodes = true;
   bool m_suppressSceneSave = false;
   QString m_sceneIdBeforePlay;
