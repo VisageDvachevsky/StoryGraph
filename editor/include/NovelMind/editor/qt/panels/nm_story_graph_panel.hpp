@@ -465,8 +465,18 @@ protected:
   void dragEnterEvent(QDragEnterEvent *event) override;
   void dragMoveEvent(QDragMoveEvent *event) override;
   void dropEvent(QDropEvent *event) override;
+  void hideEvent(QHideEvent *event) override;
 
 private:
+  /**
+   * @brief Reset all drag/pan/connection state
+   *
+   * Called from hideEvent to ensure drag state doesn't persist when the widget
+   * is hidden (e.g., when parent panel is closed during a drag operation).
+   * Issue #172 fix: Prevents undefined behavior from stale drag state.
+   */
+  void resetDragState();
+
   qreal m_zoomLevel = 1.0;
   bool m_isPanning = false;
   QPoint m_lastPanPoint;
@@ -639,6 +649,7 @@ private slots:
   void onExportDialogueClicked();
   void onGenerateLocalizationKeysClicked();
   void onSyncGraphToScript(); // Issue #82: Sync Graph -> Script
+  void onSyncScriptToGraph(); // Issue #127: Sync Script -> Graph
 
 private:
   void setupToolBar();
@@ -646,6 +657,7 @@ private:
   void setupNodePalette();
   void updateNodeBreakpoints();
   void updateCurrentNode(const QString &nodeId);
+  void updateSyncButtonsVisibility(); // Issue #127: Mode-aware button visibility
 
   NMStoryGraphScene *m_scene = nullptr;
   NMStoryGraphView *m_view = nullptr;
@@ -668,8 +680,9 @@ private:
   QPushButton *m_generateKeysBtn = nullptr;
   QString m_currentPreviewLocale;
 
-  // Sync controls (issue #82)
+  // Sync controls (issue #82, #127)
   QPushButton *m_syncGraphToScriptBtn = nullptr;
+  QPushButton *m_syncScriptToGraphBtn = nullptr; // Issue #127
 
   // Read-only mode for workflow enforcement (issue #117)
   bool m_readOnly = false;

@@ -16,6 +16,7 @@
 #include <QGraphicsSceneContextMenuEvent>
 #include <QGraphicsSceneMouseEvent>
 #include <QHBoxLayout>
+#include <QHideEvent>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -408,6 +409,28 @@ void NMStoryGraphView::dropEvent(QDropEvent *event) {
   }
 
   QGraphicsView::dropEvent(event);
+void NMStoryGraphView::hideEvent(QHideEvent *event) {
+  // Issue #172 fix: Reset drag state when widget is hidden to prevent stale
+  // state if closed during a drag operation. This avoids crashes from
+  // accessing invalid state when the widget is shown again.
+  resetDragState();
+  QGraphicsView::hideEvent(event);
+}
+
+void NMStoryGraphView::resetDragState() {
+  m_isPanning = false;
+  m_isDrawingConnection = false;
+  m_connectionStartNode = nullptr;
+  m_connectionEndPoint = QPointF();
+  m_possibleDrag = false;
+  m_isDragging = false;
+  m_lastPanPoint = QPoint();
+  m_dragStartPos = QPoint();
+
+  // Reset cursor if not in persistent connection mode
+  if (!m_connectionModeEnabled) {
+    setCursor(Qt::ArrowCursor);
+  }
 }
 
 // ============================================================================
