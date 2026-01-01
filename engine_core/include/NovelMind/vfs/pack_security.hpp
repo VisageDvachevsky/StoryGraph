@@ -12,6 +12,9 @@
 
 #ifdef NOVELMIND_HAS_OPENSSL
 #include <openssl/evp.h>
+
+// Forward declaration for BIO
+typedef struct bio_st BIO;
 #endif
 
 namespace NovelMind::VFS {
@@ -81,6 +84,18 @@ private:
   std::unique_ptr<EVP_PKEY, EVPKeyDeleter> m_publicKey;
 #endif
 };
+
+#ifdef NOVELMIND_HAS_OPENSSL
+// RAII wrapper for OpenSSL BIO to prevent resource leaks
+struct BIODeleter {
+  void operator()(BIO *bio) const {
+    if (bio) {
+      BIO_free(bio);
+    }
+  }
+};
+using BIO_ptr = std::unique_ptr<BIO, BIODeleter>;
+#endif
 
 class PackDecryptor {
 public:

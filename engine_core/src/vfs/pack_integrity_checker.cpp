@@ -70,13 +70,13 @@ Result<void> PackIntegrityChecker::setPublicKeyPem(const std::string &pem) {
     return Result<void>::error("Public key PEM is empty");
   }
 
-  BIO *bio = BIO_new_mem_buf(pem.data(), static_cast<int>(pem.size()));
+  // Use RAII wrapper for BIO to prevent leaks on exception
+  BIO_ptr bio(BIO_new_mem_buf(pem.data(), static_cast<int>(pem.size())));
   if (!bio) {
     return Result<void>::error("Failed to allocate BIO for public key");
   }
 
-  EVP_PKEY *key = PEM_read_bio_PUBKEY(bio, nullptr, nullptr, nullptr);
-  BIO_free(bio);
+  EVP_PKEY *key = PEM_read_bio_PUBKEY(bio.get(), nullptr, nullptr, nullptr);
 
   if (!key) {
     return Result<void>::error("Failed to parse public key PEM: " +
