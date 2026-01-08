@@ -107,28 +107,38 @@ NMPlayModeController::NMPlayModeController(QObject *parent)
 // === Playback Control ===
 
 void NMPlayModeController::play() {
+  qDebug() << "[PlayMode] === PLAY BUTTON CLICKED ===";
+  qDebug() << "[PlayMode] Current mode:" << m_playMode;
+
   if (m_playMode == Playing) {
     qDebug() << "[PlayMode] Already playing, ignoring play() call";
     return;
   }
 
   if (m_playMode == Paused) {
+    qDebug() << "[PlayMode] Resuming from paused state";
     m_runtimeHost.resume();
   } else {
+    qDebug() << "[PlayMode] Starting from stopped state, loading runtime...";
     if (!ensureRuntimeLoaded()) {
       qWarning() << "[PlayMode] No project loaded for runtime";
+      qWarning() << "[PlayMode] CRITICAL: Runtime initialization failed. Check project state.";
       return;
     }
+    qDebug() << "[PlayMode] Runtime loaded successfully, calling play()...";
     auto result = m_runtimeHost.play();
     if (result.isError()) {
-      qWarning() << "[PlayMode] Failed to start runtime:"
+      qCritical() << "[PlayMode] Failed to start runtime:"
                  << QString::fromStdString(result.error());
+      qCritical() << "[PlayMode] PLAYBACK FAILED - See error above for details";
       return;
     }
+    qDebug() << "[PlayMode] Runtime started successfully!";
     m_deltaTimer.restart();
   }
 
   m_runtimeTimer->start();
+  qDebug() << "[PlayMode] Play mode activated, timer started";
 }
 
 void NMPlayModeController::pause() {
@@ -209,6 +219,12 @@ bool NMPlayModeController::loadProject(const QString &projectPath,
                                        const QString &scriptsPath,
                                        const QString &assetsPath,
                                        const QString &startScene) {
+  qDebug() << "[PlayMode] === LOADING PROJECT ===";
+  qDebug() << "[PlayMode] Project path:" << projectPath;
+  qDebug() << "[PlayMode] Scripts path:" << scriptsPath;
+  qDebug() << "[PlayMode] Assets path:" << assetsPath;
+  qDebug() << "[PlayMode] Start scene:" << startScene;
+
   ::NovelMind::editor::ProjectDescriptor desc;
   desc.path = projectPath.toStdString();
   desc.name = QFileInfo(projectPath).fileName().toStdString();
@@ -220,18 +236,22 @@ bool NMPlayModeController::loadProject(const QString &projectPath,
     desc.scenesPath = projectDir.filePath("Scenes").toStdString();
   }
 
+  qDebug() << "[PlayMode] Calling EditorRuntimeHost::loadProject()...";
   auto result = m_runtimeHost.loadProject(desc);
   if (result.isError()) {
-    qWarning() << "[PlayMode] Failed to load project for runtime:"
+    qCritical() << "[PlayMode] Failed to load project for runtime:"
                << QString::fromStdString(result.error());
+    qCritical() << "[PlayMode] This usually means compilation failed or files are missing";
     m_runtimeLoaded = false;
     return false;
   }
 
+  qDebug() << "[PlayMode] Project loaded successfully!";
   m_runtimeLoaded = true;
   m_lastSnapshot = m_runtimeHost.getSceneSnapshot();
   m_totalSteps =
       static_cast<int>(std::max<size_t>(1, m_runtimeHost.getScenes().size()));
+  qDebug() << "[PlayMode] Total scenes available:" << m_totalSteps;
   emit sceneSnapshotUpdated();
   emit projectLoaded(projectPath);
   return true;
