@@ -3,6 +3,7 @@
 #include "NovelMind/core/logger.hpp"
 #include "NovelMind/editor/project_manager.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
+#include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
 #include "NovelMind/editor/script_project_context.hpp"
@@ -530,6 +531,40 @@ void NMScriptEditorPanel::addEditorTab(const QString &path) {
           &NMScriptEditorPanel::onBreadcrumbsChanged);
   connect(editor, &NMScriptEditor::quickFixesAvailable, this,
           &NMScriptEditorPanel::showQuickFixMenu);
+
+  // Breakpoint connection - wire to NMPlayModeController
+  connect(editor, &NMScriptEditor::breakpointToggled, this,
+          [this, path](int line) {
+            auto &controller = NMPlayModeController::instance();
+            controller.toggleSourceBreakpoint(path, line);
+          });
+
+  // Sync breakpoints from controller to editor
+  auto &controller = NMPlayModeController::instance();
+  editor->setBreakpoints(controller.sourceBreakpointsForFile(path));
+
+  // Listen for external breakpoint changes
+  connect(&controller, &NMPlayModeController::sourceBreakpointsChanged, editor,
+          [path, editor]() {
+            auto &ctrl = NMPlayModeController::instance();
+            editor->setBreakpoints(ctrl.sourceBreakpointsForFile(path));
+          });
+
+  // Listen for source-level breakpoint hits to show execution line
+  connect(&controller, &NMPlayModeController::sourceBreakpointHit, editor,
+          [path, editor](const QString &filePath, int line) {
+            if (filePath == path) {
+              editor->setCurrentExecutionLine(line);
+            }
+          });
+
+  // Clear execution line when play mode changes
+  connect(&controller, &NMPlayModeController::playModeChanged, editor,
+          [editor](int mode) {
+            if (mode == NMPlayModeController::Stopped) {
+              editor->setCurrentExecutionLine(0);
+            }
+          });
 
   // Update cursor position in status bar
   connect(editor, &QPlainTextEdit::cursorPositionChanged, this,
