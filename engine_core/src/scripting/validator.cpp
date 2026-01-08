@@ -32,6 +32,12 @@ void Validator::setReportUnused(bool report) { m_reportUnused = report; }
 
 void Validator::setReportDeadCode(bool report) { m_reportDeadCode = report; }
 
+void Validator::setProjectContext(IProjectContext *context) {
+  m_projectContext = context;
+}
+
+void Validator::setValidateAssets(bool validate) {
+  m_validateAssets = validate;
 void Validator::setSource(const std::string &source) { m_source = source; }
 
 void Validator::setFilePath(const std::string &path) { m_filePath = path; }
@@ -252,6 +258,12 @@ void Validator::validateShowStmt(const ShowStmt &stmt) {
       markCharacterUsed(stmt.identifier, m_currentLocation);
     }
 
+    // Validate character sprite asset exists
+    if (m_validateAssets && m_projectContext) {
+      if (!m_projectContext->characterSpriteExists(stmt.identifier)) {
+        warning(ErrorCode::UndefinedResource,
+                "Character sprite asset for '" + stmt.identifier +
+                    "' not found in project",
     // Check if character object exists in current scene (if callback provided)
     if (m_sceneObjectExistsCallback && !m_currentScene.empty()) {
       if (!m_sceneObjectExistsCallback(m_currentScene, stmt.identifier)) {
@@ -265,6 +277,14 @@ void Validator::validateShowStmt(const ShowStmt &stmt) {
   }
 
   case ShowStmt::Target::Background:
+    // Validate background asset exists
+    if (m_validateAssets && m_projectContext) {
+      // The resource field contains the background identifier
+      const std::string &bgId =
+          stmt.resource.has_value() ? stmt.resource.value() : stmt.identifier;
+      if (!bgId.empty() && !m_projectContext->backgroundExists(bgId)) {
+        warning(ErrorCode::UndefinedResource,
+                "Background asset '" + bgId + "' not found in project",
     // Validate background asset if resource is specified
     if (stmt.resource.has_value() && m_assetFileExistsCallback) {
       const std::string &assetPath = stmt.resource.value();
@@ -473,6 +493,25 @@ void Validator::validatePlayStmt(const PlayStmt &stmt) {
   if (stmt.resource.empty()) {
     error(ErrorCode::InvalidResourcePath,
           "Play statement requires a resource path", m_currentLocation);
+  } else {
+    // Validate audio asset exists
+    if (m_validateAssets && m_projectContext) {
+      std::string mediaType;
+      switch (stmt.type) {
+      case PlayStmt::MediaType::Sound:
+        mediaType = "sound";
+        break;
+      case PlayStmt::MediaType::Music:
+        mediaType = "music";
+        break;
+      }
+
+      if (!m_projectContext->audioExists(stmt.resource, mediaType)) {
+        warning(ErrorCode::UndefinedResource,
+                "Audio asset '" + stmt.resource + "' not found in project " +
+                    mediaType + " directory",
+                m_currentLocation);
+      }
   } else if (m_assetFileExistsCallback) {
     // Check if audio asset exists
     if (!m_assetFileExistsCallback(stmt.resource)) {

@@ -54,6 +54,11 @@ class QCheckBox;
 class QPushButton;
 class NMIssuesPanel;
 
+// Forward declaration for ScriptProjectContext (in NovelMind::editor namespace)
+namespace NovelMind::editor {
+class ScriptProjectContext;
+}
+
 namespace NovelMind::editor::qt {
 
 /**
@@ -924,6 +929,9 @@ private:
   QWidget *m_readOnlyBanner = nullptr;
   QLabel *m_readOnlyLabel = nullptr;
   QPushButton *m_syncToGraphBtn = nullptr;
+
+  // Project context for asset validation (issue #241)
+  NovelMind::editor::ScriptProjectContext *m_projectContext = nullptr;
 
   // Live scene preview (issue #240)
   bool m_scenePreviewEnabled = false;
