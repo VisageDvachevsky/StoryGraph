@@ -645,10 +645,10 @@ void NMScriptWelcomeDialog::styleDialog() {
                     .arg(palette.textPrimary.name())  // %5 - primary text
                     .arg(palette.textSecondary.name()) // %6 - secondary text
                     .arg(palette.bgMedium.name())     // %7 - card background
-                    .arg(palette.borderMedium.name()) // %8 - card border
+                    .arg(palette.borderDefault.name()) // %8 - card border
                     .arg(palette.bgLight.name())      // %9 - hover bg
                     .arg(palette.accentPrimary.name()) // %10 - accent (buttons)
-                    .arg(palette.accentSecondary.name()) // %11 - shortcut text
+                    .arg(palette.accentHover.name()) // %11 - shortcut text
                     .arg(palette.bgDark.name())       // %12 - shortcut bg
                     .arg(palette.accentPrimary.lighter(110).name()) // %13 - button hover
                     .arg(palette.accentPrimary.darker(110).name())  // %14 - button pressed
