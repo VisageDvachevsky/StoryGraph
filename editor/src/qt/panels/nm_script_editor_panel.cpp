@@ -2,10 +2,11 @@
 #include "NovelMind/editor/qt/widgets/nm_scene_preview_widget.hpp"
 #include "NovelMind/core/logger.hpp"
 #include "NovelMind/editor/project_manager.hpp"
-#include "NovelMind/editor/editor_settings.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
+#include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
+#include "NovelMind/editor/script_project_context.hpp"
 #include "NovelMind/scripting/compiler.hpp"
 #include "NovelMind/scripting/lexer.hpp"
 #include "NovelMind/scripting/parser.hpp"
@@ -27,6 +28,7 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMenu>
+#include <QMutexLocker>
 #include <QPainter>
 #include <QPushButton>
 #include <QRegularExpression>
@@ -67,15 +69,26 @@ NMScriptEditorPanel::NMScriptEditorPanel(QWidget *parent)
           &NMScriptEditorPanel::onDirectoryChanged);
   connect(m_scriptWatcher, &QFileSystemWatcher::fileChanged, this,
           &NMScriptEditorPanel::onFileChanged);
+          [this](const QString &) { refreshSymbolIndex(); });
+
+  // Initialize project context for asset validation
+  m_projectContext = new ScriptProjectContext(QString());
   setupContent();
 }
 
 NMScriptEditorPanel::~NMScriptEditorPanel() {
   // Save state on destruction
   saveState();
+  delete m_projectContext;
 }
 
 void NMScriptEditorPanel::onInitialize() {
+  // Set project path for asset validation
+  const std::string projectPath =
+      ProjectManager::instance().getProjectPath();
+  if (!projectPath.empty() && m_projectContext) {
+    m_projectContext->setProjectPath(QString::fromStdString(projectPath));
+  }
   refreshFileList();
   // Restore state after panels are initialized
   restoreState();
@@ -345,9 +358,9 @@ void NMScriptEditorPanel::setupContent() {
 
   // Scene Preview Widget (issue #240)
   m_scenePreview = new NMScenePreviewWidget(m_mainSplitter);
-  m_scenePreviewEnabled = EditorSettings::instance()
-                              .value("scriptEditor/previewEnabled", false)
-                              .toBool();
+  QSettings settings;
+  m_scenePreviewEnabled =
+      settings.value("scriptEditor/previewEnabled", false).toBool();
   m_scenePreview->setVisible(m_scenePreviewEnabled);
   m_scenePreview->setPreviewEnabled(m_scenePreviewEnabled);
 
@@ -519,6 +532,40 @@ void NMScriptEditorPanel::addEditorTab(const QString &path) {
   connect(editor, &NMScriptEditor::quickFixesAvailable, this,
           &NMScriptEditorPanel::showQuickFixMenu);
 
+  // Breakpoint connection - wire to NMPlayModeController
+  connect(editor, &NMScriptEditor::breakpointToggled, this,
+          [this, path](int line) {
+            auto &controller = NMPlayModeController::instance();
+            controller.toggleSourceBreakpoint(path, line);
+          });
+
+  // Sync breakpoints from controller to editor
+  auto &controller = NMPlayModeController::instance();
+  editor->setBreakpoints(controller.sourceBreakpointsForFile(path));
+
+  // Listen for external breakpoint changes
+  connect(&controller, &NMPlayModeController::sourceBreakpointsChanged, editor,
+          [path, editor]() {
+            auto &ctrl = NMPlayModeController::instance();
+            editor->setBreakpoints(ctrl.sourceBreakpointsForFile(path));
+          });
+
+  // Listen for source-level breakpoint hits to show execution line
+  connect(&controller, &NMPlayModeController::sourceBreakpointHit, editor,
+          [path, editor](const QString &filePath, int line) {
+            if (filePath == path) {
+              editor->setCurrentExecutionLine(line);
+            }
+          });
+
+  // Clear execution line when play mode changes
+  connect(&controller, &NMPlayModeController::playModeChanged, editor,
+          [editor](int mode) {
+            if (mode == NMPlayModeController::Stopped) {
+              editor->setCurrentExecutionLine(0);
+            }
+          });
+
   // Update cursor position in status bar
   connect(editor, &QPlainTextEdit::cursorPositionChanged, this,
           [this, editor]() {
@@ -687,6 +734,7 @@ void NMScriptEditorPanel::rebuildWatchList() {
 }
 
 void NMScriptEditorPanel::refreshSymbolIndex() {
+  QMutexLocker locker(&m_symbolIndexMutex);
   m_symbolIndex = {};
   const QString root = scriptsRootPath();
   if (root.isEmpty()) {
@@ -822,6 +870,36 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
         std::string("Failed to build script symbols: ") + e.what());
   }
 
+  // Add all available assets from project file system
+  if (m_projectContext) {
+    // Add available backgrounds
+    auto backgrounds = m_projectContext->getAvailableBackgrounds();
+    for (const auto &bg : backgrounds) {
+      insertList(m_symbolIndex.backgrounds, seenBackgrounds,
+                 QString::fromStdString(bg));
+    }
+
+    // Add available music
+    auto music = m_projectContext->getAvailableAudio("music");
+    for (const auto &track : music) {
+      insertList(m_symbolIndex.music, seenMusic,
+                 QString::fromStdString(track));
+    }
+
+    // Add available sound effects
+    auto sounds = m_projectContext->getAvailableAudio("sound");
+    for (const auto &sfx : sounds) {
+      insertList(m_symbolIndex.music, seenMusic, QString::fromStdString(sfx));
+    }
+
+    // Add available voices
+    auto voices = m_projectContext->getAvailableAudio("voice");
+    for (const auto &voice : voices) {
+      insertList(m_symbolIndex.voices, seenVoices,
+                 QString::fromStdString(voice));
+    }
+  }
+
   pushCompletionsToEditors();
   refreshSymbolList();
   if (m_issuesPanel) {
@@ -858,6 +936,11 @@ NMScriptEditorPanel::validateSource(const QString &path,
   }
 
   Validator validator;
+  // Enable asset validation if project context is available
+  if (m_projectContext) {
+    validator.setProjectContext(m_projectContext);
+    validator.setValidateAssets(true);
+  }
   auto validation = validator.validate(parseResult.value());
   for (const auto &err : validation.errors.all()) {
     QString severity = "info";
@@ -907,6 +990,7 @@ void NMScriptEditorPanel::goToLocation(const QString &path, int line) {
 
 QList<NMScriptEditor::CompletionEntry>
 NMScriptEditorPanel::buildProjectCompletionEntries() const {
+  QMutexLocker locker(&m_symbolIndexMutex);
   QList<NMScriptEditor::CompletionEntry> entries;
 
   auto addEntries = [&entries](const QStringList &list, const QString &detail) {
@@ -927,6 +1011,7 @@ NMScriptEditorPanel::buildProjectCompletionEntries() const {
 }
 
 QHash<QString, QString> NMScriptEditorPanel::buildProjectHoverDocs() const {
+  QMutexLocker locker(&m_symbolIndexMutex);
   QHash<QString, QString> docs;
   auto relPath = [](const QString &path) {
     if (path.isEmpty()) {
@@ -967,6 +1052,7 @@ QHash<QString, QString> NMScriptEditorPanel::buildProjectHoverDocs() const {
 }
 
 QHash<QString, QString> NMScriptEditorPanel::buildProjectDocHtml() const {
+  QMutexLocker locker(&m_symbolIndexMutex);
   QHash<QString, QString> docs;
 
   auto relPath = [](const QString &path) {
@@ -1080,12 +1166,14 @@ NMScriptEditor *NMScriptEditorPanel::currentEditor() const {
 }
 
 bool NMScriptEditorPanel::goToSceneDefinition(const QString &sceneName) {
+  QMutexLocker locker(&m_symbolIndexMutex);
   const QString key = sceneName.toLower();
   for (auto it = m_symbolIndex.scenes.constBegin();
        it != m_symbolIndex.scenes.constEnd(); ++it) {
     if (it.key().toLower() == key) {
       const QString filePath = it.value();
       const int line = m_symbolIndex.sceneLines.value(it.key(), 1);
+      locker.unlock();  // Unlock before calling goToLocation to avoid deadlock
       goToLocation(filePath, line);
       return true;
     }
@@ -1197,6 +1285,7 @@ void NMScriptEditorPanel::refreshSymbolList() {
   }
   m_symbolList->clear();
 
+  QMutexLocker locker(&m_symbolIndexMutex);
   const auto &palette = NMStyleManager::instance().palette();
   auto addItems = [this, &palette](const QHash<QString, QString> &map,
                                    const QString &typeLabel,
@@ -1285,6 +1374,7 @@ void NMScriptEditorPanel::showReferencesDialog(
 
 QHash<QString, SymbolLocation>
 NMScriptEditorPanel::buildSymbolLocations() const {
+  QMutexLocker locker(&m_symbolIndexMutex);
   QHash<QString, SymbolLocation> locations;
 
   // Add scenes
