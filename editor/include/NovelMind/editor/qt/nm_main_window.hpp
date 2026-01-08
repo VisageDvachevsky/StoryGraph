@@ -47,6 +47,7 @@ class NMScriptEditorPanel;
 class NMScriptDocPanel;
 class NMPlayToolbarPanel;
 class NMDebugOverlayPanel;
+class NMScriptInspectorPanel;
 class NMIssuesPanel;
 class NMDiagnosticsPanel;
 class NMVoiceManagerPanel;
@@ -477,6 +478,7 @@ private:
   NMScriptDocPanel *m_scriptDocPanel = nullptr;
   NMPlayToolbarPanel *m_playToolbarPanel = nullptr;
   NMDebugOverlayPanel *m_debugOverlayPanel = nullptr;
+  NMScriptInspectorPanel *m_scriptInspectorPanel = nullptr;
   NMIssuesPanel *m_issuesPanel = nullptr;
   NMDiagnosticsPanel *m_diagnosticsPanel = nullptr;
   NMVoiceManagerPanel *m_voiceManagerPanel = nullptr;

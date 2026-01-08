@@ -170,6 +170,7 @@ add_library(novelmind_editor STATIC
     src/qt/panels/nm_play_toolbar_panel.cpp
     src/qt/panels/nm_debug_overlay_panel.cpp
     src/qt/panels/nm_issues_panel.cpp
+    src/qt/panels/nm_script_inspector_panel.cpp
 
     # Phase 6 - Guided Learning System Panel
     src/qt/panels/nm_help_hub_panel.cpp
@@ -227,6 +228,7 @@ add_library(novelmind_editor STATIC
     include/NovelMind/editor/qt/panels/nm_play_toolbar_panel.hpp
     include/NovelMind/editor/qt/panels/nm_debug_overlay_panel.hpp
     include/NovelMind/editor/qt/panels/nm_issues_panel.hpp
+    include/NovelMind/editor/qt/panels/nm_script_inspector_panel.hpp
     include/NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp
     include/NovelMind/editor/qt/panels/nm_animation_adapter.hpp
     include/NovelMind/editor/qt/panels/nm_help_hub_panel.hpp
