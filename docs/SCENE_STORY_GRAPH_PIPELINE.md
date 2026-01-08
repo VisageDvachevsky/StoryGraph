@@ -768,34 +768,34 @@ QString SceneRegistry::registerScene(const QString& displayName) {
 
 ## Follow-up Issues
 
-Based on this design document, the following implementation issues should be created:
+Based on this design document, the following implementation issues have been created:
 
-1. **#XXX - Implement Scene Registry System** (HIGH priority)
+1. **#211 - Implement Scene Registry System** (HIGH priority)
    - Create SceneRegistry class
    - Persistence to scene_registry.json
    - Thumbnail caching
 
-2. **#XXX - Add Scene ID Picker to Inspector** (HIGH priority)
+2. **#212 - Add Scene ID Picker to Inspector** (HIGH priority)
    - Dropdown for existing scenes
    - "Create New Scene" button
    - "Edit Scene" button
 
-3. **#XXX - Add Auto-sync Events** (MEDIUM priority)
+3. **#213 - Add Auto-sync Events** (MEDIUM priority)
    - SceneRenamedEvent handling
    - SceneDocumentModifiedEvent handling
    - Thumbnail refresh on scene change
 
-4. **#XXX - Improve Story Preview in Scene View** (MEDIUM priority)
+4. **#214 - Improve Story Preview in Scene View** (MEDIUM priority)
    - Better dialogue overlay
    - Choice buttons rendering
    - Navigation controls
 
-5. **#XXX - Add Validation & Error Handling** (MEDIUM priority)
+5. **#215 - Add Validation & Error Handling** (MEDIUM priority)
    - Pre-play validation
    - Diagnostics integration
    - Warning icons on nodes
 
-6. **#XXX - Create Scene Templates** (LOW priority)
+6. **#216 - Create Scene Templates** (LOW priority)
    - Empty scene template
    - Dialogue scene template
    - Choice scene template
