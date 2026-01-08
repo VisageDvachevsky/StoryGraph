@@ -85,6 +85,7 @@ if(NOVELMIND_BUILD_EDITOR)
         integration/test_scene_workflow.cpp  # Issue #179
         integration/test_scene_registry.cpp  # Issue #206
         integration/test_scene_validation.cpp  # Issue #215
+        integration/test_scene_id_picker.cpp  # Issue #212
         unit/test_performance_cache.cpp
         unit/test_tutorial_types.cpp
         unit/test_state_machine_robustness.cpp  # Issue #173: State machine fixes
