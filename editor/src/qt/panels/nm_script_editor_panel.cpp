@@ -30,6 +30,7 @@
 #include <QRegularExpression>
 #include <QScrollBar>
 #include <QSet>
+#include <QSettings>
 #include <QStandardItem>
 #include <QStandardItemModel>
 #include <QStringListModel>
@@ -70,9 +71,16 @@ NMScriptEditorPanel::NMScriptEditorPanel(QWidget *parent)
   setupContent();
 }
 
-NMScriptEditorPanel::~NMScriptEditorPanel() = default;
+NMScriptEditorPanel::~NMScriptEditorPanel() {
+  // Save state on destruction
+  saveState();
+}
 
-void NMScriptEditorPanel::onInitialize() { refreshFileList(); }
+void NMScriptEditorPanel::onInitialize() {
+  refreshFileList();
+  // Restore state after panels are initialized
+  restoreState();
+}
 
 void NMScriptEditorPanel::onUpdate(double /*deltaTime*/) {}
 
@@ -1699,6 +1707,136 @@ void NMScriptEditorPanel::syncScriptToGraph() {
 
   qDebug() << "[ScriptEditor] Sync complete:" << synced << "of" << total
            << "scenes with data";
+}
+
+// ============================================================================
+// State Persistence
+// ============================================================================
+
+void NMScriptEditorPanel::saveState() {
+  QSettings settings;
+
+  // Save splitter positions
+  if (m_splitter) {
+    settings.setValue("scriptEditor/splitterState", m_splitter->saveState());
+  }
+  if (m_leftSplitter) {
+    settings.setValue("scriptEditor/leftSplitterState", m_leftSplitter->saveState());
+  }
+
+  // Save open files
+  QStringList openFiles;
+  for (int i = 0; i < m_tabs->count(); ++i) {
+    QWidget *widget = m_tabs->widget(i);
+    QString path = m_tabPaths.value(widget);
+    if (!path.isEmpty()) {
+      openFiles.append(path);
+    }
+  }
+  settings.setValue("scriptEditor/openFiles", openFiles);
+
+  // Save active file index
+  settings.setValue("scriptEditor/activeFileIndex", m_tabs->currentIndex());
+
+  // Save cursor positions for each open file
+  for (int i = 0; i < m_tabs->count(); ++i) {
+    if (auto *editor = qobject_cast<NMScriptEditor *>(m_tabs->widget(i))) {
+      QString path = m_tabPaths.value(editor);
+      if (!path.isEmpty()) {
+        QTextCursor cursor = editor->textCursor();
+        settings.setValue(QString("scriptEditor/cursorPos/%1").arg(path), cursor.position());
+      }
+    }
+  }
+
+  // Save minimap visibility
+  settings.setValue("scriptEditor/minimapVisible", m_minimapEnabled);
+}
+
+void NMScriptEditorPanel::restoreState() {
+  QSettings settings;
+
+  // Restore splitter positions
+  if (m_splitter) {
+    QByteArray state = settings.value("scriptEditor/splitterState").toByteArray();
+    if (!state.isEmpty()) {
+      m_splitter->restoreState(state);
+    }
+  }
+  if (m_leftSplitter) {
+    QByteArray state = settings.value("scriptEditor/leftSplitterState").toByteArray();
+    if (!state.isEmpty()) {
+      m_leftSplitter->restoreState(state);
+    }
+  }
+
+  // Restore minimap visibility
+  m_minimapEnabled = settings.value("scriptEditor/minimapVisible", true).toBool();
+
+  // Restore open files if enabled
+  bool restoreOpenFiles = settings.value("editor.script.restore_open_files", true).toBool();
+  if (restoreOpenFiles) {
+    QStringList openFiles = settings.value("scriptEditor/openFiles").toStringList();
+    int activeIndex = settings.value("scriptEditor/activeFileIndex", 0).toInt();
+
+    for (const QString &path : openFiles) {
+      if (QFileInfo::exists(path)) {
+        openScript(path);
+
+        // Restore cursor position if enabled
+        bool restoreCursor = settings.value("editor.script.restore_cursor_position", true).toBool();
+        if (restoreCursor) {
+          if (auto *editor = qobject_cast<NMScriptEditor *>(m_tabs->currentWidget())) {
+            int cursorPos = settings.value(QString("scriptEditor/cursorPos/%1").arg(path), 0).toInt();
+            QTextCursor cursor = editor->textCursor();
+            cursor.setPosition(cursorPos);
+            editor->setTextCursor(cursor);
+          }
+        }
+      }
+    }
+
+    // Restore active tab
+    if (activeIndex >= 0 && activeIndex < m_tabs->count()) {
+      m_tabs->setCurrentIndex(activeIndex);
+    }
+  }
+
+  // Apply settings from registry
+  applySettings();
+}
+
+void NMScriptEditorPanel::applySettings() {
+  QSettings settings;
+
+  // Apply diagnostic delay
+  int diagnosticDelay = settings.value("editor.script.diagnostic_delay", 600).toInt();
+  m_diagnosticsTimer.setInterval(diagnosticDelay);
+
+  // Apply settings to all open editors
+  for (auto *editor : editors()) {
+    if (!editor) continue;
+
+    // Font settings
+    QString fontFamily = settings.value("editor.script.font_family", "monospace").toString();
+    int fontSize = settings.value("editor.script.font_size", 14).toInt();
+    QFont font(fontFamily, fontSize);
+    editor->setFont(font);
+
+    // Display settings
+    bool showMinimap = settings.value("editor.script.show_minimap", true).toBool();
+    editor->setMinimapEnabled(showMinimap);
+    m_minimapEnabled = showMinimap;
+
+    // Word wrap
+    bool wordWrap = settings.value("editor.script.word_wrap", false).toBool();
+    editor->setLineWrapMode(wordWrap ? QPlainTextEdit::WidgetWidth : QPlainTextEdit::NoWrap);
+
+    // Tab size (note: the editor already has a tab size property)
+    int tabSize = settings.value("editor.script.tab_size", 4).toInt();
+    QFontMetrics metrics(font);
+    editor->setTabStopDistance(tabSize * metrics.horizontalAdvance(' '));
+  }
 }
 
 } // namespace NovelMind::editor::qt

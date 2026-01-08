@@ -800,6 +800,11 @@ private:
                             const QList<ReferenceResult> &references);
   NMScriptEditor *currentEditor() const;
 
+  // State persistence
+  void saveState();
+  void restoreState();
+  void applySettings();
+
   QWidget *m_contentWidget = nullptr;
   QSplitter *m_splitter = nullptr;
   QSplitter *m_leftSplitter = nullptr;
