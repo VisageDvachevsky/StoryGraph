@@ -124,6 +124,8 @@ public:
    * @param path The file path
    */
   void setFilePath(const std::string &path);
+
+  /**
    * @brief Set callback for checking scene file existence
    * @param callback Function that returns true if .nmscene file exists
    */
