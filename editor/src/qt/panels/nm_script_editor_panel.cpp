@@ -37,6 +37,7 @@
 #include <QTextBlock>
 #include <QTextFormat>
 #include <QTextStream>
+#include <QToolButton>
 #include <QToolTip>
 #include <QVBoxLayout>
 #include <QWindow>
@@ -388,19 +389,26 @@ void NMScriptEditorPanel::setupToolBar() {
   m_toolBar = new QToolBar(m_contentWidget);
   m_toolBar->setIconSize(QSize(16, 16));
 
+  auto &iconMgr = NMIconManager::instance();
+
+  // File operations group
   QAction *actionSave = m_toolBar->addAction(tr("Save"));
+  actionSave->setIcon(iconMgr.getIcon("file-save", 16));
   actionSave->setToolTip(tr("Save (Ctrl+S)"));
   connect(actionSave, &QAction::triggered, this,
           &NMScriptEditorPanel::onSaveRequested);
 
   QAction *actionSaveAll = m_toolBar->addAction(tr("Save All"));
+  actionSaveAll->setIcon(iconMgr.getIcon("file-save", 16));
   actionSaveAll->setToolTip(tr("Save all open scripts"));
   connect(actionSaveAll, &QAction::triggered, this,
           &NMScriptEditorPanel::onSaveAllRequested);
 
   m_toolBar->addSeparator();
 
+  // Edit operations group
   QAction *actionFormat = m_toolBar->addAction(tr("Format"));
+  actionFormat->setIcon(iconMgr.getIcon("transform-scale", 16));
   actionFormat->setToolTip(tr("Auto-format script (Ctrl+Shift+F)"));
   actionFormat->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_F));
   actionFormat->setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -410,8 +418,9 @@ void NMScriptEditorPanel::setupToolBar() {
 
   m_toolBar->addSeparator();
 
-  // Snippet insertion
+  // Code operations group
   QAction *actionSnippet = m_toolBar->addAction(tr("Insert"));
+  actionSnippet->setIcon(iconMgr.getIcon("add", 16));
   actionSnippet->setToolTip(tr("Insert code snippet (Ctrl+J)"));
   actionSnippet->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_J));
   actionSnippet->setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -419,14 +428,43 @@ void NMScriptEditorPanel::setupToolBar() {
   connect(actionSnippet, &QAction::triggered, this,
           &NMScriptEditorPanel::onInsertSnippetRequested);
 
-  // Symbol navigator
   QAction *actionSymbols = m_toolBar->addAction(tr("Symbols"));
+  actionSymbols->setIcon(iconMgr.getIcon("search", 16));
   actionSymbols->setToolTip(tr("Open symbol navigator (Ctrl+Shift+O)"));
   actionSymbols->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_O));
   actionSymbols->setShortcutContext(Qt::WidgetWithChildrenShortcut);
   addAction(actionSymbols);
   connect(actionSymbols, &QAction::triggered, this,
           &NMScriptEditorPanel::onSymbolNavigatorRequested);
+
+  m_toolBar->addSeparator();
+
+  // View dropdown menu
+  QToolButton *viewBtn = new QToolButton(m_toolBar);
+  viewBtn->setText(tr("View"));
+  viewBtn->setIcon(iconMgr.getIcon("visible", 16));
+  viewBtn->setToolTip(tr("View options"));
+  viewBtn->setPopupMode(QToolButton::InstantPopup);
+  viewBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+
+  QMenu *viewMenu = new QMenu(viewBtn);
+  QAction *actionToggleMinimap = viewMenu->addAction(tr("Toggle Minimap"));
+  actionToggleMinimap->setIcon(iconMgr.getIcon("layout-grid", 16));
+  connect(actionToggleMinimap, &QAction::triggered, this,
+          &NMScriptEditorPanel::onToggleMinimap);
+
+  QAction *actionFoldAll = viewMenu->addAction(tr("Fold All"));
+  actionFoldAll->setIcon(iconMgr.getIcon("chevron-up", 16));
+  connect(actionFoldAll, &QAction::triggered, this,
+          &NMScriptEditorPanel::onFoldAll);
+
+  QAction *actionUnfoldAll = viewMenu->addAction(tr("Unfold All"));
+  actionUnfoldAll->setIcon(iconMgr.getIcon("chevron-down", 16));
+  connect(actionUnfoldAll, &QAction::triggered, this,
+          &NMScriptEditorPanel::onUnfoldAll);
+
+  viewBtn->setMenu(viewMenu);
+  m_toolBar->addWidget(viewBtn);
 }
 
 void NMScriptEditorPanel::addEditorTab(const QString &path) {
