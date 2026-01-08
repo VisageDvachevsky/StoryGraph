@@ -783,6 +783,36 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
         std::string("Failed to build script symbols: ") + e.what());
   }
 
+  // Add all available assets from project file system
+  if (m_projectContext) {
+    // Add available backgrounds
+    auto backgrounds = m_projectContext->getAvailableBackgrounds();
+    for (const auto &bg : backgrounds) {
+      insertList(m_symbolIndex.backgrounds, seenBackgrounds,
+                 QString::fromStdString(bg));
+    }
+
+    // Add available music
+    auto music = m_projectContext->getAvailableAudio("music");
+    for (const auto &track : music) {
+      insertList(m_symbolIndex.music, seenMusic,
+                 QString::fromStdString(track));
+    }
+
+    // Add available sound effects
+    auto sounds = m_projectContext->getAvailableAudio("sound");
+    for (const auto &sfx : sounds) {
+      insertList(m_symbolIndex.music, seenMusic, QString::fromStdString(sfx));
+    }
+
+    // Add available voices
+    auto voices = m_projectContext->getAvailableAudio("voice");
+    for (const auto &voice : voices) {
+      insertList(m_symbolIndex.voices, seenVoices,
+                 QString::fromStdString(voice));
+    }
+  }
+
   pushCompletionsToEditors();
   refreshSymbolList();
   if (m_issuesPanel) {
