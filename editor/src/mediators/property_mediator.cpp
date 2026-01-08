@@ -73,6 +73,30 @@ void PropertyMediator::initialize() {
         onScriptDocHtmlChanged(event);
       }));
 
+  // =========================================================================
+  // Issue #203: Connect Qt signals to EventBus for panel integration
+  // This bridges the gap between Qt's signal/slot mechanism and the EventBus
+  // pattern used by mediators.
+  // =========================================================================
+
+  // Connect Inspector Panel's propertyChanged signal to publish EventBus event
+  if (m_inspector) {
+    connect(m_inspector, &qt::NMInspectorPanel::propertyChanged, this,
+            [](const QString &objectId, const QString &propertyName,
+               const QString &newValue) {
+              qDebug() << "[PropertyMediator] Publishing "
+                          "InspectorPropertyChangedEvent for property:"
+                       << propertyName << "on" << objectId;
+
+              events::InspectorPropertyChangedEvent event;
+              event.objectId = objectId;
+              event.propertyName = propertyName;
+              event.newValue = newValue;
+
+              EventBus::instance().publish(event);
+            });
+  }
+
   qDebug() << "[PropertyMediator] Initialized with"
            << m_subscriptions.size() << "subscriptions";
 }

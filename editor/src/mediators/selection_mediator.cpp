@@ -49,6 +49,35 @@ void SelectionMediator::initialize() {
             onHierarchyObjectDoubleClicked(event);
           }));
 
+  // =========================================================================
+  // Issue #203: Connect Qt signals to EventBus for panel integration
+  // This bridges the gap between Qt's signal/slot mechanism and the EventBus
+  // pattern used by mediators.
+  // =========================================================================
+
+  // Connect Story Graph Panel's nodeSelected signal to publish EventBus event
+  if (m_storyGraph) {
+    connect(m_storyGraph, &qt::NMStoryGraphPanel::nodeSelected, this,
+            [this](const QString &nodeIdString) {
+              qDebug() << "[SelectionMediator] Publishing "
+                          "StoryGraphNodeSelectedEvent for node:"
+                       << nodeIdString;
+
+              events::StoryGraphNodeSelectedEvent event;
+              event.nodeIdString = nodeIdString;
+
+              // Populate additional event data from the node if available
+              if (auto *node = m_storyGraph->findNodeByIdString(nodeIdString)) {
+                event.nodeType = node->nodeType();
+                event.dialogueSpeaker = node->dialogueSpeaker();
+                event.dialogueText = node->dialogueText();
+                event.choiceOptions = node->choiceOptions();
+              }
+
+              EventBus::instance().publish(event);
+            });
+  }
+
   qDebug() << "[SelectionMediator] Initialized with"
            << m_subscriptions.size() << "subscriptions";
 }
