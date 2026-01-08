@@ -169,6 +169,9 @@ add_library(novelmind_editor STATIC
     # Phase 6 - Guided Learning System Panel
     src/qt/panels/nm_help_hub_panel.cpp
 
+    # Custom Widgets
+    src/qt/widgets/nm_scene_id_picker.cpp
+
     # Performance optimization headers
     include/NovelMind/editor/qt/lazy_thumbnail_loader.hpp
     include/NovelMind/editor/qt/timeline_render_cache.hpp
@@ -246,6 +249,9 @@ add_library(novelmind_editor STATIC
 
     # Scene Registry (issue #206)
     include/NovelMind/editor/scene_registry.hpp
+
+    # Custom Widget headers
+    include/NovelMind/editor/qt/widgets/nm_scene_id_picker.hpp
 
     # Qt Resources
     resources/editor_resources.qrc
