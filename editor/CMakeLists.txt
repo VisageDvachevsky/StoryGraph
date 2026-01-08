@@ -170,6 +170,7 @@ add_library(novelmind_editor STATIC
     src/qt/nm_play_mode_controller.cpp
     src/qt/panels/nm_play_toolbar_panel.cpp
     src/qt/panels/nm_debug_overlay_panel.cpp
+    src/qt/panels/nm_script_runtime_inspector_panel.cpp
     src/qt/panels/nm_issues_panel.cpp
     src/qt/panels/nm_script_inspector_panel.cpp
 
@@ -228,6 +229,7 @@ add_library(novelmind_editor STATIC
     include/NovelMind/editor/qt/panels/nm_project_settings_panel.hpp
     include/NovelMind/editor/qt/panels/nm_play_toolbar_panel.hpp
     include/NovelMind/editor/qt/panels/nm_debug_overlay_panel.hpp
+    include/NovelMind/editor/qt/panels/nm_script_runtime_inspector_panel.hpp
     include/NovelMind/editor/qt/panels/nm_issues_panel.hpp
     include/NovelMind/editor/qt/panels/nm_script_inspector_panel.hpp
     include/NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp
