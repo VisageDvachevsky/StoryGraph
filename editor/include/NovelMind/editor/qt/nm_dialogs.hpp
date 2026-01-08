@@ -309,11 +309,15 @@ private:
   MetadataResult m_result;
 };
 
+} // namespace NovelMind::editor::qt
+
 // Forward declarations for NMNewSceneDialog
 namespace NovelMind::editor {
 class SceneTemplateManager;
 struct SceneTemplateMetadata;
 } // namespace NovelMind::editor
+
+namespace NovelMind::editor::qt {
 
 /**
  * @brief Dialog for creating a new scene from a template
