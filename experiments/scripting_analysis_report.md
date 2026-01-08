@@ -885,4 +885,488 @@ Based on this analysis, the following individual issues should be created:
 
 ---
 
-*End of Analysis Report*
+## 11. UI/UX Integration Analysis (Extended Analysis)
+
+**Analysis Date**: 2026-01-08 (Extended)
+**Scope**: Script Editor UI Integration, Synchronization, Usability
+
+This section extends the original analysis with a deep dive into UI/UX integration, synchronization mechanisms, and user experience aspects as requested in issue comments.
+
+### 11.1 UI Editor Integration Architecture
+
+#### Component Hierarchy
+
+```
+NMScriptEditorPanel (Dock Panel)
+├── Toolbar (Save, Format, Insert, Symbols)
+├── Breadcrumb Bar (Scope hierarchy: scene > choice > if)
+├── Main Splitter (Horizontal)
+│   ├── Left Splitter (Vertical)
+│   │   ├── File Tree (QTreeWidget) - .nms file browser
+│   │   └── Symbol Navigator (QListWidget) - Quick symbol jump
+│   └── Tab Widget (Multi-file editing)
+│       └── NMScriptEditor (per tab)
+│           ├── Line Number Area (Left margin)
+│           ├── Folding Area (Left margin, next to line numbers)
+│           ├── Main Text Editor (QPlainTextEdit)
+│           └── Minimap (Right side, 120px)
+├── Find/Replace Widget (Hidden by default, Ctrl+F/Ctrl+H)
+├── Status Bar (Syntax hints + cursor position)
+└── Read-Only Banner (Shown in Graph mode)
+```
+
+**Files**:
+- `editor/src/qt/panels/nm_script_editor_panel.cpp` (1705 lines)
+- `editor/src/qt/panels/nm_script_editor_panel_editor.cpp` (2571 lines)
+- `editor/src/qt/panels/nm_script_doc_panel.cpp` (Documentation companion)
+
+#### VSCode-Like Features Implemented
+
+1. **Minimap** ✅
+   - 120px right-side overview
+   - Syntax-colored character rendering
+   - Viewport indicator overlay
+   - Click/drag navigation
+   - Cached QImage for performance
+
+2. **Command Palette** ✅ (Ctrl+Shift+P)
+   - Fuzzy filtering
+   - Grouped by category
+   - Keyboard navigation
+   - Shortcut display
+
+3. **Find/Replace** ✅ (Ctrl+F/Ctrl+H)
+   - Regex support
+   - Case sensitivity toggle
+   - Whole word matching
+   - Match count display
+   - Highlight all matches
+   - Replace/Replace All
+
+4. **Go-to-Definition** ✅ (F12)
+   - Works for: scenes, characters, flags, variables
+   - Opens file and jumps to line
+   - Uses symbol index lookup
+
+5. **Find References** ✅ (Shift+F12)
+   - Searches all .nms files
+   - Shows context line
+   - Marks definitions with [DEF]
+   - Modal dialog with clickable results
+
+6. **Code Folding** ✅
+   - Brace-based folding regions
+   - Visual +/- indicators
+   - Click to toggle fold
+   - Fold All / Unfold All commands
+
+7. **Breadcrumbs** ✅
+   - Shows scope hierarchy
+   - Updates as cursor moves
+   - Clickable navigation ❌ (not implemented)
+
+8. **IntelliSense** ✅
+   - Context-aware completions
+   - Hover documentation tooltips
+   - Badge showing symbol type
+   - 2+ character trigger or Ctrl+Space
+
+9. **Syntax Highlighting** ✅
+   - Real-time keyword highlighting
+   - String, number, comment coloring
+   - Error/warning underlines (wavy)
+   - Bracket matching highlights
+
+10. **Snippets** ✅ (Ctrl+J)
+    - 15 built-in templates
+    - Tabstop navigation
+    - Variable placeholders
+    - Context-sensitive insertion
+
+### 11.2 Synchronization Mechanisms & Issues
+
+#### Critical Synchronization Holes
+
+**ISSUE-23: Race Condition in Symbol Index** 🔴 **CRITICAL**
+- **Location**: `refreshSymbolIndex()` (nm_script_editor_panel.cpp:636)
+- **Problem**: No mutex protection on `m_symbolIndex` structure
+- **Trigger**: Multiple rapid saves or file watcher events
+- **Impact**: Concurrent reads/writes can corrupt symbol data
+- **Symptoms**: Crashes, incorrect go-to-definition, missing completions
+- **Fix**: Add `QMutex` around all `m_symbolIndex` access
+
+**ISSUE-24: File Watcher Conflicts** 🔴 **CRITICAL**
+- **Location**: `QFileSystemWatcher` setup (nm_script_editor_panel.cpp:62-69)
+- **Problem**: No detection of external vs. internal file changes
+- **Trigger**: External tool modifies file while open in editor
+- **Impact**: User's unsaved changes silently lost on reload
+- **Missing**: Timestamp comparison, conflict dialog, user prompt
+- **Fix**: Check file mtime before reload, show 3-way merge dialog
+
+**ISSUE-25: Missing Bidirectional Graph Sync** 🟡 **HIGH**
+- **Exists**: Script → Graph sync (nm_script_editor_panel.cpp:1600-1702)
+- **Missing**: Graph → Script sync
+- **Problem**: Graph node property changes don't update script files
+- **Impact**: Dual editing workflow is one-way only
+- **Workaround**: User must manually edit both Script and Graph
+- **Fix**: Implement Graph → Script serialization with conflict detection
+
+**ISSUE-26: Single-Tab Diagnostics** 🟡 **HIGH**
+- **Location**: `runDiagnostics()` (nm_script_editor_panel.cpp:823)
+- **Problem**: Only current tab is validated
+- **Impact**: Errors in background tabs remain undetected
+- **Trigger**: User switches tabs, background tabs not re-validated
+- **Fix**: Implement background validation queue with debouncing
+
+**ISSUE-27: No Undo Manager Integration** 🟡 **HIGH**
+- **Problem**: Script edits not recorded in global undo stack
+- **Impact**: Can't undo after switching to another panel and back
+- **Missing**: Connection to `NMUndoManager`
+- **Fix**: Wrap each edit in `UndoCommand`, push to manager
+
+#### Synchronization Performance Issues
+
+**ISSUE-28: Full Symbol Index Rebuild on Every Save** 🟠 **MEDIUM**
+- **Location**: `refreshSymbolIndex()` scans ALL .nms files
+- **Problem**: O(n) where n = total project scripts
+- **Impact**: Lag on projects with 100+ script files
+- **Trigger**: Every file save, directory change
+- **Optimization**: Incremental update (only re-scan changed file)
+
+**ISSUE-29: No Debouncing on File Watcher** 🟠 **MEDIUM**
+- **Problem**: Rapid saves trigger multiple concurrent symbol scans
+- **Example**: Save All with 10 tabs → 10 simultaneous full scans
+- **Impact**: UI freeze, wasted CPU cycles
+- **Fix**: Add 300ms debounce timer to batch watcher events
+
+#### Script ↔ Scene Object Validation Gaps
+
+**ISSUE-30: Missing Static Reference Validation** 🟡 **HIGH**
+- **Problem**: Scripts can reference non-existent objects
+- **Examples**:
+  - `goto unknown_scene` - Scene doesn't exist
+  - `show undefined_character` - Character not declared
+  - `play voice "missing.ogg"` - Asset file not found
+  - `transition slide_diagonal` - Invalid transition type
+- **Current State**: Only validated at runtime (too late!)
+- **Location**: `validateSource()` doesn't check external references
+- **Fix**: Add cross-reference validation pass to Validator
+
+**ISSUE-31: No Asset Path Validation** 🟠 **MEDIUM**
+- **Problem**: String paths to assets not checked against filesystem
+- **Examples**:
+  - `show background "assets/bg_beach.png"` - File doesn't exist
+  - `play music "soundtrack/theme.ogg"` - Wrong path
+- **Fix**: Resolve asset paths during validation, warn if not found
+
+### 11.3 Usability Issues & Missing Features
+
+#### Keyboard Shortcuts & Navigation
+
+**ISSUE-32: Missing Essential Editor Shortcuts** 🟠 **MEDIUM**
+- **Missing**:
+  - `Ctrl+D` - Duplicate line
+  - `Alt+Up/Down` - Move line up/down
+  - `Ctrl+/` - Toggle comment
+  - `Ctrl+Shift+K` - Delete line
+  - `Alt+Shift+Up/Down` - Multi-cursor
+  - `Ctrl+Shift+L` - Select all occurrences
+- **Impact**: Users expect these from VS Code, Sublime, etc.
+- **Fix**: Implement in NMScriptEditor::keyPressEvent
+
+**ISSUE-33: Breadcrumbs Not Clickable** 🟢 **LOW**
+- **Location**: `onBreadcrumbsChanged()` creates QPushButton widgets
+- **Problem**: Buttons have no click handlers
+- **Expected**: Click "scene main" → jump to scene start
+- **Fix**: Connect button signals to jump-to-line logic
+
+#### Code Completion & IntelliSense
+
+**ISSUE-34: No Fuzzy Matching in Completions** 🟠 **MEDIUM**
+- **Current**: Case-insensitive substring match only
+- **Missing**: Fuzzy matching (e.g., "shbg" matches "show background")
+- **Impact**: Must type exact prefixes
+- **Fix**: Implement fuzzy score ranking in completer filter
+
+**ISSUE-35: Completion Popup Flickering** 🟠 **MEDIUM**
+- **Location**: `refreshDynamicCompletions()` rebuilds on every keystroke
+- **Problem**: Model cleared and rebuilt → visual flicker
+- **Impact**: Distracting, poor UX
+- **Fix**: Only update model if completion list actually changed
+
+**ISSUE-36: No Snippet Preview** 🟢 **LOW**
+- **Problem**: Can't see snippet template before insertion
+- **Expected**: Popup preview showing full template with placeholders
+- **Fix**: Add preview pane to snippet menu
+
+**ISSUE-37: No Parameter Hints** 🟠 **MEDIUM**
+- **Missing**: Function signature tooltips
+- **Example**: Typing `transition` should show available parameters
+- **Fix**: Add signature help popup (QToolTip or QWidget)
+
+#### Error Reporting & Diagnostics
+
+**ISSUE-38: No Error Tooltip on Hover** 🟡 **HIGH**
+- **Problem**: Must switch to Issues Panel to see error message
+- **Expected**: Hover over red underline → tooltip with error text
+- **Impact**: Breaks concentration, extra navigation
+- **Fix**: Store diagnostics in QTextBlock user data, show in hover
+
+**ISSUE-39: Quick Fixes Not Automatic** 🟠 **MEDIUM**
+- **Current**: Must press Ctrl+. to see fixes
+- **Missing**: Lightbulb icon in margin for lines with fixes
+- **Impact**: Users don't discover Quick Fix feature
+- **Fix**: Add visual indicator (icon or colored marker)
+
+#### Multi-File Operations
+
+**ISSUE-40: No "Find in Files" / "Replace in Files"** 🟡 **HIGH**
+- **Current**: Find/Replace only searches current file
+- **Missing**: Project-wide search
+- **Workaround**: Must manually search each tab
+- **Impact**: Refactoring is tedious
+- **Fix**: Add "Find in All Scripts" dialog with results panel
+
+**ISSUE-41: No Symbol Rename Refactoring** 🟡 **HIGH**
+- **Problem**: Renaming a scene requires manual find/replace
+- **Missing**: "Rename Symbol" command that updates all references
+- **Risk**: Manual rename can miss occurrences, break code
+- **Fix**: Implement refactoring command with preview
+
+**ISSUE-42: No Split View / Side-by-Side Editing** 🟢 **LOW**
+- **Missing**: Can't view two scripts simultaneously
+- **Workaround**: External editor or duplicate window
+- **Fix**: Add split pane mode to tab widget
+
+#### Code Folding & Structure
+
+**ISSUE-43: Folding State Not Persistent** 🟠 **MEDIUM**
+- **Problem**: All folds reset when file reloaded
+- **Expected**: Folding state saved and restored
+- **Impact**: Must re-fold large files after every reload
+- **Fix**: Store folding state in project settings
+
+**ISSUE-44: No "Fold All" / "Unfold All" Toolbar Buttons** 🟢 **LOW**
+- **Commands exist** but only in Command Palette
+- **Missing**: Toolbar buttons for quick access
+- **Fix**: Add to toolbar next to Format button
+
+#### Minimap & Visual Aids
+
+**ISSUE-45: Minimap Rendering Performance** 🟠 **MEDIUM**
+- **Problem**: Full re-render on every document change
+- **Impact**: Lag on files with 1000+ lines
+- **Location**: `paintEvent()` redraws entire QImage
+- **Fix**: Implement partial/incremental update, virtual scrolling
+
+**ISSUE-46: No Minimap Scrollbar** 🟢 **LOW**
+- **Missing**: Can't drag minimap viewport for smooth scrolling
+- **Current**: Must click position to jump
+- **Fix**: Add draggable viewport rectangle
+
+#### Read-Only Mode & Workflow
+
+**ISSUE-47: Read-Only Banner Message Unclear** 🟠 **MEDIUM**
+- **Current**: "Read-only mode (Graph Mode) - Script editing is disabled."
+- **Problem**: Doesn't explain WHY or HOW to change
+- **Better**: "Scripts are read-only in Graph Mode. Switch to Script Mode (top toolbar) to edit, or click 'Sync to Graph' to push changes from here."
+- **Fix**: Improve banner message with actionable guidance
+
+**ISSUE-48: "Sync to Graph" Lacks Progress Feedback** 🟠 **MEDIUM**
+- **Problem**: Button click → silent operation, no feedback
+- **Missing**: Progress indicator, success/failure message
+- **Impact**: User doesn't know if sync worked
+- **Fix**: Show progress bar, toast notification on completion
+
+### 11.4 Missing Modern Editor Features
+
+**ISSUE-49: No Bookmarks** 🟢 **LOW**
+- **Missing**: Mark important lines for quick return
+- **Expected**: Toggle bookmark (Ctrl+K Ctrl+K), navigate bookmarks
+- **Fix**: Implement bookmark margin markers
+
+**ISSUE-50: No Code Metrics** 🟢 **LOW**
+- **Missing**: Line count, word count, complexity
+- **Expected**: Status bar shows "X lines, Y words"
+- **Fix**: Add metrics calculation to status bar
+
+**ISSUE-51: No Git Integration** 🟢 **LOW**
+- **Missing**: Diff view, blame annotations, change markers
+- **Impact**: Must use external git tools
+- **Fix**: Integrate with Git via QProcess
+
+**ISSUE-52: No User-Defined Snippets** 🟠 **MEDIUM**
+- **Current**: 15 hardcoded snippets only
+- **Missing**: User snippet library, import/export
+- **Fix**: Add snippet manager dialog, JSON storage
+
+**ISSUE-53: No Multi-Cursor Editing** 🟠 **MEDIUM**
+- **Missing**: Place cursors at multiple positions
+- **Expected**: Alt+Click, Ctrl+Alt+Up/Down
+- **Impact**: Bulk edits require tedious find/replace
+- **Fix**: Implement QTextCursor list management
+
+### 11.5 Accessibility & Inclusivity
+
+**ISSUE-54: No Screen Reader Support** 🟡 **HIGH**
+- **Problem**: Diagnostics not announced to screen readers
+- **Missing**: ARIA roles, accessible navigation
+- **Impact**: Unusable for visually impaired developers
+- **Fix**: Add accessibility attributes, test with NVDA/JAWS
+
+**ISSUE-55: Hardcoded Colors Ignore System Theme** 🟠 **MEDIUM**
+- **Problem**: Colors defined in code, not from OS
+- **Missing**: High contrast mode support
+- **Impact**: Low vision users struggle to read
+- **Fix**: Respect QApplication::palette() system colors
+
+### 11.6 Integration with Other Panels
+
+**ISSUE-56: No Inspector Integration** 🟠 **MEDIUM**
+- **Missing**: Inspector doesn't show properties for symbol under cursor
+- **Expected**: Cursor on character → Inspector shows character properties
+- **Current**: Inspector and Script Editor operate independently
+- **Fix**: Emit events to EventBus on cursor position change
+
+**ISSUE-57: No Scene Preview Sync** 🟢 **LOW**
+- **Missing**: Scene Preview doesn't highlight when cursor in scene block
+- **Expected**: Cursor in `scene intro` → Preview panel focuses on intro
+- **Fix**: Add preview sync signal on breadcrumb change
+
+### 11.7 Documentation Integration
+
+**ISSUE-58: Doc Panel Doesn't Show Examples** 🟠 **MEDIUM**
+- **Current**: Shows brief description only
+- **Missing**: Code examples, parameter details
+- **Location**: Doc HTML generated in `buildDocHtml()`
+- **Fix**: Expand HTML templates with example snippets
+
+**ISSUE-59: No In-Editor Tutorial** 🟢 **LOW**
+- **Missing**: Interactive walkthrough for new users
+- **Idea**: Overlay hints on first launch ("Try Ctrl+Space for completions")
+- **Fix**: Implement guided learning overlay
+
+### 11.8 Performance & Scalability
+
+**ISSUE-60: Syntax Highlighter Runs on UI Thread** 🟠 **MEDIUM**
+- **Problem**: Blocking operation on large files
+- **Impact**: UI freeze while typing in 2000+ line scripts
+- **Fix**: Move highlighting to background thread with QRunnable
+
+**ISSUE-61: File Tree Rebuild on Every Directory Change** 🟢 **LOW**
+- **Problem**: Full tree reconstruction even for single file add
+- **Fix**: Incremental tree update
+
+### 11.9 Workflow & User Experience
+
+**ISSUE-62: New File Template Too Minimal** 🟢 **LOW**
+- **Current**: Creates basic scene with single `say` statement
+- **Missing**: Template wizard with options (dialogue scene, choice scene, etc.)
+- **Fix**: Add template selection dialog
+
+**ISSUE-63: No Auto-Save** 🟠 **MEDIUM**
+- **Missing**: Periodic auto-save to prevent data loss
+- **Impact**: Crash or power loss → work lost
+- **Fix**: Add auto-save timer (default 2 minutes)
+
+**ISSUE-64: Tab Close Doesn't Prompt on Unsaved Changes** ❌ **FALSE**
+- **Actually Implemented**: Tab shows * indicator on unsaved
+- **Note**: This is correct - close does remove unsaved work
+- **REAL ISSUE**: Should prompt "Save changes?" on close
+- **Fix**: Add confirmation dialog on tab close if modified
+
+### 11.10 Summary: UI/UX Priority Matrix
+
+#### Critical (Must Fix) 🔴
+1. **ISSUE-23**: Race condition in symbol index (thread safety)
+2. **ISSUE-24**: File watcher conflicts (data loss risk)
+
+#### High Priority (Should Fix) 🟡
+3. **ISSUE-25**: Missing bidirectional Graph sync
+4. **ISSUE-26**: Single-tab diagnostics
+5. **ISSUE-27**: No undo manager integration
+6. **ISSUE-30**: Missing static reference validation
+7. **ISSUE-38**: No error tooltip on hover
+8. **ISSUE-40**: No "Find in Files"
+9. **ISSUE-41**: No symbol rename refactoring
+10. **ISSUE-54**: No screen reader support
+
+#### Medium Priority (Nice to Have) 🟠
+11-42. See individual issues above
+
+#### Low Priority (Future Enhancements) 🟢
+43-64. See individual issues above
+
+### 11.11 Recommended Improvements
+
+#### Quick Wins (Low Effort, High Impact)
+1. Add error tooltip on hover (2 hours)
+2. Make breadcrumbs clickable (1 hour)
+3. Add "Fold All" toolbar buttons (30 minutes)
+4. Improve read-only banner message (15 minutes)
+5. Add sync progress feedback (1 hour)
+
+#### Medium Effort, High Impact
+6. Implement "Find in Files" (8 hours)
+7. Add symbol rename refactoring (16 hours)
+8. Fix race condition with mutex (4 hours)
+9. Add file conflict detection (8 hours)
+10. Implement auto-save (4 hours)
+
+#### High Effort, High Impact
+11. Bidirectional Graph↔Script sync (40 hours)
+12. Background validation queue (16 hours)
+13. Screen reader accessibility (24 hours)
+14. Multi-cursor editing (24 hours)
+15. Script debugger integration (40+ hours)
+
+---
+
+## 12. Updated Issue List (Extended)
+
+### New UI/UX Issues to Create
+
+#### Critical Synchronization Bugs
+- **#237**: [Critical][Scripting] Symbol Index Race Condition (Thread Safety)
+- **#238**: [Critical][Scripting] File Watcher Conflicts Can Lose Unsaved Changes
+
+#### High Priority UI/UX
+- **#239**: [High][Scripting] Implement Bidirectional Script↔Graph Synchronization
+- **#240**: [High][Scripting] Validate All Open Tabs in Background
+- **#241**: [High][Scripting] Integrate Script Editor with Undo Manager
+- **#242**: [High][Scripting] Add Static Cross-Reference Validation
+- **#243**: [High][Scripting] Show Error Message Tooltip on Hover
+- **#244**: [High][Scripting] Implement "Find in Files" / "Replace in Files"
+- **#245**: [High][Scripting] Add Symbol Rename Refactoring
+
+#### Medium Priority Features
+- **#246**: [Medium][Scripting] Add Essential Editor Keyboard Shortcuts
+- **#247**: [Medium][Scripting] Implement Fuzzy Matching in Code Completion
+- **#248**: [Medium][Scripting] Add Parameter Hints / Signature Help
+- **#249**: [Medium][Scripting] Optimize Symbol Index Rebuild (Incremental)
+- **#250**: [Medium][Scripting] Add Auto-Save with Configurable Interval
+- **#251**: [Medium][Scripting] Make Breadcrumbs Clickable for Navigation
+- **#252**: [Medium][Scripting] Add Visual Indicator for Quick Fixes
+- **#253**: [Medium][Scripting] Persist Code Folding State Across Sessions
+- **#254**: [Medium][Scripting] Improve Read-Only Mode Banner Message
+
+#### Accessibility & Inclusivity
+- **#255**: [High][Accessibility] Add Screen Reader Support to Script Editor
+- **#256**: [Medium][Accessibility] Support System High Contrast Themes
+
+#### Advanced Editor Features
+- **#257**: [Medium][Scripting] Implement Multi-Cursor Editing
+- **#258**: [Medium][Scripting] Add User-Defined Snippets Library
+- **#259**: [Low][Scripting] Add Split View / Side-by-Side Editing
+- **#260**: [Low][Scripting] Add Bookmark Support
+
+#### Performance Optimizations
+- **#261**: [Medium][Performance] Move Syntax Highlighting to Background Thread
+- **#262**: [Medium][Performance] Optimize Minimap Rendering (Incremental Update)
+
+#### Issue for Deeper Analysis
+- **#263**: [Meta][Scripting] Conduct Comprehensive UX Study with Real Users
+
+---
+
+*End of Extended Analysis Report - UI/UX Integration*
