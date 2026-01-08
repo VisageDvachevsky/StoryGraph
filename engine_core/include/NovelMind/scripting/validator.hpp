@@ -88,6 +88,18 @@ public:
    */
   void setReportDeadCode(bool report);
 
+  /**
+   * @brief Set the source code for context in error messages
+   * @param source The full source code string
+   */
+  void setSource(const std::string &source);
+
+  /**
+   * @brief Set the file path for error messages
+   * @param path The file path
+   */
+  void setFilePath(const std::string &path);
+
 private:
   // Reset state for new validation
   void reset();
@@ -148,6 +160,16 @@ private:
   void warning(ErrorCode code, const std::string &message, SourceLocation loc);
   void info(ErrorCode code, const std::string &message, SourceLocation loc);
 
+  // Enhanced error with suggestions
+  void errorWithSuggestions(ErrorCode code, const std::string &message,
+                            SourceLocation loc,
+                            const std::vector<std::string> &suggestions);
+
+  // Helper to get all symbol names of a type
+  [[nodiscard]] std::vector<std::string> getAllCharacterNames() const;
+  [[nodiscard]] std::vector<std::string> getAllSceneNames() const;
+  [[nodiscard]] std::vector<std::string> getAllVariableNames() const;
+
   // Symbol tables
   std::unordered_map<std::string, SymbolInfo> m_characters;
   std::unordered_map<std::string, SymbolInfo> m_scenes;
@@ -163,6 +185,10 @@ private:
   // Configuration
   bool m_reportUnused = true;
   bool m_reportDeadCode = true;
+
+  // Source context for error messages
+  std::string m_source;
+  std::string m_filePath;
 
   // Results
   ErrorList m_errors;
