@@ -10,7 +10,9 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
+#include <QJsonArray>
 #include <QJsonDocument>
+#include <QJsonObject>
 #include <QTemporaryDir>
 
 using namespace NovelMind::editor;
