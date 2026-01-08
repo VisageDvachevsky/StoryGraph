@@ -35,6 +35,18 @@ void Validator::setReportDeadCode(bool report) { m_reportDeadCode = report; }
 void Validator::setSource(const std::string &source) { m_source = source; }
 
 void Validator::setFilePath(const std::string &path) { m_filePath = path; }
+void Validator::setSceneFileExistsCallback(SceneFileExistsCallback callback) {
+  m_sceneFileExistsCallback = std::move(callback);
+}
+
+void Validator::setSceneObjectExistsCallback(
+    SceneObjectExistsCallback callback) {
+  m_sceneObjectExistsCallback = std::move(callback);
+}
+
+void Validator::setAssetFileExistsCallback(AssetFileExistsCallback callback) {
+  m_assetFileExistsCallback = std::move(callback);
+}
 
 void Validator::reset() {
   m_characters.clear();
@@ -120,6 +132,16 @@ void Validator::validateProgram(const Program &program) {
 
 void Validator::validateScene(const SceneDecl &decl) {
   m_currentScene = decl.name;
+
+  // Check if scene file exists (if callback is provided)
+  if (m_sceneFileExistsCallback) {
+    if (!m_sceneFileExistsCallback(decl.name)) {
+      warning(ErrorCode::MissingSceneFile,
+              "Scene file '" + decl.name +
+                  ".nmscene' not found - scene objects cannot be validated",
+              m_currentLocation);
+    }
+  }
 
   // Check for empty scene
   if (decl.body.empty()) {
@@ -229,11 +251,29 @@ void Validator::validateShowStmt(const ShowStmt &stmt) {
     } else {
       markCharacterUsed(stmt.identifier, m_currentLocation);
     }
+
+    // Check if character object exists in current scene (if callback provided)
+    if (m_sceneObjectExistsCallback && !m_currentScene.empty()) {
+      if (!m_sceneObjectExistsCallback(m_currentScene, stmt.identifier)) {
+        warning(ErrorCode::MissingSceneObject,
+                "Object '" + stmt.identifier + "' not found in scene '" +
+                    m_currentScene + "'",
+                m_currentLocation);
+      }
+    }
     break;
   }
 
   case ShowStmt::Target::Background:
-    // Background resources are validated at compile time
+    // Validate background asset if resource is specified
+    if (stmt.resource.has_value() && m_assetFileExistsCallback) {
+      const std::string &assetPath = stmt.resource.value();
+      if (!m_assetFileExistsCallback(assetPath)) {
+        warning(ErrorCode::MissingAssetFile,
+                "Asset '" + assetPath + "' not found in project",
+                m_currentLocation);
+      }
+    }
     break;
   }
 
@@ -433,6 +473,13 @@ void Validator::validatePlayStmt(const PlayStmt &stmt) {
   if (stmt.resource.empty()) {
     error(ErrorCode::InvalidResourcePath,
           "Play statement requires a resource path", m_currentLocation);
+  } else if (m_assetFileExistsCallback) {
+    // Check if audio asset exists
+    if (!m_assetFileExistsCallback(stmt.resource)) {
+      warning(ErrorCode::MissingAssetFile,
+              "Asset '" + stmt.resource + "' not found in project",
+              m_currentLocation);
+    }
   }
 
   if (stmt.volume.has_value()) {
