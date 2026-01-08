@@ -4,6 +4,9 @@
 #include "NovelMind/scripting/ir.hpp"
 #include "editor_runtime_host_detail.hpp"
 
+#include <QDebug>
+#include <QString>
+
 #include <chrono>
 #include <exception>
 #include <filesystem>
