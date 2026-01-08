@@ -356,3 +356,78 @@ TEST_CASE("VM JUMP_IF_NOT to address 0", "[scripting][jump]")
     REQUIRE(std::get<NovelMind::i32>(val) == 3);
     REQUIRE(vm.isHalted());
 }
+
+TEST_CASE("VM IP bounds validation - program runs past end", "[scripting][security]")
+{
+    VirtualMachine vm;
+
+    // Program without HALT - IP will increment past the end
+    std::vector<Instruction> program = {
+        {OpCode::PUSH_INT, 42},      // 0
+        {OpCode::STORE_VAR, 0}       // 1 - no HALT, IP will be 2 after this
+    };
+
+    vm.load(program, {"result"});
+
+    // First two steps should succeed
+    REQUIRE(vm.step());  // Execute instruction 0
+    REQUIRE(vm.step());  // Execute instruction 1
+
+    // Third step should fail - IP is now 2, which is >= program.size() (2)
+    REQUIRE_FALSE(vm.step());
+    REQUIRE(vm.isHalted());
+
+    // Verify the variable was set correctly before halting
+    auto val = vm.getVariable("result");
+    REQUIRE(std::holds_alternative<NovelMind::i32>(val));
+    REQUIRE(std::get<NovelMind::i32>(val) == 42);
+}
+
+TEST_CASE("VM IP bounds validation - corrupted IP", "[scripting][security]")
+{
+    VirtualMachine vm;
+
+    std::vector<Instruction> program = {
+        {OpCode::PUSH_INT, 1},
+        {OpCode::NOP, 0},
+        {OpCode::HALT, 0}
+    };
+
+    vm.load(program, {});
+
+    // Execute first instruction
+    REQUIRE(vm.step());  // IP is now 1
+
+    // Manually try to set IP to an invalid value using setIP
+    vm.setIP(999);
+
+    // setIP should reject invalid IP (logs warning but doesn't change IP)
+    // VM should remain in a valid state at IP=1
+    // Step should execute the NOP instruction at IP=1
+    REQUIRE(vm.step());  // Execute NOP at IP=1, IP becomes 2
+    REQUIRE_FALSE(vm.isHalted());
+
+    // One more step should execute HALT
+    REQUIRE_FALSE(vm.step());  // Execute HALT, returns false because halted
+    REQUIRE(vm.isHalted());
+}
+
+TEST_CASE("VM IP bounds validation - setIP beyond bounds", "[scripting][security]")
+{
+    VirtualMachine vm;
+
+    std::vector<Instruction> program = {
+        {OpCode::PUSH_INT, 1},
+        {OpCode::HALT, 0}
+    };
+
+    vm.load(program, {});
+
+    // Try to set IP beyond program bounds - setIP should reject this
+    vm.setIP(10);  // program.size() is 2
+
+    // setIP rejected the invalid value, so IP should still be 0
+    // VM should remain in a valid state and step() should succeed
+    REQUIRE(vm.step());
+    REQUIRE_FALSE(vm.isHalted());  // Executed PUSH_INT, not halted yet
+}

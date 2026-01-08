@@ -41,6 +41,9 @@ bool VirtualMachine::step() {
   }
 
   if (m_ip >= m_program.size()) {
+    NOVELMIND_LOG_ERROR("VM Error: Instruction pointer out of bounds: " +
+                        std::to_string(m_ip) + " >= " +
+                        std::to_string(m_program.size()));
     m_halted = true;
     return false;
   }
