@@ -2,12 +2,12 @@
 #include "NovelMind/editor/qt/widgets/nm_scene_preview_widget.hpp"
 #include "NovelMind/core/logger.hpp"
 #include "NovelMind/editor/project_manager.hpp"
-#include "NovelMind/editor/editor_settings.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
 #include "NovelMind/editor/qt/dialogs/nm_script_welcome_dialog.hpp"
+#include "NovelMind/editor/script_project_context.hpp"
 #include "NovelMind/scripting/compiler.hpp"
 #include "NovelMind/scripting/lexer.hpp"
 #include "NovelMind/scripting/parser.hpp"
@@ -29,6 +29,7 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMenu>
+#include <QMutexLocker>
 #include <QPainter>
 #include <QPushButton>
 #include <QRegularExpression>
@@ -67,21 +68,29 @@ NMScriptEditorPanel::NMScriptEditorPanel(QWidget *parent)
           &NMScriptEditorPanel::runDiagnostics);
   m_scriptWatcher = new QFileSystemWatcher(this);
   connect(m_scriptWatcher, &QFileSystemWatcher::directoryChanged, this,
-          [this](const QString &) {
-            refreshFileList();
-            refreshSymbolIndex();
-          });
+          &NMScriptEditorPanel::onDirectoryChanged);
   connect(m_scriptWatcher, &QFileSystemWatcher::fileChanged, this,
+          &NMScriptEditorPanel::onFileChanged);
           [this](const QString &) { refreshSymbolIndex(); });
+
+  // Initialize project context for asset validation
+  m_projectContext = new ScriptProjectContext(QString());
   setupContent();
 }
 
 NMScriptEditorPanel::~NMScriptEditorPanel() {
   // Save state on destruction
   saveState();
+  delete m_projectContext;
 }
 
 void NMScriptEditorPanel::onInitialize() {
+  // Set project path for asset validation
+  const std::string projectPath =
+      ProjectManager::instance().getProjectPath();
+  if (!projectPath.empty() && m_projectContext) {
+    m_projectContext->setProjectPath(QString::fromStdString(projectPath));
+  }
   refreshFileList();
 
   // Show welcome dialog on first launch
@@ -367,15 +376,16 @@ void NMScriptEditorPanel::setupContent() {
   connect(m_tabs, &QTabWidget::tabCloseRequested, this, [this](int index) {
     QWidget *widget = m_tabs->widget(index);
     m_tabPaths.remove(widget);
+    m_editorSaveTimes.remove(widget); // Clean up save time tracking (issue #246)
     m_tabs->removeTab(index);
     delete widget;
   });
 
   // Scene Preview Widget (issue #240)
   m_scenePreview = new NMScenePreviewWidget(m_mainSplitter);
-  m_scenePreviewEnabled = EditorSettings::instance()
-                              .value("scriptEditor/previewEnabled", false)
-                              .toBool();
+  QSettings settings;
+  m_scenePreviewEnabled =
+      settings.value("scriptEditor/previewEnabled", false).toBool();
   m_scenePreview->setVisible(m_scenePreviewEnabled);
   m_scenePreview->setPreviewEnabled(m_scenePreviewEnabled);
 
@@ -623,6 +633,10 @@ void NMScriptEditorPanel::addEditorTab(const QString &path) {
   m_tabs->setCurrentWidget(editor);
   editor->setFocus();
   m_tabPaths.insert(editor, path);
+
+  // Initialize save time for conflict detection (issue #246)
+  setEditorSaveTime(editor, QFileInfo(path).lastModified());
+
   pushCompletionsToEditors();
 }
 
@@ -644,6 +658,9 @@ bool NMScriptEditorPanel::saveEditor(QPlainTextEdit *editor) {
   QTextStream out(&file);
   out << editor->toPlainText();
   file.close();
+
+  // Record save time to prevent triggering conflict dialog for our own saves
+  setEditorSaveTime(editor, QFileInfo(path).lastModified());
 
   const QString name = QFileInfo(path).fileName();
   const int index = m_tabs->indexOf(editor);
@@ -742,6 +759,7 @@ void NMScriptEditorPanel::rebuildWatchList() {
 }
 
 void NMScriptEditorPanel::refreshSymbolIndex() {
+  QMutexLocker locker(&m_symbolIndexMutex);
   m_symbolIndex = {};
   const QString root = scriptsRootPath();
   if (root.isEmpty()) {
@@ -877,6 +895,36 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
         std::string("Failed to build script symbols: ") + e.what());
   }
 
+  // Add all available assets from project file system
+  if (m_projectContext) {
+    // Add available backgrounds
+    auto backgrounds = m_projectContext->getAvailableBackgrounds();
+    for (const auto &bg : backgrounds) {
+      insertList(m_symbolIndex.backgrounds, seenBackgrounds,
+                 QString::fromStdString(bg));
+    }
+
+    // Add available music
+    auto music = m_projectContext->getAvailableAudio("music");
+    for (const auto &track : music) {
+      insertList(m_symbolIndex.music, seenMusic,
+                 QString::fromStdString(track));
+    }
+
+    // Add available sound effects
+    auto sounds = m_projectContext->getAvailableAudio("sound");
+    for (const auto &sfx : sounds) {
+      insertList(m_symbolIndex.music, seenMusic, QString::fromStdString(sfx));
+    }
+
+    // Add available voices
+    auto voices = m_projectContext->getAvailableAudio("voice");
+    for (const auto &voice : voices) {
+      insertList(m_symbolIndex.voices, seenVoices,
+                 QString::fromStdString(voice));
+    }
+  }
+
   pushCompletionsToEditors();
   refreshSymbolList();
   if (m_issuesPanel) {
@@ -913,6 +961,11 @@ NMScriptEditorPanel::validateSource(const QString &path,
   }
 
   Validator validator;
+  // Enable asset validation if project context is available
+  if (m_projectContext) {
+    validator.setProjectContext(m_projectContext);
+    validator.setValidateAssets(true);
+  }
   auto validation = validator.validate(parseResult.value());
   for (const auto &err : validation.errors.all()) {
     QString severity = "info";
@@ -962,6 +1015,7 @@ void NMScriptEditorPanel::goToLocation(const QString &path, int line) {
 
 QList<NMScriptEditor::CompletionEntry>
 NMScriptEditorPanel::buildProjectCompletionEntries() const {
+  QMutexLocker locker(&m_symbolIndexMutex);
   QList<NMScriptEditor::CompletionEntry> entries;
 
   auto addEntries = [&entries](const QStringList &list, const QString &detail) {
@@ -982,6 +1036,7 @@ NMScriptEditorPanel::buildProjectCompletionEntries() const {
 }
 
 QHash<QString, QString> NMScriptEditorPanel::buildProjectHoverDocs() const {
+  QMutexLocker locker(&m_symbolIndexMutex);
   QHash<QString, QString> docs;
   auto relPath = [](const QString &path) {
     if (path.isEmpty()) {
@@ -1022,6 +1077,7 @@ QHash<QString, QString> NMScriptEditorPanel::buildProjectHoverDocs() const {
 }
 
 QHash<QString, QString> NMScriptEditorPanel::buildProjectDocHtml() const {
+  QMutexLocker locker(&m_symbolIndexMutex);
   QHash<QString, QString> docs;
 
   auto relPath = [](const QString &path) {
@@ -1135,12 +1191,14 @@ NMScriptEditor *NMScriptEditorPanel::currentEditor() const {
 }
 
 bool NMScriptEditorPanel::goToSceneDefinition(const QString &sceneName) {
+  QMutexLocker locker(&m_symbolIndexMutex);
   const QString key = sceneName.toLower();
   for (auto it = m_symbolIndex.scenes.constBegin();
        it != m_symbolIndex.scenes.constEnd(); ++it) {
     if (it.key().toLower() == key) {
       const QString filePath = it.value();
       const int line = m_symbolIndex.sceneLines.value(it.key(), 1);
+      locker.unlock();  // Unlock before calling goToLocation to avoid deadlock
       goToLocation(filePath, line);
       return true;
     }
@@ -1252,6 +1310,7 @@ void NMScriptEditorPanel::refreshSymbolList() {
   }
   m_symbolList->clear();
 
+  QMutexLocker locker(&m_symbolIndexMutex);
   const auto &palette = NMStyleManager::instance().palette();
   auto addItems = [this, &palette](const QHash<QString, QString> &map,
                                    const QString &typeLabel,
@@ -1340,6 +1399,7 @@ void NMScriptEditorPanel::showReferencesDialog(
 
 QHash<QString, SymbolLocation>
 NMScriptEditorPanel::buildSymbolLocations() const {
+  QMutexLocker locker(&m_symbolIndexMutex);
   QHash<QString, SymbolLocation> locations;
 
   // Add scenes
@@ -2208,6 +2268,284 @@ void NMScriptEditorPanel::applySettings() {
     QFontMetrics metrics(font);
     editor->setTabStopDistance(tabSize * metrics.horizontalAdvance(' '));
   }
+}
+
+// ============================================================================
+// File Conflict Detection (Issue #246)
+// ============================================================================
+
+NMScriptEditor *
+NMScriptEditorPanel::findEditorForPath(const QString &path) const {
+  for (int i = 0; i < m_tabs->count(); ++i) {
+    QWidget *widget = m_tabs->widget(i);
+    if (m_tabPaths.value(widget) == path) {
+      return qobject_cast<NMScriptEditor *>(widget);
+    }
+  }
+  return nullptr;
+}
+
+bool NMScriptEditorPanel::isTabModified(const QWidget *editor) const {
+  if (!editor || !m_tabs) {
+    return false;
+  }
+  const int index = m_tabs->indexOf(const_cast<QWidget *>(editor));
+  if (index < 0) {
+    return false;
+  }
+  // Check if tab text has "*" suffix indicating unsaved changes
+  return m_tabs->tabText(index).endsWith("*");
+}
+
+QDateTime
+NMScriptEditorPanel::getEditorSaveTime(const QWidget *editor) const {
+  return m_editorSaveTimes.value(const_cast<QWidget *>(editor));
+}
+
+void NMScriptEditorPanel::setEditorSaveTime(QWidget *editor,
+                                            const QDateTime &time) {
+  if (editor) {
+    m_editorSaveTimes.insert(editor, time);
+  }
+}
+
+void NMScriptEditorPanel::onFileChanged(const QString &path) {
+  // Find if this file is open in an editor tab
+  NMScriptEditor *editor = findEditorForPath(path);
+  if (!editor) {
+    // File not open, just refresh symbol index
+    refreshSymbolIndex();
+    return;
+  }
+
+  // Check if tab has unsaved changes
+  const bool hasUnsaved = isTabModified(editor);
+
+  // Get file modification time
+  QFileInfo fileInfo(path);
+  if (!fileInfo.exists()) {
+    // File was deleted, handle separately if needed
+    core::Logger::instance().warning(
+        "File was deleted externally: " + path.toStdString());
+    return;
+  }
+  const QDateTime fileMTime = fileInfo.lastModified();
+
+  // Compare with last known save time
+  const QDateTime editorMTime = getEditorSaveTime(editor);
+
+  // If we have a recorded save time and file time is not newer, this was our
+  // own save
+  if (editorMTime.isValid() && fileMTime <= editorMTime) {
+    // This was our own save, ignore
+    refreshSymbolIndex();
+    return;
+  }
+
+  // External modification detected
+  if (hasUnsaved) {
+    showConflictDialog(path, editor);
+  } else {
+    showReloadPrompt(path, editor);
+  }
+}
+
+void NMScriptEditorPanel::onDirectoryChanged(const QString &path) {
+  Q_UNUSED(path);
+  // Directory changes don't affect open files, just refresh file list
+  refreshFileList();
+  refreshSymbolIndex();
+}
+
+void NMScriptEditorPanel::showConflictDialog(const QString &path,
+                                              NMScriptEditor *editor) {
+  if (!editor) {
+    return;
+  }
+
+  const QString fileName = QFileInfo(path).fileName();
+  const QString message =
+      tr("The file \"%1\" has been modified externally, but you have unsaved "
+         "changes in the editor.\n\nWhat would you like to do?")
+          .arg(fileName);
+
+  // Create custom dialog with three options
+  auto *dialog = new QDialog(this);
+  dialog->setWindowTitle(tr("File Conflict Detected"));
+  dialog->setModal(true);
+  dialog->setMinimumWidth(450);
+
+  auto *layout = new QVBoxLayout(dialog);
+  layout->setContentsMargins(16, 16, 16, 16);
+  layout->setSpacing(12);
+
+  // Warning icon and message
+  auto *messageLayout = new QHBoxLayout();
+  auto *iconLabel = new QLabel(dialog);
+  iconLabel->setText("⚠️");
+  iconLabel->setStyleSheet("font-size: 32px;");
+  messageLayout->addWidget(iconLabel);
+
+  auto *messageLabel = new QLabel(message, dialog);
+  messageLabel->setWordWrap(true);
+  messageLayout->addWidget(messageLabel, 1);
+  layout->addLayout(messageLayout);
+
+  // Button layout
+  auto *buttonLayout = new QHBoxLayout();
+  buttonLayout->addStretch();
+
+  auto *keepMyChangesBtn =
+      new QPushButton(tr("Keep My Changes"), dialog);
+  keepMyChangesBtn->setToolTip(
+      tr("Discard the external file version and keep your unsaved changes"));
+  buttonLayout->addWidget(keepMyChangesBtn);
+
+  auto *useFileVersionBtn =
+      new QPushButton(tr("Use File Version"), dialog);
+  useFileVersionBtn->setToolTip(
+      tr("Discard your unsaved changes and reload from disk"));
+  buttonLayout->addWidget(useFileVersionBtn);
+
+  auto *cancelBtn = new QPushButton(tr("Cancel"), dialog);
+  cancelBtn->setToolTip(tr("Do nothing for now"));
+  buttonLayout->addWidget(cancelBtn);
+
+  layout->addLayout(buttonLayout);
+
+  // Connect buttons
+  int result = 0; // 1 = Keep Mine, 2 = Use File, 0 = Cancel
+  connect(keepMyChangesBtn, &QPushButton::clicked, dialog,
+          [dialog, &result]() {
+            result = 1;
+            dialog->accept();
+          });
+  connect(useFileVersionBtn, &QPushButton::clicked, dialog,
+          [dialog, &result]() {
+            result = 2;
+            dialog->accept();
+          });
+  connect(cancelBtn, &QPushButton::clicked, dialog, [dialog]() {
+    dialog->reject();
+  });
+
+  dialog->exec();
+
+  if (result == 1) {
+    // Keep My Changes - force save over file version
+    core::Logger::instance().info(
+        "User chose to keep editor changes for: " + path.toStdString());
+    saveEditor(editor);
+  } else if (result == 2) {
+    // Use File Version - reload from disk
+    core::Logger::instance().info(
+        "User chose to reload file from disk: " + path.toStdString());
+    QFile file(path);
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      const QString content = QString::fromUtf8(file.readAll());
+      editor->setPlainText(content);
+      file.close();
+
+      // Update save time to prevent immediate re-trigger
+      setEditorSaveTime(editor, QFileInfo(path).lastModified());
+
+      // Remove "*" from tab
+      const int index = m_tabs->indexOf(editor);
+      if (index >= 0) {
+        m_tabs->setTabText(index, fileName);
+      }
+
+      refreshSymbolIndex();
+      m_diagnosticsTimer.start();
+    }
+  }
+  // else: Cancel - do nothing
+
+  delete dialog;
+}
+
+void NMScriptEditorPanel::showReloadPrompt(const QString &path,
+                                            NMScriptEditor *editor) {
+  if (!editor) {
+    return;
+  }
+
+  const QString fileName = QFileInfo(path).fileName();
+  const QString message =
+      tr("The file \"%1\" has been modified externally.\n\nDo you want to "
+         "reload it from disk?")
+          .arg(fileName);
+
+  // Create simple reload dialog
+  auto *dialog = new QDialog(this);
+  dialog->setWindowTitle(tr("File Changed Externally"));
+  dialog->setModal(true);
+  dialog->setMinimumWidth(400);
+
+  auto *layout = new QVBoxLayout(dialog);
+  layout->setContentsMargins(16, 16, 16, 16);
+  layout->setSpacing(12);
+
+  // Info icon and message
+  auto *messageLayout = new QHBoxLayout();
+  auto *iconLabel = new QLabel(dialog);
+  iconLabel->setText("ℹ️");
+  iconLabel->setStyleSheet("font-size: 28px;");
+  messageLayout->addWidget(iconLabel);
+
+  auto *messageLabel = new QLabel(message, dialog);
+  messageLabel->setWordWrap(true);
+  messageLayout->addWidget(messageLabel, 1);
+  layout->addLayout(messageLayout);
+
+  // Button layout
+  auto *buttonLayout = new QHBoxLayout();
+  buttonLayout->addStretch();
+
+  auto *reloadBtn = new QPushButton(tr("Reload"), dialog);
+  reloadBtn->setToolTip(tr("Reload the file from disk"));
+  buttonLayout->addWidget(reloadBtn);
+
+  auto *ignoreBtn = new QPushButton(tr("Ignore"), dialog);
+  ignoreBtn->setToolTip(
+      tr("Keep current version, you will be warned on save"));
+  buttonLayout->addWidget(ignoreBtn);
+
+  layout->addLayout(buttonLayout);
+
+  // Connect buttons
+  bool shouldReload = false;
+  connect(reloadBtn, &QPushButton::clicked, dialog,
+          [dialog, &shouldReload]() {
+            shouldReload = true;
+            dialog->accept();
+          });
+  connect(ignoreBtn, &QPushButton::clicked, dialog,
+          [dialog]() { dialog->reject(); });
+
+  dialog->exec();
+
+  if (shouldReload) {
+    core::Logger::instance().info("User chose to reload file: " +
+                                  path.toStdString());
+    QFile file(path);
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      const QString content = QString::fromUtf8(file.readAll());
+      editor->setPlainText(content);
+      file.close();
+
+      // Update save time to prevent immediate re-trigger
+      setEditorSaveTime(editor, QFileInfo(path).lastModified());
+
+      refreshSymbolIndex();
+      m_diagnosticsTimer.start();
+    }
+  } else {
+    core::Logger::instance().info("User chose to ignore external change for: " +
+                                  path.toStdString());
+  }
+
+  delete dialog;
 }
 
 } // namespace NovelMind::editor::qt

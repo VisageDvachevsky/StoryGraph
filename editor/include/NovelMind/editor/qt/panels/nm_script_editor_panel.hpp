@@ -35,6 +35,7 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMenu>
+#include <QMutex>
 #include <QPlainTextEdit>
 #include <QPointer>
 #include <QRegularExpression>
@@ -53,6 +54,11 @@ class QFileSystemWatcher;
 class QCheckBox;
 class QPushButton;
 class NMIssuesPanel;
+
+// Forward declaration for ScriptProjectContext (in NovelMind::editor namespace)
+namespace NovelMind::editor {
+class ScriptProjectContext;
+}
 
 namespace NovelMind::editor::qt {
 
@@ -878,6 +884,16 @@ private:
   void restoreState();
   void applySettings();
 
+  // File conflict handling helpers
+  NMScriptEditor *findEditorForPath(const QString &path) const;
+  bool isTabModified(const QWidget *editor) const;
+  QDateTime getEditorSaveTime(const QWidget *editor) const;
+  void setEditorSaveTime(QWidget *editor, const QDateTime &time);
+  void onFileChanged(const QString &path);
+  void onDirectoryChanged(const QString &path);
+  void showConflictDialog(const QString &path, NMScriptEditor *editor);
+  void showReloadPrompt(const QString &path, NMScriptEditor *editor);
+
   QWidget *m_contentWidget = nullptr;
   QSplitter *m_splitter = nullptr;
   QSplitter *m_leftSplitter = nullptr;
@@ -891,6 +907,7 @@ private:
   NMScenePreviewWidget *m_scenePreview = nullptr;
 
   QHash<QWidget *, QString> m_tabPaths;
+  QHash<QWidget *, QDateTime> m_editorSaveTimes; // Track last save time per editor
   QPointer<QFileSystemWatcher> m_scriptWatcher;
 
   struct ScriptSymbolIndex {
@@ -906,6 +923,9 @@ private:
     QHash<QString, int> sceneLines;     // name -> line number
     QHash<QString, int> characterLines; // name -> line number
   } m_symbolIndex;
+
+  // Mutex to protect m_symbolIndex from concurrent access (issue #245)
+  mutable QMutex m_symbolIndexMutex;
 
   QTimer m_diagnosticsTimer;
   class NMIssuesPanel *m_issuesPanel = nullptr;
@@ -925,6 +945,9 @@ private:
   QWidget *m_readOnlyBanner = nullptr;
   QLabel *m_readOnlyLabel = nullptr;
   QPushButton *m_syncToGraphBtn = nullptr;
+
+  // Project context for asset validation (issue #241)
+  NovelMind::editor::ScriptProjectContext *m_projectContext = nullptr;
 
   // Live scene preview (issue #240)
   bool m_scenePreviewEnabled = false;
