@@ -11,6 +11,7 @@
  * - Duplicate definitions
  * - Type mismatches
  * - Invalid goto targets
+ * - Missing asset references (backgrounds, audio files, sprites)
  */
 
 #include "NovelMind/core/types.hpp"
@@ -22,6 +23,41 @@
 #include <vector>
 
 namespace NovelMind::scripting {
+
+/**
+ * @brief Project context interface for asset validation
+ *
+ * Provides methods to check for asset existence in the project.
+ * This interface allows the validator to check if asset files
+ * referenced in scripts actually exist in the project.
+ */
+class IProjectContext {
+public:
+  virtual ~IProjectContext() = default;
+
+  /**
+   * @brief Check if a background asset exists
+   * @param assetId Background asset identifier (e.g., "bg_city", "cafeteria")
+   * @return true if the background asset exists
+   */
+  [[nodiscard]] virtual bool backgroundExists(const std::string &assetId) const = 0;
+
+  /**
+   * @brief Check if an audio asset exists
+   * @param assetPath Audio file path (e.g., "music_theme.wav", "sfx_click.wav")
+   * @param mediaType Type of media (sound, music, voice)
+   * @return true if the audio asset exists
+   */
+  [[nodiscard]] virtual bool audioExists(const std::string &assetPath,
+                                         const std::string &mediaType) const = 0;
+
+  /**
+   * @brief Check if a character sprite exists
+   * @param characterId Character identifier
+   * @return true if the character has sprite assets
+   */
+  [[nodiscard]] virtual bool characterSpriteExists(const std::string &characterId) const = 0;
+};
 
 /**
  * @brief Symbol information for tracking definitions and usages
@@ -87,6 +123,17 @@ public:
    * @brief Configure whether to report dead code as warnings
    */
   void setReportDeadCode(bool report);
+
+  /**
+   * @brief Set project context for asset validation
+   * @param context Project context providing asset existence checks
+   */
+  void setProjectContext(IProjectContext *context);
+
+  /**
+   * @brief Configure whether to validate asset references
+   */
+  void setValidateAssets(bool validate);
 
 private:
   // Reset state for new validation
@@ -163,6 +210,10 @@ private:
   // Configuration
   bool m_reportUnused = true;
   bool m_reportDeadCode = true;
+  bool m_validateAssets = false;
+
+  // Project context for asset validation
+  IProjectContext *m_projectContext = nullptr;
 
   // Results
   ErrorList m_errors;

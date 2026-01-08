@@ -65,6 +65,7 @@ add_library(novelmind_editor STATIC
     src/project_json.cpp
     src/scene_registry.cpp
     src/scene_template_manager.cpp
+    src/script_project_context.cpp
 
     # Build System components
     src/build_system.cpp
@@ -256,6 +257,10 @@ add_library(novelmind_editor STATIC
 
     # Scene Template System (issue #216)
     include/NovelMind/editor/scene_template_manager.hpp
+
+    # Script Project Context (issue #241)
+    include/NovelMind/editor/script_project_context.hpp
+
     # Custom Widget headers
     include/NovelMind/editor/qt/widgets/nm_scene_id_picker.hpp
 

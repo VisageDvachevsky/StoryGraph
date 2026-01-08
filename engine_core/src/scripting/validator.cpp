@@ -32,6 +32,14 @@ void Validator::setReportUnused(bool report) { m_reportUnused = report; }
 
 void Validator::setReportDeadCode(bool report) { m_reportDeadCode = report; }
 
+void Validator::setProjectContext(IProjectContext *context) {
+  m_projectContext = context;
+}
+
+void Validator::setValidateAssets(bool validate) {
+  m_validateAssets = validate;
+}
+
 void Validator::reset() {
   m_characters.clear();
   m_scenes.clear();
@@ -211,11 +219,31 @@ void Validator::validateShowStmt(const ShowStmt &stmt) {
     } else {
       markCharacterUsed(stmt.identifier, m_currentLocation);
     }
+
+    // Validate character sprite asset exists
+    if (m_validateAssets && m_projectContext) {
+      if (!m_projectContext->characterSpriteExists(stmt.identifier)) {
+        warning(ErrorCode::UndefinedResource,
+                "Character sprite asset for '" + stmt.identifier +
+                    "' not found in project",
+                m_currentLocation);
+      }
+    }
     break;
   }
 
   case ShowStmt::Target::Background:
-    // Background resources are validated at compile time
+    // Validate background asset exists
+    if (m_validateAssets && m_projectContext) {
+      // The resource field contains the background identifier
+      const std::string &bgId =
+          stmt.resource.has_value() ? stmt.resource.value() : stmt.identifier;
+      if (!bgId.empty() && !m_projectContext->backgroundExists(bgId)) {
+        warning(ErrorCode::UndefinedResource,
+                "Background asset '" + bgId + "' not found in project",
+                m_currentLocation);
+      }
+    }
     break;
   }
 
@@ -370,6 +398,26 @@ void Validator::validatePlayStmt(const PlayStmt &stmt) {
   if (stmt.resource.empty()) {
     error(ErrorCode::InvalidResourcePath,
           "Play statement requires a resource path", m_currentLocation);
+  } else {
+    // Validate audio asset exists
+    if (m_validateAssets && m_projectContext) {
+      std::string mediaType;
+      switch (stmt.type) {
+      case PlayStmt::MediaType::Sound:
+        mediaType = "sound";
+        break;
+      case PlayStmt::MediaType::Music:
+        mediaType = "music";
+        break;
+      }
+
+      if (!m_projectContext->audioExists(stmt.resource, mediaType)) {
+        warning(ErrorCode::UndefinedResource,
+                "Audio asset '" + stmt.resource + "' not found in project " +
+                    mediaType + " directory",
+                m_currentLocation);
+      }
+    }
   }
 
   if (stmt.volume.has_value()) {

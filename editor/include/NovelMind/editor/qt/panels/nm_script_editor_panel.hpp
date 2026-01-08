@@ -845,6 +845,9 @@ private:
   QWidget *m_readOnlyBanner = nullptr;
   QLabel *m_readOnlyLabel = nullptr;
   QPushButton *m_syncToGraphBtn = nullptr;
+
+  // Project context for asset validation (issue #241)
+  class ScriptProjectContext *m_projectContext = nullptr;
 };
 
 } // namespace NovelMind::editor::qt

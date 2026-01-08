@@ -4,6 +4,7 @@
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
+#include "NovelMind/editor/script_project_context.hpp"
 #include "NovelMind/scripting/compiler.hpp"
 #include "NovelMind/scripting/lexer.hpp"
 #include "NovelMind/scripting/parser.hpp"
@@ -67,12 +68,25 @@ NMScriptEditorPanel::NMScriptEditorPanel(QWidget *parent)
           });
   connect(m_scriptWatcher, &QFileSystemWatcher::fileChanged, this,
           [this](const QString &) { refreshSymbolIndex(); });
+
+  // Initialize project context for asset validation
+  m_projectContext = new ScriptProjectContext(QString());
   setupContent();
 }
 
-NMScriptEditorPanel::~NMScriptEditorPanel() = default;
+NMScriptEditorPanel::~NMScriptEditorPanel() {
+  delete m_projectContext;
+}
 
-void NMScriptEditorPanel::onInitialize() { refreshFileList(); }
+void NMScriptEditorPanel::onInitialize() {
+  // Set project path for asset validation
+  const std::string projectPath =
+      ProjectManager::instance().getProjectPath();
+  if (!projectPath.empty() && m_projectContext) {
+    m_projectContext->setProjectPath(QString::fromStdString(projectPath));
+  }
+  refreshFileList();
+}
 
 void NMScriptEditorPanel::onUpdate(double /*deltaTime*/) {}
 
@@ -805,6 +819,11 @@ NMScriptEditorPanel::validateSource(const QString &path,
   }
 
   Validator validator;
+  // Enable asset validation if project context is available
+  if (m_projectContext) {
+    validator.setProjectContext(m_projectContext);
+    validator.setValidateAssets(true);
+  }
   auto validation = validator.validate(parseResult.value());
   for (const auto &err : validation.errors.all()) {
     QString severity = "info";
