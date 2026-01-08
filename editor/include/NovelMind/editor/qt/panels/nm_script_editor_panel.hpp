@@ -154,6 +154,7 @@ class NMScriptEditor;
 class NMScriptMinimap;
 class NMFindReplaceWidget;
 class NMScriptCommandPalette;
+class NMScenePreviewWidget;
 
 /**
  * @brief Minimap widget for code overview (VSCode-like)
@@ -510,6 +511,54 @@ public:
    */
   [[nodiscard]] NMScriptMinimap *minimap() const { return m_minimap; }
 
+  // === Breakpoint Support ===
+
+  /**
+   * @brief Set breakpoints for this editor
+   * @param lines Set of line numbers (1-based) with breakpoints
+   */
+  void setBreakpoints(const QSet<int> &lines);
+
+  /**
+   * @brief Get breakpoints for this editor
+   */
+  [[nodiscard]] QSet<int> breakpoints() const { return m_breakpoints; }
+
+  /**
+   * @brief Check if a line has a breakpoint
+   */
+  [[nodiscard]] bool hasBreakpoint(int line) const {
+    return m_breakpoints.contains(line);
+  }
+
+  /**
+   * @brief Toggle breakpoint at line
+   */
+  void toggleBreakpoint(int line);
+
+  /**
+   * @brief Set the current execution line for debugging highlight
+   * @param line The current execution line (1-based), or 0 to clear
+   */
+  void setCurrentExecutionLine(int line);
+
+  /**
+   * @brief Get the current execution line
+   */
+  [[nodiscard]] int currentExecutionLine() const {
+    return m_currentExecutionLine;
+  }
+
+  /**
+   * @brief Paint breakpoint gutter (called by line number area widget)
+   */
+  void breakpointGutterPaintEvent(QPaintEvent *event);
+
+  /**
+   * @brief Get breakpoint gutter width
+   */
+  [[nodiscard]] int breakpointGutterWidth() const { return 16; }
+
 signals:
   void requestSave();
   void hoverDocChanged(const QString &token, const QString &html);
@@ -564,6 +613,12 @@ signals:
    * @brief Emitted when quick fixes are available for current position
    */
   void quickFixesAvailable(const QList<QuickFix> &fixes);
+
+  /**
+   * @brief Emitted when a breakpoint is toggled in the gutter
+   * @param line The line number (1-based)
+   */
+  void breakpointToggled(int line);
 
 protected:
   void keyPressEvent(QKeyEvent *event) override;
@@ -628,6 +683,11 @@ private:
 
   // Quick fixes for current diagnostics
   QHash<int, QList<QuickFix>> m_quickFixes; // line -> fixes
+
+  // Breakpoint support
+  QSet<int> m_breakpoints;      // Set of lines with breakpoints (1-based)
+  int m_currentExecutionLine = 0; // Current execution line for debug highlight
+  QWidget *m_breakpointGutter = nullptr;
 };
 
 /**
@@ -706,6 +766,16 @@ public:
   void showCommandPalette();
 
   /**
+   * @brief Toggle the live scene preview split-view mode
+   */
+  void toggleScenePreview();
+
+  /**
+   * @brief Check if scene preview is currently enabled
+   */
+  [[nodiscard]] bool isScenePreviewEnabled() const;
+
+  /**
    * @brief Set read-only mode for workflow enforcement
    *
    * When in read-only mode (e.g., Graph Mode workflow):
@@ -775,6 +845,8 @@ private slots:
   void onBreadcrumbsChanged(const QStringList &breadcrumbs);
   void onQuickFixRequested();
   void showQuickFixMenu(const QList<QuickFix> &fixes);
+  void onScriptTextChanged();
+  void onCursorPositionChanged();
 
 private:
   void setupContent();
@@ -801,15 +873,22 @@ private:
   NMScriptEditor *currentEditor() const;
   void loadSampleScript(const QString &sampleId);
 
+  // State persistence
+  void saveState();
+  void restoreState();
+  void applySettings();
+
   QWidget *m_contentWidget = nullptr;
   QSplitter *m_splitter = nullptr;
   QSplitter *m_leftSplitter = nullptr;
+  QSplitter *m_mainSplitter = nullptr; // Horizontal splitter for editor and preview
   QTreeWidget *m_fileTree = nullptr;
   QListWidget *m_symbolList = nullptr;
   QTabWidget *m_tabs = nullptr;
   QToolBar *m_toolBar = nullptr;
   NMFindReplaceWidget *m_findReplaceWidget = nullptr;
   NMScriptCommandPalette *m_commandPalette = nullptr;
+  NMScenePreviewWidget *m_scenePreview = nullptr;
 
   QHash<QWidget *, QString> m_tabPaths;
   QPointer<QFileSystemWatcher> m_scriptWatcher;
@@ -846,6 +925,10 @@ private:
   QWidget *m_readOnlyBanner = nullptr;
   QLabel *m_readOnlyLabel = nullptr;
   QPushButton *m_syncToGraphBtn = nullptr;
+
+  // Live scene preview (issue #240)
+  bool m_scenePreviewEnabled = false;
+  QAction *m_togglePreviewAction = nullptr;
 };
 
 } // namespace NovelMind::editor::qt

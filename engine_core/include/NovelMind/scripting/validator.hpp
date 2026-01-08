@@ -16,6 +16,7 @@
 #include "NovelMind/core/types.hpp"
 #include "NovelMind/scripting/ast.hpp"
 #include "NovelMind/scripting/script_error.hpp"
+#include <functional>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -47,6 +48,29 @@ struct ValidationResult {
 };
 
 /**
+ * @brief Callback for checking if a scene file exists
+ * @param sceneId The scene identifier
+ * @return true if the .nmscene file exists
+ */
+using SceneFileExistsCallback = std::function<bool(const std::string &sceneId)>;
+
+/**
+ * @brief Callback for checking if an object exists in a scene
+ * @param sceneId The scene identifier
+ * @param objectId The object identifier (e.g., character name)
+ * @return true if the object exists in the scene file
+ */
+using SceneObjectExistsCallback =
+    std::function<bool(const std::string &sceneId, const std::string &objectId)>;
+
+/**
+ * @brief Callback for checking if an asset file exists
+ * @param assetPath The asset path
+ * @return true if the asset file exists
+ */
+using AssetFileExistsCallback = std::function<bool(const std::string &assetPath)>;
+
+/**
  * @brief AST Validator for semantic analysis
  *
  * Performs comprehensive validation of NM Script AST including:
@@ -54,6 +78,7 @@ struct ValidationResult {
  * - Usage tracking for unused symbol detection
  * - Control flow analysis for dead code detection
  * - Type checking for expressions
+ * - Optional resource validation (scene files, objects, assets)
  *
  * Example usage:
  * @code
@@ -87,6 +112,34 @@ public:
    * @brief Configure whether to report dead code as warnings
    */
   void setReportDeadCode(bool report);
+
+  /**
+   * @brief Set the source code for context in error messages
+   * @param source The full source code string
+   */
+  void setSource(const std::string &source);
+
+  /**
+   * @brief Set the file path for error messages
+   * @param path The file path
+   */
+  void setFilePath(const std::string &path);
+   * @brief Set callback for checking scene file existence
+   * @param callback Function that returns true if .nmscene file exists
+   */
+  void setSceneFileExistsCallback(SceneFileExistsCallback callback);
+
+  /**
+   * @brief Set callback for checking scene object existence
+   * @param callback Function that returns true if object exists in scene
+   */
+  void setSceneObjectExistsCallback(SceneObjectExistsCallback callback);
+
+  /**
+   * @brief Set callback for checking asset file existence
+   * @param callback Function that returns true if asset file exists
+   */
+  void setAssetFileExistsCallback(AssetFileExistsCallback callback);
 
 private:
   // Reset state for new validation
@@ -148,6 +201,16 @@ private:
   void warning(ErrorCode code, const std::string &message, SourceLocation loc);
   void info(ErrorCode code, const std::string &message, SourceLocation loc);
 
+  // Enhanced error with suggestions
+  void errorWithSuggestions(ErrorCode code, const std::string &message,
+                            SourceLocation loc,
+                            const std::vector<std::string> &suggestions);
+
+  // Helper to get all symbol names of a type
+  [[nodiscard]] std::vector<std::string> getAllCharacterNames() const;
+  [[nodiscard]] std::vector<std::string> getAllSceneNames() const;
+  [[nodiscard]] std::vector<std::string> getAllVariableNames() const;
+
   // Symbol tables
   std::unordered_map<std::string, SymbolInfo> m_characters;
   std::unordered_map<std::string, SymbolInfo> m_scenes;
@@ -163,6 +226,14 @@ private:
   // Configuration
   bool m_reportUnused = true;
   bool m_reportDeadCode = true;
+
+  // Source context for error messages
+  std::string m_source;
+  std::string m_filePath;
+  // Resource validation callbacks (optional)
+  SceneFileExistsCallback m_sceneFileExistsCallback;
+  SceneObjectExistsCallback m_sceneObjectExistsCallback;
+  AssetFileExistsCallback m_assetFileExistsCallback;
 
   // Results
   ErrorList m_errors;
