@@ -159,6 +159,8 @@ public:
    * @brief Configure whether to validate asset references
    */
   void setValidateAssets(bool validate);
+
+  /**
    * @brief Set the source code for context in error messages
    * @param source The full source code string
    */
@@ -169,6 +171,8 @@ public:
    * @param path The file path
    */
   void setFilePath(const std::string &path);
+
+  /**
    * @brief Set callback for checking scene file existence
    * @param callback Function that returns true if .nmscene file exists
    */

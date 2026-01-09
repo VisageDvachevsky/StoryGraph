@@ -104,6 +104,7 @@ add_library(novelmind_editor STATIC
     src/qt/nm_voice_metadata_dialog.cpp
     src/qt/nm_bezier_curve_editor_dialog.cpp
     src/qt/nm_new_scene_dialog.cpp
+    src/qt/dialogs/nm_script_welcome_dialog.cpp
     src/qt/nm_main_window.cpp
     src/qt/nm_main_window_menu.cpp
     src/qt/nm_main_window_panels.cpp
@@ -195,6 +196,7 @@ add_library(novelmind_editor STATIC
     include/NovelMind/editor/qt/nm_main_window.hpp
     include/NovelMind/editor/qt/nm_dock_panel.hpp
     include/NovelMind/editor/qt/nm_welcome_dialog.hpp
+    include/NovelMind/editor/qt/dialogs/nm_script_welcome_dialog.hpp
     include/NovelMind/editor/qt/nm_hotkeys_dialog.hpp
     include/NovelMind/editor/qt/nm_settings_dialog.hpp
     include/NovelMind/editor/qt/nm_undo_manager.hpp

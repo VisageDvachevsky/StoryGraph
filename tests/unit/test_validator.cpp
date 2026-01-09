@@ -618,6 +618,29 @@ TEST_CASE("Validator - Undefined character provides suggestions", "[validator]")
     sayStmt.speaker = "Villian"; // typo!
     sayStmt.text = "I am evil";
     scene.body.push_back(makeStmt(sayStmt));
+    program.scenes.push_back(std::move(scene));
+
+    auto result = validator.validate(program);
+
+    // Should have error for undefined character
+    REQUIRE(result.errors.hasErrors());
+
+    // Find the undefined character error
+    bool foundSuggestion = false;
+    for (const auto& err : result.errors.all()) {
+        if (err.code == ErrorCode::UndefinedCharacter) {
+            // Should suggest "Villain" as the correct spelling
+            for (const auto& suggestion : err.suggestions) {
+                if (suggestion.find("Villain") != std::string::npos) {
+                    foundSuggestion = true;
+                    break;
+                }
+            }
+        }
+    }
+    CHECK(foundSuggestion);
+}
+
 // Tests for resource validation (scene objects and assets)
 
 TEST_CASE("Validator - Missing scene file warning with callback", "[validator][resources]")
@@ -815,19 +838,24 @@ TEST_CASE("Validator - Source and file path propagate to errors", "[validator]")
     sayStmt.speaker = "Unknown";
     sayStmt.text = "hello";
     scene.body.push_back(makeStmt(sayStmt));
-    // Should have a warning about missing asset file
-    bool foundMissingAsset = false;
-    for (const auto& error : result.errors.all())
-    {
-        if (error.code == ErrorCode::MissingAssetFile)
-        {
-            foundMissingAsset = true;
-            CHECK(error.severity == Severity::Warning);
-            CHECK(error.message.find("bg_city.png") != std::string::npos);
+    program.scenes.push_back(std::move(scene));
+
+    auto result = validator.validate(program);
+
+    // Should have error for undefined character
+    REQUIRE(result.errors.hasErrors());
+
+    // Check that source and file path are propagated to errors
+    bool foundError = false;
+    for (const auto& error : result.errors.all()) {
+        if (error.code == ErrorCode::UndefinedCharacter) {
+            CHECK(error.source == "scene test { say Unknown \"hello\" }");
+            CHECK(error.filePath == "test.nms");
+            foundError = true;
             break;
         }
     }
-    CHECK(foundMissingAsset);
+    CHECK(foundError);
 }
 
 TEST_CASE("Validator - Missing asset file warning for play music", "[validator][resources]")
