@@ -15,13 +15,13 @@
 #include <QApplication>
 #include <QColor>
 #include <QFont>
+#include <QIcon>
 #include <QObject>
 #include <QString>
 
 class QAbstractButton;
 class QPushButton;
 class QToolButton;
-class QIcon;
 
 namespace NovelMind::editor::qt {
 
