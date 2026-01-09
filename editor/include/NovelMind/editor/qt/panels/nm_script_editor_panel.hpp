@@ -877,6 +877,7 @@ private:
   void showReferencesDialog(const QString &symbol,
                             const QList<ReferenceResult> &references);
   NMScriptEditor *currentEditor() const;
+  void loadSampleScript(const QString &sampleId);
 
   // State persistence
   void saveState();

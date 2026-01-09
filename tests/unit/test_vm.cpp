@@ -449,6 +449,25 @@ TEST_CASE("VM infinite loop with stack overflow protection", "[scripting][securi
     std::vector<Instruction> program = {
         {OpCode::PUSH_INT, 1},       // 0: Push a value
         {OpCode::JUMP, 0}            // 1: Jump back to 0 (infinite loop)
+    };
+
+    vm.load(program, {});
+
+    // Execute many steps - should be stopped by stack overflow
+    int iterations = 0;
+    const int maxIterations = 1000;
+
+    while (!vm.isHalted() && iterations < maxIterations) {
+        vm.step();
+        iterations++;
+    }
+
+    // VM should have halted due to stack overflow, not max iterations
+    REQUIRE(vm.isHalted());
+    REQUIRE(vm.securityGuard().hasViolation());
+    REQUIRE(iterations < maxIterations);
+}
+
 TEST_CASE("VM IP bounds validation - program runs past end", "[scripting][security]")
 {
     VirtualMachine vm;
@@ -515,19 +534,6 @@ TEST_CASE("VM IP bounds validation - setIP beyond bounds", "[scripting][security
 
     vm.load(program, {});
 
-    // Execute many steps - should be stopped by stack overflow
-    int iterations = 0;
-    const int maxIterations = 1000;
-
-    while (!vm.isHalted() && iterations < maxIterations) {
-        vm.step();
-        iterations++;
-    }
-
-    // VM should have halted due to stack overflow, not max iterations
-    REQUIRE(vm.isHalted());
-    REQUIRE(vm.securityGuard().hasViolation());
-    REQUIRE(iterations < maxIterations);
     // Try to set IP beyond program bounds - setIP should reject this
     vm.setIP(10);  // program.size() is 2
 
