@@ -46,6 +46,7 @@ class QProgressBar;
 class QGroupBox;
 class QCheckBox;
 class QDoubleSpinBox;
+class QFrame;
 
 namespace NovelMind::editor::qt {
 
@@ -54,18 +55,18 @@ namespace NovelMind::editor::qt {
  */
 struct ChannelControl {
   audio::AudioChannel channel;
-  QLabel *nameLabel = nullptr;
-  QSlider *volumeSlider = nullptr;
-  QLabel *volumeLabel = nullptr;
-  QPushButton *muteButton = nullptr;
-  QPushButton *soloButton = nullptr;
+  QLabel* nameLabel = nullptr;
+  QSlider* volumeSlider = nullptr;
+  QLabel* volumeLabel = nullptr;
+  QPushButton* muteButton = nullptr;
+  QPushButton* soloButton = nullptr;
 };
 
 class NMAudioMixerPanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMAudioMixerPanel(QWidget *parent = nullptr);
+  explicit NMAudioMixerPanel(QWidget* parent = nullptr);
   ~NMAudioMixerPanel() override;
 
   void onInitialize() override;
@@ -75,12 +76,12 @@ public:
   /**
    * @brief Set the currently selected audio asset for preview
    */
-  void setSelectedAudioAsset(const QString &assetPath);
+  void setSelectedAudioAsset(const QString& assetPath);
 
   /**
    * @brief Get the current audio manager instance (for editor preview)
    */
-  [[nodiscard]] audio::AudioManager *getPreviewAudioManager() const {
+  [[nodiscard]] audio::AudioManager* getPreviewAudioManager() const {
     return m_previewAudioManager.get();
   }
 
@@ -88,12 +89,12 @@ signals:
   /**
    * @brief Emitted when an audio asset is selected for preview
    */
-  void audioAssetSelected(const QString &assetPath);
+  void audioAssetSelected(const QString& assetPath);
 
   /**
    * @brief Emitted when a playback error occurs
    */
-  void playbackError(const QString &errorMessage);
+  void playbackError(const QString& errorMessage);
 
 private slots:
   // Music preview controls
@@ -122,56 +123,62 @@ private slots:
 
   // Asset browser integration
   void onBrowseAudioClicked();
-  void onAssetSelected(const QString &assetPath);
+  void onAssetSelected(const QString& assetPath);
 
   // Position update timer
   void onUpdatePosition();
 
 private:
   void setupUI();
-  void setupMusicPreviewControls(QWidget *parent);
-  void setupCrossfadeControls(QWidget *parent);
-  void setupDuckingControls(QWidget *parent);
-  void setupMixerControls(QWidget *parent);
-  void setupAssetBrowser(QWidget *parent);
+  void setupMusicPreviewControls(QWidget* parent);
+  void setupCrossfadeControls(QWidget* parent);
+  void setupDuckingControls(QWidget* parent);
+  void setupMixerControls(QWidget* parent);
+  void setupAssetBrowser(QWidget* parent);
 
   void updatePlaybackState();
   void updatePositionDisplay();
   void resetPlaybackUI();
-  void setPlaybackError(const QString &message);
+  void setPlaybackError(const QString& message);
   QString formatTime(f32 seconds) const;
 
   void applyChannelVolumes();
   void updateSoloState();
+  void showAudioWarningBanner(const QString& message);
+  void hideAudioWarningBanner();
 
   // UI Elements - Music Preview
-  QGroupBox *m_previewGroup = nullptr;
-  QLabel *m_currentTrackLabel = nullptr;
-  QPushButton *m_playBtn = nullptr;
-  QPushButton *m_pauseBtn = nullptr;
-  QPushButton *m_stopBtn = nullptr;
-  QCheckBox *m_loopCheckBox = nullptr;
-  QSlider *m_seekSlider = nullptr;
-  QLabel *m_positionLabel = nullptr;
-  QLabel *m_durationLabel = nullptr;
-  QPushButton *m_browseBtn = nullptr;
+  QGroupBox* m_previewGroup = nullptr;
+  QLabel* m_currentTrackLabel = nullptr;
+  QPushButton* m_playBtn = nullptr;
+  QPushButton* m_pauseBtn = nullptr;
+  QPushButton* m_stopBtn = nullptr;
+  QCheckBox* m_loopCheckBox = nullptr;
+  QSlider* m_seekSlider = nullptr;
+  QLabel* m_positionLabel = nullptr;
+  QLabel* m_durationLabel = nullptr;
+  QPushButton* m_browseBtn = nullptr;
+
+  // Warning banner for audio initialization failure
+  QFrame* m_audioWarningBanner = nullptr;
+  QLabel* m_audioWarningLabel = nullptr;
 
   // UI Elements - Crossfade
-  QGroupBox *m_crossfadeGroup = nullptr;
-  QDoubleSpinBox *m_crossfadeDurationSpin = nullptr;
-  QPushButton *m_crossfadeBtn = nullptr;
+  QGroupBox* m_crossfadeGroup = nullptr;
+  QDoubleSpinBox* m_crossfadeDurationSpin = nullptr;
+  QPushButton* m_crossfadeBtn = nullptr;
 
   // UI Elements - Auto-ducking
-  QGroupBox *m_duckingGroup = nullptr;
-  QCheckBox *m_duckingEnabledCheckBox = nullptr;
-  QDoubleSpinBox *m_duckAmountSpin = nullptr;
-  QDoubleSpinBox *m_duckAttackSpin = nullptr;
-  QDoubleSpinBox *m_duckReleaseSpin = nullptr;
+  QGroupBox* m_duckingGroup = nullptr;
+  QCheckBox* m_duckingEnabledCheckBox = nullptr;
+  QDoubleSpinBox* m_duckAmountSpin = nullptr;
+  QDoubleSpinBox* m_duckAttackSpin = nullptr;
+  QDoubleSpinBox* m_duckReleaseSpin = nullptr;
 
   // UI Elements - Mixer
-  QGroupBox *m_mixerGroup = nullptr;
-  QSlider *m_masterVolumeSlider = nullptr;
-  QLabel *m_masterVolumeLabel = nullptr;
+  QGroupBox* m_mixerGroup = nullptr;
+  QSlider* m_masterVolumeSlider = nullptr;
+  QLabel* m_masterVolumeLabel = nullptr;
   std::vector<ChannelControl> m_channelControls;
 
   // Audio playback state
@@ -182,6 +189,7 @@ private:
   bool m_isPlaying = false;
   bool m_isPaused = false;
   bool m_isSeeking = false;
+  bool m_audioManagerInitialized = false;
   f32 m_currentPosition = 0.0f;
   f32 m_currentDuration = 0.0f;
 
@@ -197,7 +205,7 @@ private:
   int m_soloChannelIndex = -1; // -1 = no solo
 
   // Update timer for position display
-  QTimer *m_positionTimer = nullptr;
+  QTimer* m_positionTimer = nullptr;
 
   // Verbose logging flag
   static constexpr bool VERBOSE_LOGGING = false;
