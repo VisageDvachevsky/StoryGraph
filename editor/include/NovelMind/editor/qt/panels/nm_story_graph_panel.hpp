@@ -749,6 +749,12 @@ private:
   QWidget *m_readOnlyBanner = nullptr;
   QLabel *m_readOnlyLabel = nullptr;
 
+  // Scene validation UI (Issue #332)
+  QLabel *m_validationStatusLabel = nullptr;
+  QPushButton *m_fixIssuesBtn = nullptr;
+  void updateValidationStatus();
+  void showValidationIssuesDialog();
+
   // Event subscriptions for scene auto-sync (Issue #223)
   std::vector<EventSubscription> m_eventSubscriptions;
 };
