@@ -38,6 +38,8 @@ void Validator::setProjectContext(IProjectContext *context) {
 
 void Validator::setValidateAssets(bool validate) {
   m_validateAssets = validate;
+}
+
 void Validator::setSource(const std::string &source) { m_source = source; }
 
 void Validator::setFilePath(const std::string &path) { m_filePath = path; }
