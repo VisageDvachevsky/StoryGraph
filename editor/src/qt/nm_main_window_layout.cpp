@@ -1,4 +1,6 @@
 #include "NovelMind/editor/qt/nm_main_window.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_build_settings_panel.hpp"
@@ -1302,6 +1304,159 @@ void NMMainWindow::resetToDefaultLayout() {
     m_actionFocusMode->setChecked(false);
   }
   createDefaultLayout();
+}
+
+// ============================================================================
+// D2: Workspace Management UI Implementation
+// ============================================================================
+
+void NMMainWindow::populateWorkspaceMenu() {
+  if (!m_workspaceMenu) {
+    return;
+  }
+
+  // Get list of all workspace actions before the separator
+  const QList<QAction *> allActions = m_workspaceMenu->actions();
+
+  // Find the separator that marks the start of custom workspace section
+  int customSectionIndex = -1;
+  int managementSectionIndex = -1;
+  for (int i = 0; i < allActions.size(); ++i) {
+    if (allActions[i]->isSeparator()) {
+      if (customSectionIndex == -1 && i > 0 &&
+          allActions[i - 1]->text().contains("Legacy")) {
+        customSectionIndex = i;
+      } else if (customSectionIndex != -1 && managementSectionIndex == -1) {
+        managementSectionIndex = i;
+        break;
+      }
+    }
+  }
+
+  if (customSectionIndex == -1 || managementSectionIndex == -1) {
+    return;
+  }
+
+  // Remove existing custom workspace actions (between the two separators)
+  for (int i = managementSectionIndex - 1; i > customSectionIndex; --i) {
+    QAction *action = allActions[i];
+    if (!action->isSeparator()) {
+      m_workspaceMenu->removeAction(action);
+      delete action;
+    }
+  }
+
+  // Get custom presets from settings
+  QSettings settings("NovelMind", "Editor");
+  settings.beginGroup("workspace/custom");
+  const QStringList customPresets = settings.childGroups();
+  settings.endGroup();
+
+  // Add custom workspace actions
+  if (!customPresets.isEmpty()) {
+    QAction *separatorAction = allActions[customSectionIndex];
+    auto &iconMgr = NMIconManager::instance();
+
+    for (const QString &presetName : customPresets) {
+      QAction *customAction = new QAction(
+          iconMgr.getIcon("panel-scene", 16), presetName, m_workspaceMenu);
+      customAction->setToolTip(tr("Load custom workspace: %1").arg(presetName));
+
+      connect(customAction, &QAction::triggered, this, [this, presetName]() {
+        onLoadCustomWorkspace(presetName);
+      });
+
+      m_workspaceMenu->insertAction(separatorAction, customAction);
+      separatorAction = customAction; // Insert after this action next time
+    }
+  }
+}
+
+void NMMainWindow::onSaveWorkspaceAs() {
+  bool ok = false;
+  const QString name = NMInputDialog::getText(
+      this, tr("Save Workspace As"),
+      tr("Enter a name for this workspace preset:"),
+      QLineEdit::Normal, QString(), &ok);
+
+  if (!ok || name.isEmpty()) {
+    return;
+  }
+
+  // Check if name conflicts with built-in presets
+  const QStringList builtInNames = {
+      tr("Default"), tr("Story / Script"), tr("Scene / Animation"),
+      tr("Audio / Voice"), tr("Story"), tr("Scene"), tr("Script"),
+      tr("Developer"), tr("Compact")};
+
+  if (builtInNames.contains(name)) {
+    NMMessageDialog::showWarning(
+        this, tr("Invalid Name"),
+        tr("The name '%1' is reserved for a built-in workspace. "
+           "Please choose a different name.")
+            .arg(name));
+    return;
+  }
+
+  // Save the current workspace
+  saveWorkspacePreset(name);
+
+  // Refresh the menu
+  populateWorkspaceMenu();
+}
+
+void NMMainWindow::onLoadCustomWorkspace(const QString &name) {
+  if (!loadWorkspacePreset(name)) {
+    NMMessageDialog::showError(
+        this, tr("Load Failed"),
+        tr("Failed to load workspace preset '%1'.").arg(name));
+  }
+}
+
+void NMMainWindow::showManageWorkspacesDialog() {
+  // Get custom presets from settings
+  QSettings settings("NovelMind", "Editor");
+  settings.beginGroup("workspace/custom");
+  const QStringList customPresets = settings.childGroups();
+  settings.endGroup();
+
+  if (customPresets.isEmpty()) {
+    NMMessageDialog::showInfo(
+        this, tr("No Custom Workspaces"),
+        tr("You have not created any custom workspace presets yet.\n\n"
+           "Use 'Save Current Layout As...' to create a custom workspace."));
+    return;
+  }
+
+  // Create a simple list dialog for managing workspaces
+  bool ok = false;
+  const QString selected = NMInputDialog::getItem(
+      this, tr("Manage Workspaces"),
+      tr("Select a custom workspace to delete:"), customPresets, 0, false, &ok);
+
+  if (!ok || selected.isEmpty()) {
+    return;
+  }
+
+  // Confirm deletion
+  const auto result = NMMessageDialog::showQuestion(
+      this, tr("Delete Workspace"),
+      tr("Are you sure you want to delete the workspace '%1'?\n\n"
+         "This action cannot be undone.")
+          .arg(selected),
+      {NMDialogButton::Yes, NMDialogButton::No}, NMDialogButton::No);
+
+  if (result == NMDialogButton::Yes) {
+    // Delete the workspace
+    settings.beginGroup("workspace/custom");
+    settings.remove(selected);
+    settings.endGroup();
+
+    setStatusMessage(tr("Workspace '%1' deleted").arg(selected), 2000);
+
+    // Refresh the menu
+    populateWorkspaceMenu();
+  }
 }
 
 } // namespace NovelMind::editor::qt

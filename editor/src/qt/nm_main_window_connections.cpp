@@ -307,6 +307,12 @@ void NMMainWindow::setupLayoutConnections() {
   connect(m_actionLoadLayout, &QAction::triggered, this,
           &NMMainWindow::loadCustomLayout);
 
+  // Custom workspace management
+  connect(m_actionSaveWorkspaceAs, &QAction::triggered, this,
+          &NMMainWindow::onSaveWorkspaceAs);
+  connect(m_actionManageWorkspaces, &QAction::triggered, this,
+          &NMMainWindow::showManageWorkspacesDialog);
+
   // UI scale
   auto &styleManager = NMStyleManager::instance();
   auto updateScaleActions = [this](double scale) {

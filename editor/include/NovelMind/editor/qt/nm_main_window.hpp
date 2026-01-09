@@ -341,6 +341,10 @@ private:
   // Dialog helpers
   void showHotkeysDialog();
   void onValidateProject();
+  void showManageWorkspacesDialog();
+  void onSaveWorkspaceAs();
+  void onLoadCustomWorkspace(const QString &name);
+  void populateWorkspaceMenu();
 
   // =========================================================================
   // Menu Actions
@@ -402,6 +406,9 @@ private:
   QAction *m_actionResetLayout = nullptr;
   QAction *m_actionSaveLayout = nullptr;
   QAction *m_actionLoadLayout = nullptr;
+  QAction *m_actionSaveWorkspaceAs = nullptr;
+  QAction *m_actionManageWorkspaces = nullptr;
+  QMenu *m_workspaceMenu = nullptr;
   QAction *m_actionFocusMode = nullptr;
   QAction *m_actionFocusIncludeHierarchy = nullptr;
   QAction *m_actionLockLayout = nullptr;

@@ -261,66 +261,85 @@ void NMMainWindow::setupMenuBar() {
   // =========================================================================
   // D2: Workspace Presets Menu
   // =========================================================================
-  QMenu *workspaceMenu = viewMenu->addMenu(tr("&Workspaces"));
+  m_workspaceMenu = viewMenu->addMenu(tr("&Workspaces"));
 
   // D2: New primary workspace presets
-  m_actionLayoutDefault = workspaceMenu->addAction(
+  m_actionLayoutDefault = m_workspaceMenu->addAction(
       iconMgr.getIcon("panel-scene", 16), tr("&Default"));
   m_actionLayoutDefault->setToolTip(tr(
       "Balanced layout for general editing (Scene, Story, Inspector, Assets)"));
   m_actionLayoutDefault->setShortcut(QKeySequence("Ctrl+Alt+1"));
 
-  m_actionLayoutStoryScript = workspaceMenu->addAction(
+  m_actionLayoutStoryScript = m_workspaceMenu->addAction(
       iconMgr.getIcon("panel-graph", 16), tr("Story / &Script"));
   m_actionLayoutStoryScript->setToolTip(
       tr("Story graph and script editing (Story Graph, Script Editor, "
          "Inspector, Localization)"));
   m_actionLayoutStoryScript->setShortcut(QKeySequence("Ctrl+Alt+2"));
 
-  m_actionLayoutSceneAnimation = workspaceMenu->addAction(
+  m_actionLayoutSceneAnimation = m_workspaceMenu->addAction(
       iconMgr.getIcon("panel-timeline", 16), tr("Scene / &Animation"));
   m_actionLayoutSceneAnimation->setToolTip(
       tr("Scene and animation editing (Scene View, Timeline, Curve Editor, "
          "Hierarchy)"));
   m_actionLayoutSceneAnimation->setShortcut(QKeySequence("Ctrl+Alt+3"));
 
-  m_actionLayoutAudioVoice = workspaceMenu->addAction(
+  m_actionLayoutAudioVoice = m_workspaceMenu->addAction(
       iconMgr.getIcon("panel-voice", 16), tr("&Audio / Voice"));
   m_actionLayoutAudioVoice->setToolTip(tr(
       "Audio and voice management (Voice Studio, Voice Manager, Audio Mixer)"));
   m_actionLayoutAudioVoice->setShortcut(QKeySequence("Ctrl+Alt+4"));
 
-  workspaceMenu->addSeparator();
-  workspaceMenu->addAction(tr("Legacy Workspaces"))->setEnabled(false);
+  m_workspaceMenu->addSeparator();
+  m_workspaceMenu->addAction(tr("Legacy Workspaces"))->setEnabled(false);
 
   // Legacy workspace presets
-  m_actionLayoutStory = workspaceMenu->addAction(
+  m_actionLayoutStory = m_workspaceMenu->addAction(
       iconMgr.getIcon("panel-graph", 16), tr("Stor&y (Legacy)"));
   m_actionLayoutStory->setToolTip(tr("Story Graph + Inspector + Play + Log"));
   m_actionLayoutStory->setShortcut(QKeySequence("Ctrl+1"));
 
-  m_actionLayoutScene = workspaceMenu->addAction(
+  m_actionLayoutScene = m_workspaceMenu->addAction(
       iconMgr.getIcon("panel-scene", 16), tr("S&cene (Legacy)"));
   m_actionLayoutScene->setToolTip(
       tr("Scene View + Assets + Inspector + Hierarchy"));
   m_actionLayoutScene->setShortcut(QKeySequence("Ctrl+2"));
 
-  m_actionLayoutScript = workspaceMenu->addAction(
+  m_actionLayoutScript = m_workspaceMenu->addAction(
       iconMgr.getIcon("panel-console", 16), tr("Scr&ipt (Legacy)"));
   m_actionLayoutScript->setToolTip(tr("Script Editor + Story Graph + Play"));
   m_actionLayoutScript->setShortcut(QKeySequence("Ctrl+3"));
 
-  m_actionLayoutDeveloper = workspaceMenu->addAction(
+  m_actionLayoutDeveloper = m_workspaceMenu->addAction(
       iconMgr.getIcon("panel-diagnostics", 16), tr("&Developer (Legacy)"));
   m_actionLayoutDeveloper->setToolTip(
       tr("Scene + Script + Console + Issues + Diagnostics + Debug"));
   m_actionLayoutDeveloper->setShortcut(QKeySequence("Ctrl+4"));
 
-  m_actionLayoutCompact = workspaceMenu->addAction(
+  m_actionLayoutCompact = m_workspaceMenu->addAction(
       iconMgr.getIcon("panel-asset", 16), tr("&Compact (Legacy)"));
   m_actionLayoutCompact->setToolTip(
       tr("Compact layout with more panels visible at once"));
   m_actionLayoutCompact->setShortcut(QKeySequence("Ctrl+5"));
+
+  // Custom workspace presets section (dynamically populated)
+  m_workspaceMenu->addSeparator();
+
+  // Workspace management actions
+  m_workspaceMenu->addSeparator();
+  m_actionSaveWorkspaceAs = m_workspaceMenu->addAction(
+      iconMgr.getIcon("file-save", 16), tr("Save Current Layout &As..."));
+  m_actionSaveWorkspaceAs->setToolTip(
+      tr("Save the current panel arrangement as a custom workspace preset"));
+
+  m_actionManageWorkspaces = m_workspaceMenu->addAction(
+      iconMgr.getIcon("settings", 16), tr("&Manage Workspaces..."));
+  m_actionManageWorkspaces->setToolTip(
+      tr("Rename or delete custom workspace presets"));
+
+  // Connect to populate menu when it's about to be shown
+  connect(m_workspaceMenu, &QMenu::aboutToShow, this,
+          &NMMainWindow::populateWorkspaceMenu);
 
   QMenu *layoutMenu = viewMenu->addMenu(tr("&Layouts"));
   m_actionSaveLayout = layoutMenu->addAction(iconMgr.getIcon("file-save", 16),
