@@ -522,12 +522,13 @@ void Validator::validatePlayStmt(const PlayStmt &stmt) {
                     mediaType + " directory",
                 m_currentLocation);
       }
-  } else if (m_assetFileExistsCallback) {
-    // Check if audio asset exists
-    if (!m_assetFileExistsCallback(stmt.resource)) {
-      warning(ErrorCode::MissingAssetFile,
-              "Asset '" + stmt.resource + "' not found in project",
-              m_currentLocation);
+    } else if (m_assetFileExistsCallback) {
+      // Check if audio asset exists
+      if (!m_assetFileExistsCallback(stmt.resource)) {
+        warning(ErrorCode::MissingAssetFile,
+                "Asset '" + stmt.resource + "' not found in project",
+                m_currentLocation);
+      }
     }
   }
 
