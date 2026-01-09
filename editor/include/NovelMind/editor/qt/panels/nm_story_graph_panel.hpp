@@ -309,6 +309,14 @@ protected:
   void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
 
 private:
+  /**
+   * @brief Draw scene transition indicator icon (Issue #345)
+   * @param painter The painter to use
+   * @param pos The position to draw at (midpoint of connection)
+   * @param isCrossScene Whether this is a cross-scene (scene-to-scene) connection
+   */
+  void drawSceneTransitionIndicator(QPainter *painter, const QPointF &pos, bool isCrossScene);
+
   NMGraphNodeItem *m_startNode;
   NMGraphNodeItem *m_endNode;
   QPainterPath m_path;
@@ -436,6 +444,32 @@ public:
    */
   [[nodiscard]] bool isReadOnly() const { return m_readOnly; }
 
+  /**
+   * @brief Enable or disable scene container visualization (Issue #345)
+   *
+   * When enabled, semi-transparent containers are drawn around scene nodes
+   * and their connected dialogue nodes to visually group them.
+   *
+   * @param enabled true to show scene containers
+   */
+  void setSceneContainersVisible(bool enabled);
+
+  /**
+   * @brief Check if scene containers are visible
+   */
+  [[nodiscard]] bool sceneContainersVisible() const { return m_showSceneContainers; }
+
+  /**
+   * @brief Find all dialogue nodes that belong to a scene (Issue #345)
+   *
+   * Uses BFS to find all non-scene nodes reachable from the given scene node
+   * before hitting another scene node.
+   *
+   * @param sceneNode The scene node to find children for
+   * @return List of dialogue/choice nodes that belong to this scene
+   */
+  QList<NMGraphNodeItem *> findDialogueNodesInScene(NMGraphNodeItem *sceneNode) const;
+
 signals:
   void nodeAdded(uint64_t nodeId, const QString &nodeIdString,
                  const QString &nodeType);
@@ -455,6 +489,13 @@ protected:
   void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
 
 private:
+  /**
+   * @brief Draw scene container visualizations (Issue #345)
+   * @param painter The painter to use
+   * @param viewRect The visible view rectangle for culling
+   */
+  void drawSceneContainers(QPainter *painter, const QRectF &viewRect);
+
   QList<NMGraphNodeItem *> m_nodes;
   QList<NMGraphConnectionItem *> m_connections;
   QHash<uint64_t, NMGraphNodeItem *> m_nodeLookup;
@@ -462,6 +503,7 @@ private:
   QHash<uint64_t, QPointF> m_dragStartPositions;
   bool m_isDraggingNodes = false;
   bool m_readOnly = false; // Issue #117: Read-only mode for workflow enforcement
+  bool m_showSceneContainers = true; // Issue #345: Scene container visualization
 };
 
 /**

@@ -416,6 +416,22 @@ void NMStoryGraphPanel::setupToolBar() {
   connect(actionAutoLayout, &QAction::triggered, this,
           &NMStoryGraphPanel::onAutoLayout);
 
+  // Issue #345: Scene container visualization toggle
+  m_toolBar->addSeparator();
+
+  QAction *actionSceneContainers = m_toolBar->addAction(tr("Scenes"));
+  actionSceneContainers->setCheckable(true);
+  actionSceneContainers->setChecked(true); // On by default
+  actionSceneContainers->setToolTip(
+      tr("Toggle scene container visualization.\n"
+         "When enabled, semi-transparent boxes show which nodes\n"
+         "belong to each scene, making the story structure clearer."));
+  connect(actionSceneContainers, &QAction::toggled, this, [this](bool enabled) {
+    if (m_scene) {
+      m_scene->setSceneContainersVisible(enabled);
+    }
+  });
+
   // Localization controls section
   m_toolBar->addSeparator();
 

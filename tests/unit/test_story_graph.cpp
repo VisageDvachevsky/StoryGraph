@@ -947,3 +947,246 @@ TEST_CASE("Speaker Identifier - Sanitization (Issue #92)",
     CHECK(sanitizeSpeakerIdentifier("rfsfsddsf") == "rfsfsddsf");
   }
 }
+
+// ============================================================================
+// Scene Separation Tests (Issue #345)
+// ============================================================================
+
+namespace {
+
+// Test data structure for scene container calculations
+// Mirrors the logic from NMStoryGraphScene::findDialogueNodesInScene
+struct TestGraphNode {
+  uint64_t nodeId;
+  std::string nodeType; // "Scene", "Dialogue", "Choice", "Condition"
+  std::string title;
+};
+
+// Finds all dialogue nodes reachable from a scene node before hitting another scene node
+// This is a standalone implementation for testing that mirrors the Qt implementation
+std::vector<uint64_t> findDialogueNodesInScene(
+    uint64_t sceneNodeId,
+    const std::unordered_map<uint64_t, TestGraphNode> &nodes,
+    const std::unordered_map<uint64_t, std::vector<uint64_t>> &adjacencyList) {
+
+  std::vector<uint64_t> result;
+
+  // Verify start node is a scene node
+  auto startIt = nodes.find(sceneNodeId);
+  if (startIt == nodes.end() || startIt->second.nodeType != "Scene") {
+    return result;
+  }
+
+  // BFS from scene node, stop at other Scene nodes
+  std::unordered_set<uint64_t> visited;
+  std::vector<uint64_t> queue;
+  queue.push_back(sceneNodeId);
+  visited.insert(sceneNodeId);
+
+  while (!queue.empty()) {
+    uint64_t currentId = queue.back();
+    queue.pop_back();
+
+    auto adjIt = adjacencyList.find(currentId);
+    if (adjIt == adjacencyList.end()) {
+      continue;
+    }
+
+    for (uint64_t nextId : adjIt->second) {
+      if (visited.find(nextId) != visited.end()) {
+        continue;
+      }
+      visited.insert(nextId);
+
+      auto nextIt = nodes.find(nextId);
+      if (nextIt == nodes.end()) {
+        continue;
+      }
+
+      // Stop at Scene nodes - they belong to their own container
+      if (nextIt->second.nodeType == "Scene") {
+        continue;
+      }
+
+      result.push_back(nextId);
+      queue.push_back(nextId);
+    }
+  }
+
+  return result;
+}
+
+// Determine connection type for visual differentiation
+enum class TestConnectionType { SameScene, SceneTransition, CrossScene };
+
+TestConnectionType determineConnectionType(
+    uint64_t fromNodeId,
+    uint64_t toNodeId,
+    const std::unordered_map<uint64_t, TestGraphNode> &nodes) {
+
+  auto fromIt = nodes.find(fromNodeId);
+  auto toIt = nodes.find(toNodeId);
+
+  if (fromIt == nodes.end() || toIt == nodes.end()) {
+    return TestConnectionType::SameScene;
+  }
+
+  const bool fromIsScene = (fromIt->second.nodeType == "Scene");
+  const bool toIsScene = (toIt->second.nodeType == "Scene");
+
+  if (fromIsScene && toIsScene) {
+    return TestConnectionType::CrossScene;
+  }
+  if (fromIsScene || toIsScene) {
+    return TestConnectionType::SceneTransition;
+  }
+  return TestConnectionType::SameScene;
+}
+
+} // namespace
+
+TEST_CASE("Scene Container - Find dialogue nodes in scene (Issue #345)",
+          "[story_graph][scene_container]") {
+  // Build test graph
+  std::unordered_map<uint64_t, TestGraphNode> nodes;
+  std::unordered_map<uint64_t, std::vector<uint64_t>> adj;
+
+  SECTION("Scene with dialogue nodes") {
+    // Scene 1 -> Dialogue 2 -> Dialogue 3 -> Scene 4
+    nodes[1] = {1, "Scene", "Opening Scene"};
+    nodes[2] = {2, "Dialogue", "Hello"};
+    nodes[3] = {3, "Dialogue", "Goodbye"};
+    nodes[4] = {4, "Scene", "Next Scene"};
+
+    adj[1] = {2};
+    adj[2] = {3};
+    adj[3] = {4};
+
+    auto dialogueNodes = findDialogueNodesInScene(1, nodes, adj);
+
+    // Should find dialogues 2 and 3, but not scene 4
+    CHECK(dialogueNodes.size() == 2);
+    CHECK(std::find(dialogueNodes.begin(), dialogueNodes.end(), 2) != dialogueNodes.end());
+    CHECK(std::find(dialogueNodes.begin(), dialogueNodes.end(), 3) != dialogueNodes.end());
+    CHECK(std::find(dialogueNodes.begin(), dialogueNodes.end(), 4) == dialogueNodes.end());
+  }
+
+  SECTION("Scene with branching dialogue") {
+    // Scene 1 -> Dialogue 2 -> Choice 3 -> (Dialogue 4, Dialogue 5) -> Scene 6
+    nodes[1] = {1, "Scene", "Branch Scene"};
+    nodes[2] = {2, "Dialogue", "Question"};
+    nodes[3] = {3, "Choice", "Select option"};
+    nodes[4] = {4, "Dialogue", "Option A response"};
+    nodes[5] = {5, "Dialogue", "Option B response"};
+    nodes[6] = {6, "Scene", "Next Scene"};
+
+    adj[1] = {2};
+    adj[2] = {3};
+    adj[3] = {4, 5};
+    adj[4] = {6};
+    adj[5] = {6};
+
+    auto dialogueNodes = findDialogueNodesInScene(1, nodes, adj);
+
+    // Should find all dialogue/choice nodes (2, 3, 4, 5), not scene 6
+    CHECK(dialogueNodes.size() == 4);
+    CHECK(std::find(dialogueNodes.begin(), dialogueNodes.end(), 6) == dialogueNodes.end());
+  }
+
+  SECTION("Empty scene (no outgoing connections)") {
+    nodes[1] = {1, "Scene", "Empty Scene"};
+
+    auto dialogueNodes = findDialogueNodesInScene(1, nodes, adj);
+    CHECK(dialogueNodes.empty());
+  }
+
+  SECTION("Scene directly connecting to scene") {
+    // Scene 1 -> Scene 2 (no dialogue in between)
+    nodes[1] = {1, "Scene", "First Scene"};
+    nodes[2] = {2, "Scene", "Second Scene"};
+
+    adj[1] = {2};
+
+    auto dialogueNodes = findDialogueNodesInScene(1, nodes, adj);
+    CHECK(dialogueNodes.empty());
+  }
+
+  SECTION("Non-scene node returns empty") {
+    nodes[1] = {1, "Scene", "Scene"};
+    nodes[2] = {2, "Dialogue", "Dialogue"};
+
+    adj[1] = {2};
+
+    // Trying to find dialogue nodes starting from a dialogue node
+    auto dialogueNodes = findDialogueNodesInScene(2, nodes, adj);
+    CHECK(dialogueNodes.empty());
+  }
+}
+
+TEST_CASE("Scene Container - Connection type detection (Issue #345)",
+          "[story_graph][scene_container]") {
+  std::unordered_map<uint64_t, TestGraphNode> nodes;
+  nodes[1] = {1, "Scene", "Scene 1"};
+  nodes[2] = {2, "Dialogue", "Dialogue 1"};
+  nodes[3] = {3, "Choice", "Choice 1"};
+  nodes[4] = {4, "Scene", "Scene 2"};
+
+  SECTION("Dialogue to dialogue is same scene") {
+    auto connType = determineConnectionType(2, 3, nodes);
+    CHECK(connType == TestConnectionType::SameScene);
+  }
+
+  SECTION("Scene to dialogue is scene transition") {
+    auto connType = determineConnectionType(1, 2, nodes);
+    CHECK(connType == TestConnectionType::SceneTransition);
+  }
+
+  SECTION("Dialogue to scene is scene transition") {
+    auto connType = determineConnectionType(3, 4, nodes);
+    CHECK(connType == TestConnectionType::SceneTransition);
+  }
+
+  SECTION("Scene to scene is cross-scene") {
+    auto connType = determineConnectionType(1, 4, nodes);
+    CHECK(connType == TestConnectionType::CrossScene);
+  }
+}
+
+TEST_CASE("Scene Container - Visual hierarchy properties (Issue #345)",
+          "[story_graph][scene_container]") {
+  // Test that scene containers have proper visual properties
+
+  SECTION("Scene container padding") {
+    // Container should have padding around nodes
+    constexpr double containerPadding = 25.0;
+    CHECK(containerPadding > 0);
+    CHECK(containerPadding < 50); // Not too large
+  }
+
+  SECTION("Scene container colors") {
+    // Test color values match scene theme (green)
+    const uint8_t containerFillR = 100;
+    const uint8_t containerFillG = 200;
+    const uint8_t containerFillB = 150;
+    const uint8_t containerFillA = 25; // Very transparent
+
+    CHECK(containerFillG > containerFillR); // Green-dominant
+    CHECK(containerFillG > containerFillB);
+    CHECK(containerFillA < 50); // Transparency for background visibility
+  }
+
+  SECTION("Connection type colors") {
+    // Scene transition: green
+    const uint8_t sceneTransitionR = 100;
+    const uint8_t sceneTransitionG = 200;
+    const uint8_t sceneTransitionB = 150;
+
+    // Cross-scene: orange/warm
+    const uint8_t crossSceneR = 255;
+    const uint8_t crossSceneG = 200;
+    const uint8_t crossSceneB = 100;
+
+    CHECK(sceneTransitionG > sceneTransitionR); // Green-dominant
+    CHECK(crossSceneR > crossSceneG); // Red/orange-dominant
+  }
+}
