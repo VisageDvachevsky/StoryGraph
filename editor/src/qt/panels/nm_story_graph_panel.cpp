@@ -549,13 +549,33 @@ void NMStoryGraphPanel::setupNodePalette() {
 
 bool NMStoryGraphPanel::navigateToNode(const QString &nodeIdString) {
   if (nodeIdString.isEmpty() || !m_scene || !m_view) {
+    qWarning() << "[StoryGraph] Navigation failed: Invalid parameters"
+               << "(nodeIdString.isEmpty():" << nodeIdString.isEmpty()
+               << ", m_scene:" << (m_scene != nullptr)
+               << ", m_view:" << (m_view != nullptr) << ")";
     return false;
   }
 
   // Find the node
   NMGraphNodeItem *node = findNodeByIdString(nodeIdString);
   if (!node) {
-    qWarning() << "[StoryGraph] Node not found for navigation:" << nodeIdString;
+    // Issue #335: Show user-visible notification when navigation target is not found
+    qWarning() << "[StoryGraph] Node not found for navigation:" << nodeIdString
+               << "- Available nodes:" << m_nodeIdToString.size()
+               << "- Graph has" << m_scene->nodes().size() << "nodes";
+
+    // Show user-visible error message
+    QMessageBox::warning(
+        this, tr("Node Not Found"),
+        tr("Cannot navigate to node '%1'.\n\n"
+           "The node does not exist in the Story Graph.\n"
+           "This may happen if:\n"
+           "• The node was deleted\n"
+           "• The graph hasn't been synchronized with scripts\n"
+           "• The node ID is incorrect\n\n"
+           "Try rebuilding the graph or check the node reference.")
+            .arg(nodeIdString));
+
     return false;
   }
 
@@ -577,7 +597,8 @@ bool NMStoryGraphPanel::navigateToNode(const QString &nodeIdString) {
   raise();
   setFocus();
 
-  qDebug() << "[StoryGraph] Navigated to node:" << nodeIdString;
+  qDebug() << "[StoryGraph] Navigated to node:" << nodeIdString
+           << "at position:" << node->pos();
   return true;
 }
 
