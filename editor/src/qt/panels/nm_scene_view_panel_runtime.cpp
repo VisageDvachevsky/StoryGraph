@@ -11,7 +11,7 @@
 
 namespace NovelMind::editor::qt {
 
-void NMSceneViewPanel::onPlayModeCurrentNodeChanged(const QString &nodeId) {
+void NMSceneViewPanel::onPlayModeCurrentNodeChanged(const QString& nodeId) {
   if (!m_scene) {
     return;
   }
@@ -35,11 +35,16 @@ void NMSceneViewPanel::onPlayModeCurrentNodeChanged(const QString &nodeId) {
 
   if (!loadSceneDocument(nodeId)) {
     qWarning() << "[SceneView] Failed to load scene for node:" << nodeId;
+    // Show error to user - this is a critical failure during play mode
+    NMMessageDialog::showError(const_cast<NMSceneViewPanel*>(this), tr("Scene Load Failed"),
+                               tr("Failed to load scene for story node '%1'.\n\n"
+                                  "The story flow may be interrupted. "
+                                  "Check that the scene exists and is not corrupted.")
+                                   .arg(nodeId));
   }
 }
 
-void NMSceneViewPanel::onPlayModeDialogueChanged(const QString &speaker,
-                                                 const QString &text) {
+void NMSceneViewPanel::onPlayModeDialogueChanged(const QString& speaker, const QString& text) {
   if (!m_playOverlay) {
     return;
   }
@@ -50,7 +55,7 @@ void NMSceneViewPanel::onPlayModeDialogueChanged(const QString &speaker,
   }
 }
 
-void NMSceneViewPanel::onPlayModeChoicesChanged(const QStringList &choices) {
+void NMSceneViewPanel::onPlayModeChoicesChanged(const QStringList& choices) {
   if (!m_playOverlay) {
     return;
   }
@@ -61,9 +66,8 @@ void NMSceneViewPanel::onPlayModeChoicesChanged(const QStringList &choices) {
   }
 }
 
-void NMSceneViewPanel::setStoryPreview(const QString &speaker,
-                                       const QString &text,
-                                       const QStringList &choices) {
+void NMSceneViewPanel::setStoryPreview(const QString& speaker, const QString& text,
+                                       const QStringList& choices) {
   if (!m_playOverlay) {
     return;
   }
@@ -100,7 +104,7 @@ void NMSceneViewPanel::hideEditorObjectsForRuntime() {
   }
 
   captureEditorObjectsForRuntime();
-  for (auto *obj : m_scene->sceneObjects()) {
+  for (auto* obj : m_scene->sceneObjects()) {
     if (!obj || obj->id().startsWith("runtime_")) {
       continue;
     }
@@ -120,7 +124,7 @@ void NMSceneViewPanel::captureEditorObjectsForRuntime() {
   m_editorVisibility.clear();
   m_editorOpacity.clear();
   m_editorVisibilitySceneId = m_currentSceneId;
-  for (auto *obj : m_scene->sceneObjects()) {
+  for (auto* obj : m_scene->sceneObjects()) {
     if (!obj || obj->id().startsWith("runtime_")) {
       continue;
     }
@@ -134,20 +138,17 @@ void NMSceneViewPanel::restoreEditorObjectsAfterRuntime() {
     return;
   }
 
-  if (!m_editorVisibilitySceneId.isEmpty() &&
-      m_currentSceneId != m_editorVisibilitySceneId) {
+  if (!m_editorVisibilitySceneId.isEmpty() && m_currentSceneId != m_editorVisibilitySceneId) {
     return;
   }
 
-  for (auto it = m_editorVisibility.constBegin();
-       it != m_editorVisibility.constEnd(); ++it) {
-    if (auto *obj = m_scene->findSceneObject(it.key())) {
+  for (auto it = m_editorVisibility.constBegin(); it != m_editorVisibility.constEnd(); ++it) {
+    if (auto* obj = m_scene->findSceneObject(it.key())) {
       obj->setVisible(it.value());
     }
   }
-  for (auto it = m_editorOpacity.constBegin(); it != m_editorOpacity.constEnd();
-       ++it) {
-    if (auto *obj = m_scene->findSceneObject(it.key())) {
+  for (auto it = m_editorOpacity.constBegin(); it != m_editorOpacity.constEnd(); ++it) {
+    if (auto* obj = m_scene->findSceneObject(it.key())) {
       obj->setOpacity(it.value());
     }
   }
@@ -156,8 +157,7 @@ void NMSceneViewPanel::restoreEditorObjectsAfterRuntime() {
   m_editorVisibilitySceneId.clear();
 }
 
-void NMSceneViewPanel::applyRuntimeSnapshot(
-    const ::NovelMind::editor::SceneSnapshot &snapshot) {
+void NMSceneViewPanel::applyRuntimeSnapshot(const ::NovelMind::editor::SceneSnapshot& snapshot) {
   // P5.3: Validate scene before runtime snapshot operations
   if (!validateSceneReady()) {
     qWarning() << "[SceneViewPanel] Cannot apply runtime snapshot: scene not "
@@ -179,20 +179,19 @@ void NMSceneViewPanel::applyRuntimeSnapshot(
 
   // Remember current selection to restore if possible
   QString previousSelection;
-  if (auto *selected = m_scene->selectedObject()) {
+  if (auto* selected = m_scene->selectedObject()) {
     previousSelection = selected->id();
   }
 
   if (enteringRuntime) {
     m_editorSelectionBeforeRuntime.clear();
-    if (!previousSelection.isEmpty() &&
-        !previousSelection.startsWith("runtime_")) {
+    if (!previousSelection.isEmpty() && !previousSelection.startsWith("runtime_")) {
       m_editorSelectionBeforeRuntime = previousSelection;
     }
   }
 
   // Remove previous runtime-only objects
-  for (const auto &id : m_runtimeObjectIds) {
+  for (const auto& id : m_runtimeObjectIds) {
     m_scene->removeSceneObject(id);
   }
   m_runtimeObjectIds.clear();
@@ -202,8 +201,8 @@ void NMSceneViewPanel::applyRuntimeSnapshot(
     m_scene->clearSelection();
   }
 
-  const QString assetsRoot = QString::fromStdString(
-      ProjectManager::instance().getFolderPath(ProjectFolder::Assets));
+  const QString assetsRoot =
+      QString::fromStdString(ProjectManager::instance().getFolderPath(ProjectFolder::Assets));
   m_assetsRoot = assetsRoot;
 
   if (m_glViewport) {
@@ -217,7 +216,7 @@ void NMSceneViewPanel::applyRuntimeSnapshot(
     return;
   }
 
-  auto objectNameFromState = [](const scene::SceneObjectState &state) {
+  auto objectNameFromState = [](const scene::SceneObjectState& state) {
     auto it = state.properties.find("name");
     if (it != state.properties.end()) {
       return QString::fromStdString(it->second);
@@ -225,10 +224,9 @@ void NMSceneViewPanel::applyRuntimeSnapshot(
     return QString::fromStdString(state.id);
   };
 
-  auto textureHintFromState = [](const scene::SceneObjectState &state) {
-    const char *keys[] = {"textureId", "texture", "image", "sprite",
-                          "background"};
-    for (auto *key : keys) {
+  auto textureHintFromState = [](const scene::SceneObjectState& state) {
+    const char* keys[] = {"textureId", "texture", "image", "sprite", "background"};
+    for (auto* key : keys) {
       auto it = state.properties.find(key);
       if (it != state.properties.end()) {
         return QString::fromStdString(it->second);
@@ -255,8 +253,9 @@ void NMSceneViewPanel::applyRuntimeSnapshot(
   int runtimeIndex = 0;
   int successCount = 0;
   int failureCount = 0;
+  QStringList failedObjectIds;
 
-  for (const auto &state : snapshot.objects) {
+  for (const auto& state : snapshot.objects) {
     QString baseId = QString::fromStdString(state.id);
     if (baseId.isEmpty()) {
       qDebug() << "[SceneViewPanel] Runtime object has empty ID, generating "
@@ -272,7 +271,7 @@ void NMSceneViewPanel::applyRuntimeSnapshot(
     // Note: new throws std::bad_alloc on failure, it doesn't return nullptr
     try {
       auto objPtr = std::make_unique<NMSceneObject>(id, toQtType(state.type));
-      auto *obj = objPtr.get();
+      auto* obj = objPtr.get();
       obj->setName(objectNameFromState(state));
       obj->setPos(QPointF(state.x, state.y));
       obj->setZValue(state.zOrder);
@@ -280,61 +279,61 @@ void NMSceneViewPanel::applyRuntimeSnapshot(
       obj->setScaleXY(state.scaleX, state.scaleY);
       obj->setOpacity(state.alpha);
       obj->setVisible(state.visible);
-      obj->setPixmap(
-          loadPixmapForAsset(textureHintFromState(state), obj->objectType()));
+      obj->setPixmap(loadPixmapForAsset(textureHintFromState(state), obj->objectType()));
       m_scene->addSceneObject(objPtr.release()); // Scene takes ownership
       m_runtimeObjectIds << id;
-    } catch (const std::bad_alloc &e) {
+      successCount++;
+    } catch (const std::bad_alloc& e) {
       qWarning() << "[SceneViewPanel] Failed to allocate runtime object:" << id
-                 << "-" << e.what();
-      continue;
-    }
-    // P5.3/MEM-4 fix: Validate allocation before use with defensive programming
-    NMSceneObject *obj = nullptr;
-    try {
-      obj = new NMSceneObject(id, toQtType(state.type));
-    } catch (const std::exception &e) {
-      qCritical() << "[SceneViewPanel] Exception allocating runtime object:"
-                  << id << "error:" << e.what();
+                 << "error:" << e.what();
+      failedObjectIds << id;
       failureCount++;
-      continue;
-    }
-
-    if (!obj) {
-      // This branch is technically unreachable with standard new, but kept
-      // for defensive programming in case of custom allocators
-      qWarning() << "[SceneViewPanel] Failed to allocate runtime object:" << id;
+    } catch (const std::exception& e) {
+      qWarning() << "[SceneViewPanel] Exception creating runtime object:" << id
+                 << "error:" << e.what();
+      failedObjectIds << id;
       failureCount++;
-      continue;
     }
-
-    // Configure the object properties
-    obj->setName(objectNameFromState(state));
-    obj->setPos(QPointF(state.x, state.y));
-    obj->setZValue(state.zOrder);
-    obj->setRotation(state.rotation);
-    obj->setScaleXY(state.scaleX, state.scaleY);
-    obj->setOpacity(state.alpha);
-    obj->setVisible(state.visible);
-    obj->setPixmap(
-        loadPixmapForAsset(textureHintFromState(state), obj->objectType()));
-
-    // Add to scene
-    m_scene->addSceneObject(obj);
-    m_runtimeObjectIds << id;
-    successCount++;
   }
 
   // Log summary of runtime object creation
   if (successCount > 0 || failureCount > 0) {
-    qDebug() << "[SceneViewPanel] Runtime snapshot applied: created"
-             << successCount << "objects," << failureCount << "failures";
+    qDebug() << "[SceneViewPanel] Runtime snapshot applied: created" << successCount << "objects,"
+             << failureCount << "failures";
   }
 
-  // Show warning if some objects failed to create
+  // Show warning dialog if some objects failed to create
+  // This ensures users are aware of failures instead of silently logging
   if (failureCount > 0) {
-    qWarning() << "[SceneViewPanel]" << failureCount
-               << "runtime objects failed to create";
+    qWarning() << "[SceneViewPanel]" << failureCount << "runtime objects failed to create";
+
+    QString message;
+    if (failureCount == 1) {
+      message = tr("Failed to create 1 runtime object during scene preview.\n\n"
+                   "Object: %1\n\n"
+                   "The scene preview may be incomplete. "
+                   "Check the console for detailed error information.")
+                    .arg(failedObjectIds.first());
+    } else {
+      const int maxShown = 5;
+      QString objectList;
+      for (int i = 0; i < qMin(failureCount, maxShown); ++i) {
+        objectList += "• " + failedObjectIds[i] + "\n";
+      }
+      if (failureCount > maxShown) {
+        objectList += tr("• ... and %1 more\n").arg(failureCount - maxShown);
+      }
+
+      message = tr("Failed to create %1 runtime objects during scene preview.\n\n"
+                   "%2\n"
+                   "The scene preview may be incomplete. "
+                   "Check the console for detailed error information.")
+                    .arg(failureCount)
+                    .arg(objectList);
+    }
+
+    NMMessageDialog::showWarning(const_cast<NMSceneViewPanel*>(this),
+                                 tr("Runtime Object Creation Failed"), message);
   }
 
   m_runtimePreviewActive = true;
@@ -348,8 +347,7 @@ void NMSceneViewPanel::applyRuntimeSnapshot(
       m_scene->findSceneObject(previousSelection)) {
     m_scene->selectObject(previousSelection);
     restored = true;
-  } else if (!fallbackSelection.isEmpty() &&
-             m_scene->findSceneObject(fallbackSelection)) {
+  } else if (!fallbackSelection.isEmpty() && m_scene->findSceneObject(fallbackSelection)) {
     m_scene->selectObject(fallbackSelection);
     restored = true;
   }
@@ -367,10 +365,12 @@ void NMSceneViewPanel::onPlayModeChanged(int mode) {
   qDebug() << "[SceneView] Play mode changed to:" << playMode;
 
   if (m_playOverlay) {
-    m_playOverlay->setInteractionEnabled(playMode !=
-                                         NMPlayModeController::Stopped);
+    m_playOverlay->setInteractionEnabled(playMode != NMPlayModeController::Stopped);
     // Show navigation controls during play mode
     m_playOverlay->setNavigationVisible(playMode != NMPlayModeController::Stopped);
+    // Explicitly hide preview badge during play mode, show only in editor preview
+    m_playOverlay->setPreviewMode(playMode == NMPlayModeController::Stopped &&
+                                  m_editorPreviewActive);
     if (playMode != NMPlayModeController::Stopped) {
       m_playOverlay->setFocus();
     }
@@ -417,8 +417,7 @@ void NMSceneViewPanel::onPlayModeChanged(int mode) {
     }
     clearRuntimePreview();
 
-    if (!m_sceneIdBeforePlay.isEmpty() &&
-        m_sceneIdBeforePlay != m_currentSceneId) {
+    if (!m_sceneIdBeforePlay.isEmpty() && m_sceneIdBeforePlay != m_currentSceneId) {
       const bool prevSuppress = m_suppressSceneSave;
       m_suppressSceneSave = true;
       loadSceneDocument(m_sceneIdBeforePlay);
@@ -438,7 +437,7 @@ void NMSceneViewPanel::syncRuntimeSelection() {
   if (!m_scene) {
     return;
   }
-  if (auto *selected = m_scene->selectedObject()) {
+  if (auto* selected = m_scene->selectedObject()) {
     emit objectSelected(selected->id());
   }
 }
@@ -449,11 +448,11 @@ void NMSceneViewPanel::clearRuntimePreview() {
   }
 
   bool selectionWasRuntime = false;
-  if (auto *selected = m_scene->selectedObject()) {
+  if (auto* selected = m_scene->selectedObject()) {
     selectionWasRuntime = m_runtimeObjectIds.contains(selected->id());
   }
 
-  for (const auto &id : m_runtimeObjectIds) {
+  for (const auto& id : m_runtimeObjectIds) {
     m_scene->removeSceneObject(id);
   }
   m_runtimeObjectIds.clear();
@@ -476,8 +475,7 @@ void NMSceneViewPanel::clearRuntimePreview() {
   }
 
   if (m_glViewport) {
-    m_glViewport->setSnapshot(::NovelMind::editor::SceneSnapshot{},
-                              m_assetsRoot);
+    m_glViewport->setSnapshot(::NovelMind::editor::SceneSnapshot{}, m_assetsRoot);
   }
 
   emit sceneObjectsChanged();
@@ -488,8 +486,7 @@ void NMSceneViewPanel::updateRuntimePreviewVisibility() {
     return;
   }
 
-  const bool showGL = m_playModeActive && !m_followPlayModeNodes &&
-                      !m_renderRuntimeSceneObjects;
+  const bool showGL = m_playModeActive && !m_followPlayModeNodes && !m_renderRuntimeSceneObjects;
   m_glViewport->setVisible(showGL);
 
   if (m_fontWarning) {
@@ -506,8 +503,7 @@ void NMSceneViewPanel::applyEditorPreview() {
   }
 
   if (m_editorPreviewActive) {
-    m_playOverlay->setDialogueImmediate(m_editorPreviewSpeaker,
-                                        m_editorPreviewText);
+    m_playOverlay->setDialogueImmediate(m_editorPreviewSpeaker, m_editorPreviewText);
     // In editor preview mode, do not show choices
     // Choices should only appear during actual play mode
     m_playOverlay->clearChoices();
@@ -543,29 +539,26 @@ bool NMSceneViewPanel::validateSceneReady() const {
 
 void NMSceneViewPanel::showSceneNotLoadedError() {
   qWarning() << "[SceneViewPanel] Cannot perform operation: scene not loaded";
-  NMMessageDialog::showError(
-      const_cast<NMSceneViewPanel *>(this), tr("Scene Not Loaded"),
-      tr("Cannot perform this operation because no scene is loaded.\n\n"
-         "Please load or create a scene first:\n"
-         "• File → New Scene\n"
-         "• File → Open Scene"));
+  NMMessageDialog::showError(const_cast<NMSceneViewPanel*>(this), tr("Scene Not Loaded"),
+                             tr("Cannot perform this operation because no scene is loaded.\n\n"
+                                "Please load or create a scene first:\n"
+                                "• File → New Scene\n"
+                                "• File → Open Scene"));
 }
 
 void NMSceneViewPanel::showSceneInvalidError() {
   qWarning() << "[SceneViewPanel] Cannot perform operation: scene is invalid";
-  NMMessageDialog::showWarning(
-      const_cast<NMSceneViewPanel *>(this), tr("Invalid Scene State"),
-      tr("The scene is in an invalid state and cannot perform this "
-         "operation.\n\n"
-         "Try reloading the scene or creating a new one."));
+  NMMessageDialog::showWarning(const_cast<NMSceneViewPanel*>(this), tr("Invalid Scene State"),
+                               tr("The scene is in an invalid state and cannot perform this "
+                                  "operation.\n\n"
+                                  "Try reloading the scene or creating a new one."));
 }
 
-void NMSceneViewPanel::showRuntimeObjectCreationError(const QString &objectId,
-                                                      const QString &reason) {
+void NMSceneViewPanel::showRuntimeObjectCreationError(const QString& objectId,
+                                                      const QString& reason) {
   qWarning() << "[SceneViewPanel] Failed to create runtime object:" << objectId
              << "reason:" << reason;
-  NMMessageDialog::showError(const_cast<NMSceneViewPanel *>(this),
-                             tr("Object Creation Failed"),
+  NMMessageDialog::showError(const_cast<NMSceneViewPanel*>(this), tr("Object Creation Failed"),
                              tr("Failed to create runtime object '%1'.\n\n"
                                 "Reason: %2\n\n"
                                 "Check the console for more details.")

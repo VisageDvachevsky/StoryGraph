@@ -9,11 +9,15 @@
 
 #include <QAction>
 #include <QComboBox>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QFile>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QList>
+#include <QListWidget>
+#include <QMessageBox>
 #include <QPair>
 #include <QPushButton>
 #include <QRegularExpression>
@@ -72,6 +76,34 @@ void NMStoryGraphPanel::onInitialize() {
           &NMStoryGraphPanel::onBreakpointsChanged, Qt::QueuedConnection);
   connect(&playController, &NMPlayModeController::projectLoaded, this,
           &NMStoryGraphPanel::rebuildFromProjectScripts, Qt::QueuedConnection);
+
+  // Issue #339: Auto-show panel when debugging starts
+  connect(&playController, &NMPlayModeController::playModeChanged, this,
+          [this](NMPlayModeController::PlayMode mode) {
+            if (mode == NMPlayModeController::Playing ||
+                mode == NMPlayModeController::Paused) {
+              // Debugging started, show and raise the Story Graph panel
+              if (!isVisible()) {
+                qDebug() << "[StoryGraph] Auto-showing panel for debugging";
+                show();
+                raise();
+              }
+            }
+          }, Qt::QueuedConnection);
+
+  // Issue #339: Handle visibility changes to process queued centering operations
+  connect(this, &QDockWidget::visibilityChanged, this,
+          [this](bool visible) {
+            if (visible && !m_pendingCenterNode.isEmpty() && m_followCurrentNode) {
+              qDebug() << "[StoryGraph] Panel became visible, processing pending center operation";
+              auto *node = findNodeByIdString(m_pendingCenterNode);
+              if (node && m_view) {
+                qDebug() << "[StoryGraph] Centering on" << m_pendingCenterNode;
+                m_view->centerOn(node);
+              }
+              m_pendingCenterNode.clear();
+            }
+          });
 
   // Subscribe to scene auto-sync events (Issue #223)
   auto &bus = EventBus::instance();
@@ -308,6 +340,8 @@ void NMStoryGraphPanel::rebuildFromProjectScripts() {
       ProjectManager::instance().getProjectPath());
   if (!projectPath.isEmpty() && m_scene) {
     m_scene->updateSceneValidationState(projectPath);
+    // Update validation status in toolbar (Issue #332)
+    updateValidationStatus();
   }
 
   detail::saveGraphLayout(m_layoutNodes, m_layoutEntryScene);
@@ -353,6 +387,27 @@ void NMStoryGraphPanel::setupToolBar() {
   connect(actionFit, &QAction::triggered, this,
           &NMStoryGraphPanel::onFitToGraph);
 
+  // Issue #339: Follow Current Node toggle
+  m_followNodeAction = m_toolBar->addAction(tr("Follow"));
+  m_followNodeAction->setToolTip(
+      tr("Auto-center view on current executing node during debugging"));
+  m_followNodeAction->setCheckable(true);
+  m_followNodeAction->setChecked(m_followCurrentNode);
+  connect(m_followNodeAction, &QAction::toggled, this, [this](bool enabled) {
+    m_followCurrentNode = enabled;
+    qDebug() << "[StoryGraph] Follow current node:" << enabled;
+
+    // If enabling and we have a pending center operation, execute it now
+    if (enabled && !m_pendingCenterNode.isEmpty() && m_view && !m_view->isHidden()) {
+      auto *node = findNodeByIdString(m_pendingCenterNode);
+      if (node) {
+        qDebug() << "[StoryGraph] Executing pending center on" << m_pendingCenterNode;
+        m_view->centerOn(node);
+      }
+      m_pendingCenterNode.clear();
+    }
+  });
+
   m_toolBar->addSeparator();
 
   QAction *actionAutoLayout = m_toolBar->addAction(tr("Auto Layout"));
@@ -360,6 +415,22 @@ void NMStoryGraphPanel::setupToolBar() {
       tr("Automatically arrange nodes (hierarchical layout)"));
   connect(actionAutoLayout, &QAction::triggered, this,
           &NMStoryGraphPanel::onAutoLayout);
+
+  // Issue #345: Scene container visualization toggle
+  m_toolBar->addSeparator();
+
+  QAction *actionSceneContainers = m_toolBar->addAction(tr("Scenes"));
+  actionSceneContainers->setCheckable(true);
+  actionSceneContainers->setChecked(true); // On by default
+  actionSceneContainers->setToolTip(
+      tr("Toggle scene container visualization.\n"
+         "When enabled, semi-transparent boxes show which nodes\n"
+         "belong to each scene, making the story structure clearer."));
+  connect(actionSceneContainers, &QAction::toggled, this, [this](bool enabled) {
+    if (m_scene) {
+      m_scene->setSceneContainersVisible(enabled);
+    }
+  });
 
   // Localization controls section
   m_toolBar->addSeparator();
@@ -423,12 +494,35 @@ void NMStoryGraphPanel::setupToolBar() {
           &NMStoryGraphPanel::onSyncScriptToGraph);
   m_toolBar->addWidget(m_syncScriptToGraphBtn);
 
+  // Validation status section (Issue #332)
+  m_toolBar->addSeparator();
+
+  // Validation status label
+  m_validationStatusLabel = new QLabel(m_toolBar);
+  m_validationStatusLabel->setToolTip(
+      tr("Scene validation status - shows count of nodes with orphaned scene references"));
+  m_toolBar->addWidget(m_validationStatusLabel);
+
+  // Fix issues button
+  m_fixIssuesBtn = new QPushButton(tr("Fix Issues"), m_toolBar);
+  m_fixIssuesBtn->setIcon(
+      NMIconManager::instance().getIcon("alert-triangle", 16));
+  m_fixIssuesBtn->setToolTip(
+      tr("Show and fix scene validation issues"));
+  m_fixIssuesBtn->setVisible(false); // Hidden initially until issues are detected
+  connect(m_fixIssuesBtn, &QPushButton::clicked, this,
+          &NMStoryGraphPanel::showValidationIssuesDialog);
+  m_toolBar->addWidget(m_fixIssuesBtn);
+
   if (auto *layout = qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
     layout->insertWidget(0, m_scrollableToolBar);
   }
 
   // Initialize button visibility based on current workflow mode
   updateSyncButtonsVisibility();
+
+  // Initialize validation status
+  updateValidationStatus();
 }
 
 void NMStoryGraphPanel::setupContent() {
@@ -488,6 +582,8 @@ void NMStoryGraphPanel::setupContent() {
           &NMStoryGraphPanel::onConnectionDeleted);
   connect(m_scene, &NMStoryGraphScene::entryNodeRequested, this,
           &NMStoryGraphPanel::onEntryNodeRequested);
+  connect(m_scene, &NMStoryGraphScene::scriptFileCreationFailed, this,
+          &NMStoryGraphPanel::onScriptFileCreationFailed);
 }
 
 void NMStoryGraphPanel::setupNodePalette() {
@@ -520,13 +616,33 @@ void NMStoryGraphPanel::setupNodePalette() {
 
 bool NMStoryGraphPanel::navigateToNode(const QString &nodeIdString) {
   if (nodeIdString.isEmpty() || !m_scene || !m_view) {
+    qWarning() << "[StoryGraph] Navigation failed: Invalid parameters"
+               << "(nodeIdString.isEmpty():" << nodeIdString.isEmpty()
+               << ", m_scene:" << (m_scene != nullptr)
+               << ", m_view:" << (m_view != nullptr) << ")";
     return false;
   }
 
   // Find the node
   NMGraphNodeItem *node = findNodeByIdString(nodeIdString);
   if (!node) {
-    qWarning() << "[StoryGraph] Node not found for navigation:" << nodeIdString;
+    // Issue #335: Show user-visible notification when navigation target is not found
+    qWarning() << "[StoryGraph] Node not found for navigation:" << nodeIdString
+               << "- Available nodes:" << m_nodeIdToString.size()
+               << "- Graph has" << m_scene->nodes().size() << "nodes";
+
+    // Show user-visible error message
+    QMessageBox::warning(
+        this, tr("Node Not Found"),
+        tr("Cannot navigate to node '%1'.\n\n"
+           "The node does not exist in the Story Graph.\n"
+           "This may happen if:\n"
+           "• The node was deleted\n"
+           "• The graph hasn't been synchronized with scripts\n"
+           "• The node ID is incorrect\n\n"
+           "Try rebuilding the graph or check the node reference.")
+            .arg(nodeIdString));
+
     return false;
   }
 
@@ -548,7 +664,8 @@ bool NMStoryGraphPanel::navigateToNode(const QString &nodeIdString) {
   raise();
   setFocus();
 
-  qDebug() << "[StoryGraph] Navigated to node:" << nodeIdString;
+  qDebug() << "[StoryGraph] Navigated to node:" << nodeIdString
+           << "at position:" << node->pos();
   return true;
 }
 
@@ -918,7 +1035,132 @@ void NMStoryGraphPanel::onSceneDeleted(const QString &sceneId) {
     qWarning() << "[StoryGraph] Found orphaned scene node references for"
                << "deleted scene" << sceneId
                << "- nodes marked with validation errors";
+    // Update validation status in toolbar
+    updateValidationStatus();
   }
+}
+
+void NMStoryGraphPanel::updateValidationStatus() {
+  if (!m_scene || !m_validationStatusLabel) {
+    return;
+  }
+
+  // Count nodes with validation errors or warnings
+  int errorCount = 0;
+  int warningCount = 0;
+
+  for (auto *node : m_scene->nodes()) {
+    if (node && node->isSceneNode()) {
+      if (node->hasSceneValidationError()) {
+        errorCount++;
+      } else if (node->hasSceneValidationWarning()) {
+        warningCount++;
+      }
+    }
+  }
+
+  // Update label text and style
+  if (errorCount > 0) {
+    QString text = tr("⚠️ %1 issue%2")
+                       .arg(errorCount)
+                       .arg(errorCount > 1 ? "s" : "");
+    m_validationStatusLabel->setText(text);
+    m_validationStatusLabel->setStyleSheet("QLabel { color: #dc3c3c; font-weight: bold; }");
+    m_validationStatusLabel->setVisible(true);
+    m_fixIssuesBtn->setVisible(true);
+  } else if (warningCount > 0) {
+    QString text = tr("⚠️ %1 warning%2")
+                       .arg(warningCount)
+                       .arg(warningCount > 1 ? "s" : "");
+    m_validationStatusLabel->setText(text);
+    m_validationStatusLabel->setStyleSheet("QLabel { color: #ffb43c; font-weight: bold; }");
+    m_validationStatusLabel->setVisible(true);
+    m_fixIssuesBtn->setVisible(true);
+  } else {
+    m_validationStatusLabel->setText(tr("✓ No issues"));
+    m_validationStatusLabel->setStyleSheet("QLabel { color: #64c832; }");
+    m_validationStatusLabel->setVisible(true);
+    m_fixIssuesBtn->setVisible(false);
+  }
+}
+
+void NMStoryGraphPanel::showValidationIssuesDialog() {
+  if (!m_scene) {
+    return;
+  }
+
+  // Collect all nodes with validation issues
+  QStringList issues;
+  QVector<NMGraphNodeItem *> problemNodes;
+
+  for (auto *node : m_scene->nodes()) {
+    if (node && node->isSceneNode()) {
+      if (node->hasSceneValidationError() || node->hasSceneValidationWarning()) {
+        const QString issueType = node->hasSceneValidationError() ? tr("Error") : tr("Warning");
+        issues.append(QString("[%1] %2: %3")
+                          .arg(issueType)
+                          .arg(node->title())
+                          .arg(node->sceneValidationMessage()));
+        problemNodes.append(node);
+      }
+    }
+  }
+
+  if (issues.isEmpty()) {
+    QMessageBox::information(this, tr("Scene Validation"),
+                             tr("No validation issues found."));
+    return;
+  }
+
+  // Create dialog to show issues
+  QDialog dialog(this);
+  dialog.setWindowTitle(tr("Scene Validation Issues"));
+  dialog.resize(600, 400);
+
+  auto *layout = new QVBoxLayout(&dialog);
+
+  // Info label
+  auto *infoLabel = new QLabel(
+      tr("The following scene nodes have validation issues:"), &dialog);
+  layout->addWidget(infoLabel);
+
+  // List widget to show issues
+  auto *issueList = new QListWidget(&dialog);
+  for (const QString &issue : issues) {
+    issueList->addItem(issue);
+  }
+  layout->addWidget(issueList);
+
+  // Connect double-click to navigate to node
+  connect(issueList, &QListWidget::itemDoubleClicked, [this, problemNodes, issueList](QListWidgetItem *item) {
+    int index = issueList->row(item);
+    if (index >= 0 && index < problemNodes.size()) {
+      auto *node = problemNodes[index];
+      if (node && m_view) {
+        // Navigate to the problem node
+        m_view->centerOn(node);
+        m_scene->clearSelection();
+        node->setSelected(true);
+      }
+    }
+  });
+
+  // Help text
+  auto *helpLabel = new QLabel(
+      tr("Double-click an issue to navigate to the node.\n\n"
+         "To fix orphaned scene references:\n"
+         "• Right-click the node and select 'Rebind Scene'\n"
+         "• Or delete the node if it's no longer needed"), &dialog);
+  helpLabel->setWordWrap(true);
+  helpLabel->setStyleSheet("QLabel { color: #888; font-size: 10px; }");
+  layout->addWidget(helpLabel);
+
+  // Button box
+  auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Close, &dialog);
+  connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+  layout->addWidget(buttonBox);
+
+  dialog.exec();
 }
 
 } // namespace NovelMind::editor::qt

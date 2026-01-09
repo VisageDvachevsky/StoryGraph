@@ -141,6 +141,13 @@ public:
   void setSceneValidationMessage(const QString &message);
   [[nodiscard]] QString sceneValidationMessage() const { return m_sceneValidationMessage; }
 
+  // Script file creation state
+  void setScriptFileError(bool hasError);
+  [[nodiscard]] bool hasScriptFileError() const { return m_hasScriptFileError; }
+
+  void setScriptFileErrorMessage(const QString &message);
+  [[nodiscard]] QString scriptFileErrorMessage() const { return m_scriptFileErrorMessage; }
+
   // Condition Node specific properties
   void setConditionExpression(const QString &expr) {
     m_conditionExpression = expr;
@@ -251,6 +258,10 @@ private:
   bool m_hasSceneValidationWarning = false;
   QString m_sceneValidationMessage;
 
+  // Script file creation state
+  bool m_hasScriptFileError = false;
+  QString m_scriptFileErrorMessage;
+
   // Condition Node specific properties
   QString m_conditionExpression;
   QStringList m_conditionOutputs;
@@ -294,7 +305,18 @@ public:
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
              QWidget *widget) override;
 
+protected:
+  void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
+
 private:
+  /**
+   * @brief Draw scene transition indicator icon (Issue #345)
+   * @param painter The painter to use
+   * @param pos The position to draw at (midpoint of connection)
+   * @param isCrossScene Whether this is a cross-scene (scene-to-scene) connection
+   */
+  void drawSceneTransitionIndicator(QPainter *painter, const QPointF &pos, bool isCrossScene);
+
   NMGraphNodeItem *m_startNode;
   NMGraphNodeItem *m_endNode;
   QPainterPath m_path;
@@ -422,6 +444,32 @@ public:
    */
   [[nodiscard]] bool isReadOnly() const { return m_readOnly; }
 
+  /**
+   * @brief Enable or disable scene container visualization (Issue #345)
+   *
+   * When enabled, semi-transparent containers are drawn around scene nodes
+   * and their connected dialogue nodes to visually group them.
+   *
+   * @param enabled true to show scene containers
+   */
+  void setSceneContainersVisible(bool enabled);
+
+  /**
+   * @brief Check if scene containers are visible
+   */
+  [[nodiscard]] bool sceneContainersVisible() const { return m_showSceneContainers; }
+
+  /**
+   * @brief Find all dialogue nodes that belong to a scene (Issue #345)
+   *
+   * Uses BFS to find all non-scene nodes reachable from the given scene node
+   * before hitting another scene node.
+   *
+   * @param sceneNode The scene node to find children for
+   * @return List of dialogue/choice nodes that belong to this scene
+   */
+  QList<NMGraphNodeItem *> findDialogueNodesInScene(NMGraphNodeItem *sceneNode) const;
+
 signals:
   void nodeAdded(uint64_t nodeId, const QString &nodeIdString,
                  const QString &nodeType);
@@ -431,6 +479,8 @@ signals:
   void entryNodeRequested(const QString &nodeIdString);
   void deleteSelectionRequested();
   void nodesMoved(const QVector<GraphNodeMove> &moves);
+  void scriptFileCreationFailed(uint64_t nodeId, const QString &nodeIdString,
+                                const QString &errorMessage);
 
 protected:
   void drawBackground(QPainter *painter, const QRectF &rect) override;
@@ -439,6 +489,13 @@ protected:
   void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
 
 private:
+  /**
+   * @brief Draw scene container visualizations (Issue #345)
+   * @param painter The painter to use
+   * @param viewRect The visible view rectangle for culling
+   */
+  void drawSceneContainers(QPainter *painter, const QRectF &viewRect);
+
   QList<NMGraphNodeItem *> m_nodes;
   QList<NMGraphConnectionItem *> m_connections;
   QHash<uint64_t, NMGraphNodeItem *> m_nodeLookup;
@@ -446,6 +503,7 @@ private:
   QHash<uint64_t, QPointF> m_dragStartPositions;
   bool m_isDraggingNodes = false;
   bool m_readOnly = false; // Issue #117: Read-only mode for workflow enforcement
+  bool m_showSceneContainers = true; // Issue #345: Scene container visualization
 };
 
 /**
@@ -701,6 +759,8 @@ private slots:
   void onGenerateLocalizationKeysClicked();
   void onSyncGraphToScript(); // Issue #82: Sync Graph -> Script
   void onSyncScriptToGraph(); // Issue #127: Sync Script -> Graph
+  void onScriptFileCreationFailed(uint64_t nodeId, const QString &nodeIdString,
+                                  const QString &errorMessage);
 
   // Scene auto-sync event handlers (Issue #223)
   void onSceneThumbnailUpdated(const QString &sceneId, const QString &thumbnailPath);
@@ -724,6 +784,11 @@ private:
   NMNodePalette *m_nodePalette = nullptr;
   QString m_currentExecutingNode;
 
+  // Issue #339: Deferred centering and follow mode
+  QString m_pendingCenterNode;        // Node ID to center when view becomes visible
+  bool m_followCurrentNode = true;    // Whether to auto-center on current node
+  QAction *m_followNodeAction = nullptr;
+
   QHash<QString, LayoutNode> m_layoutNodes;
   QHash<uint64_t, QString> m_nodeIdToString;
   QString m_layoutEntryScene;
@@ -745,6 +810,12 @@ private:
   bool m_readOnly = false;
   QWidget *m_readOnlyBanner = nullptr;
   QLabel *m_readOnlyLabel = nullptr;
+
+  // Scene validation UI (Issue #332)
+  QLabel *m_validationStatusLabel = nullptr;
+  QPushButton *m_fixIssuesBtn = nullptr;
+  void updateValidationStatus();
+  void showValidationIssuesDialog();
 
   // Event subscriptions for scene auto-sync (Issue #223)
   std::vector<EventSubscription> m_eventSubscriptions;

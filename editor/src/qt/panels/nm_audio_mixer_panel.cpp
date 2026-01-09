@@ -18,6 +18,7 @@
 
 #include <QCheckBox>
 #include <QDoubleSpinBox>
+#include <QFrame>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -50,8 +51,7 @@ const QColor CHANNEL_COLORS[] = {
     QColor(158, 158, 158) // Reserved - Gray
 };
 
-const char *CHANNEL_NAMES[] = {"MASTER",  "Music", "Sound",   "Voice",
-                               "Ambient", "UI",    "Reserved"};
+const char* CHANNEL_NAMES[] = {"MASTER", "Music", "Sound", "Voice", "Ambient", "UI", "Reserved"};
 
 // Default volumes per channel
 const int DEFAULT_VOLUMES[] = {
@@ -68,18 +68,15 @@ const int DEFAULT_VOLUMES[] = {
 // These static_asserts ensure arrays have enough elements for all channels
 // Loop accesses indices [i + 1] where i ranges from 0 to NUM_CHANNELS - 1
 // Therefore arrays need at least TOTAL_CHANNEL_ENTRIES elements
-static_assert(sizeof(CHANNEL_COLORS) / sizeof(CHANNEL_COLORS[0]) >=
-                  TOTAL_CHANNEL_ENTRIES,
+static_assert(sizeof(CHANNEL_COLORS) / sizeof(CHANNEL_COLORS[0]) >= TOTAL_CHANNEL_ENTRIES,
               "CHANNEL_COLORS array must have at least TOTAL_CHANNEL_ENTRIES "
               "elements (NUM_CHANNELS + 1 for Master)");
 
-static_assert(sizeof(CHANNEL_NAMES) / sizeof(CHANNEL_NAMES[0]) >=
-                  TOTAL_CHANNEL_ENTRIES,
+static_assert(sizeof(CHANNEL_NAMES) / sizeof(CHANNEL_NAMES[0]) >= TOTAL_CHANNEL_ENTRIES,
               "CHANNEL_NAMES array must have at least TOTAL_CHANNEL_ENTRIES "
               "elements (NUM_CHANNELS + 1 for Master)");
 
-static_assert(sizeof(DEFAULT_VOLUMES) / sizeof(DEFAULT_VOLUMES[0]) >=
-                  TOTAL_CHANNEL_ENTRIES,
+static_assert(sizeof(DEFAULT_VOLUMES) / sizeof(DEFAULT_VOLUMES[0]) >= TOTAL_CHANNEL_ENTRIES,
               "DEFAULT_VOLUMES array must have at least TOTAL_CHANNEL_ENTRIES "
               "elements (NUM_CHANNELS + 1 for Master)");
 } // namespace
@@ -88,12 +85,13 @@ static_assert(sizeof(DEFAULT_VOLUMES) / sizeof(DEFAULT_VOLUMES[0]) >=
 // NMAudioMixerPanel Implementation
 // ============================================================================
 
-NMAudioMixerPanel::NMAudioMixerPanel(QWidget *parent)
-    : NMDockPanel("Audio Mixer", parent) {
+NMAudioMixerPanel::NMAudioMixerPanel(QWidget* parent) : NMDockPanel("Audio Mixer", parent) {
   setupUI();
 }
 
-NMAudioMixerPanel::~NMAudioMixerPanel() { onShutdown(); }
+NMAudioMixerPanel::~NMAudioMixerPanel() {
+  onShutdown();
+}
 
 void NMAudioMixerPanel::onInitialize() {
   NOVELMIND_LOG_INFO("Audio Mixer Panel initialized");
@@ -103,16 +101,26 @@ void NMAudioMixerPanel::onInitialize() {
   auto result = m_previewAudioManager->initialize();
   if (result.isError()) {
     NOVELMIND_LOG_ERROR("Failed to initialize preview audio manager");
+    m_audioManagerInitialized = false;
+    // Show warning banner to user
+    QString errorDetails = QString::fromStdString(result.error());
+    showAudioWarningBanner(tr("Audio system initialization failed. Audio preview and playback "
+                              "features are unavailable. Details: %1")
+                               .arg(errorDetails));
+  } else {
+    m_audioManagerInitialized = true;
+    hideAudioWarningBanner();
   }
 
   // Set up position update timer
   m_positionTimer = new QTimer(this);
-  connect(m_positionTimer, &QTimer::timeout, this,
-          &NMAudioMixerPanel::onUpdatePosition);
+  connect(m_positionTimer, &QTimer::timeout, this, &NMAudioMixerPanel::onUpdatePosition);
   m_positionTimer->start(100); // Update every 100ms
 
-  // Apply default channel volumes
-  applyChannelVolumes();
+  // Apply default channel volumes if audio manager initialized
+  if (m_audioManagerInitialized) {
+    applyChannelVolumes();
+  }
 }
 
 void NMAudioMixerPanel::onShutdown() {
@@ -130,7 +138,7 @@ void NMAudioMixerPanel::onUpdate(double) {
   // Position updates happen via timer
 }
 
-void NMAudioMixerPanel::setSelectedAudioAsset(const QString &assetPath) {
+void NMAudioMixerPanel::setSelectedAudioAsset(const QString& assetPath) {
   m_currentAudioAsset = assetPath;
   if (m_currentTrackLabel) {
     QString displayName = assetPath;
@@ -154,9 +162,15 @@ void NMAudioMixerPanel::setSelectedAudioAsset(const QString &assetPath) {
 // ============================================================================
 
 void NMAudioMixerPanel::onPlayClicked() {
+  // Check if audio manager is initialized
+  if (!m_audioManagerInitialized) {
+    setPlaybackError(tr("Audio system not initialized. Check audio device "
+                        "configuration."));
+    return;
+  }
+
   if (m_currentAudioAsset.isEmpty()) {
-    setPlaybackError(
-        tr("No audio file selected. Use Browse to select a file."));
+    setPlaybackError(tr("No audio file selected. Use Browse to select a file."));
     return;
   }
 
@@ -172,25 +186,45 @@ void NMAudioMixerPanel::onPlayClicked() {
     config.loop = m_loopCheckBox->isChecked();
     config.fadeInDuration = 0.0f;
 
-    m_currentMusicHandle = m_previewAudioManager->playMusic(
-        m_currentAudioAsset.toStdString(), config);
+    m_currentMusicHandle =
+        m_previewAudioManager->playMusic(m_currentAudioAsset.toStdString(), config);
 
     if (!m_currentMusicHandle.isValid()) {
-      setPlaybackError(tr("Failed to play audio file."));
+      // Extract filename for better error message
+      QString filename = m_currentAudioAsset;
+      qsizetype lastSlash = filename.lastIndexOf('/');
+      if (lastSlash >= 0) {
+        filename = filename.mid(lastSlash + 1);
+      }
+      setPlaybackError(tr("Failed to play audio file '%1'. The file may be corrupted, in an "
+                          "unsupported format, or the audio device may be unavailable.")
+                           .arg(filename));
       return;
     }
 
     m_isPlaying = true;
     m_isPaused = false;
 
-    // Duration tracking not available via AudioManager API, so use a
-    // placeholder In practice, position updates will handle the seek bar
-    m_currentDuration = 0.0f;
-    if (m_durationLabel) {
-      m_durationLabel->setText(formatTime(m_currentDuration));
-    }
-    if (m_seekSlider) {
-      m_seekSlider->setEnabled(false); // Seek not fully supported
+    // Get duration from audio source
+    if (auto* source = m_previewAudioManager->getSource(m_currentMusicHandle)) {
+      m_currentDuration = source->getDuration();
+      if (m_durationLabel) {
+        m_durationLabel->setText(formatTime(m_currentDuration));
+      }
+      // Enable seek slider if we have a valid duration
+      if (m_seekSlider && m_currentDuration > 0.0f) {
+        m_seekSlider->setEnabled(true);
+        m_seekSlider->setRange(0, static_cast<int>(m_currentDuration * 1000));
+      }
+    } else {
+      // Fallback if duration not available
+      m_currentDuration = 0.0f;
+      if (m_durationLabel) {
+        m_durationLabel->setText(formatTime(m_currentDuration));
+      }
+      if (m_seekSlider) {
+        m_seekSlider->setEnabled(false);
+      }
     }
   }
 
@@ -249,9 +283,9 @@ void NMAudioMixerPanel::onCrossfadeDurationChanged(double value) {
 void NMAudioMixerPanel::onCrossfadeToClicked() {
   if (m_nextCrossfadeAsset.isEmpty()) {
     // Open file dialog to select next track
-    QString filePath = NMFileDialog::getOpenFileName(
-        this, tr("Select Next Track"), QString(),
-        tr("Audio Files (*.wav *.ogg *.mp3 *.flac);;All Files (*)"));
+    QString filePath =
+        NMFileDialog::getOpenFileName(this, tr("Select Next Track"), QString(),
+                                      tr("Audio Files (*.wav *.ogg *.mp3 *.flac);;All Files (*)"));
 
     if (filePath.isEmpty()) {
       return;
@@ -268,8 +302,7 @@ void NMAudioMixerPanel::onCrossfadeToClicked() {
 
     // Use crossfadeMusic API which handles fading between tracks
     m_currentMusicHandle = m_previewAudioManager->crossfadeMusic(
-        m_nextCrossfadeAsset.toStdString(), m_crossfadeDuration / 1000.0f,
-        config);
+        m_nextCrossfadeAsset.toStdString(), m_crossfadeDuration / 1000.0f, config);
     m_currentAudioAsset = m_nextCrossfadeAsset;
     m_nextCrossfadeAsset.clear();
 
@@ -331,7 +364,7 @@ void NMAudioMixerPanel::onMasterVolumeChanged(int value) {
 
 void NMAudioMixerPanel::onChannelVolumeChanged(int value) {
   // Find which slider sent this signal
-  auto *slider = qobject_cast<QSlider *>(sender());
+  auto* slider = qobject_cast<QSlider*>(sender());
   if (!slider)
     return;
 
@@ -341,8 +374,8 @@ void NMAudioMixerPanel::onChannelVolumeChanged(int value) {
         m_channelControls[i].volumeLabel->setText(QString("%1%").arg(value));
       }
       if (m_previewAudioManager) {
-        m_previewAudioManager->setChannelVolume(
-            m_channelControls[i].channel, static_cast<f32>(value) / 100.0f);
+        m_previewAudioManager->setChannelVolume(m_channelControls[i].channel,
+                                                static_cast<f32>(value) / 100.0f);
       }
       break;
     }
@@ -350,15 +383,14 @@ void NMAudioMixerPanel::onChannelVolumeChanged(int value) {
 }
 
 void NMAudioMixerPanel::onChannelMuteToggled(bool checked) {
-  auto *button = qobject_cast<QPushButton *>(sender());
+  auto* button = qobject_cast<QPushButton*>(sender());
   if (!button)
     return;
 
   for (size_t i = 0; i < m_channelControls.size(); ++i) {
     if (m_channelControls[i].muteButton == button) {
       if (m_previewAudioManager) {
-        m_previewAudioManager->setChannelMuted(m_channelControls[i].channel,
-                                               checked);
+        m_previewAudioManager->setChannelMuted(m_channelControls[i].channel, checked);
       }
       // Update button style
       if (checked) {
@@ -373,7 +405,7 @@ void NMAudioMixerPanel::onChannelMuteToggled(bool checked) {
 }
 
 void NMAudioMixerPanel::onChannelSoloToggled(bool checked) {
-  auto *button = qobject_cast<QPushButton *>(sender());
+  auto* button = qobject_cast<QPushButton*>(sender());
   if (!button)
     return;
 
@@ -398,9 +430,9 @@ void NMAudioMixerPanel::onChannelSoloToggled(bool checked) {
 }
 
 void NMAudioMixerPanel::onBrowseAudioClicked() {
-  QString filePath = NMFileDialog::getOpenFileName(
-      this, tr("Select Audio File"), QString(),
-      tr("Audio Files (*.wav *.ogg *.mp3 *.flac);;All Files (*)"));
+  QString filePath =
+      NMFileDialog::getOpenFileName(this, tr("Select Audio File"), QString(),
+                                    tr("Audio Files (*.wav *.ogg *.mp3 *.flac);;All Files (*)"));
 
   if (!filePath.isEmpty()) {
     setSelectedAudioAsset(filePath);
@@ -408,7 +440,7 @@ void NMAudioMixerPanel::onBrowseAudioClicked() {
   }
 }
 
-void NMAudioMixerPanel::onAssetSelected(const QString &assetPath) {
+void NMAudioMixerPanel::onAssetSelected(const QString& assetPath) {
   setSelectedAudioAsset(assetPath);
 }
 
@@ -439,8 +471,8 @@ void NMAudioMixerPanel::onUpdatePosition() {
 // ============================================================================
 
 void NMAudioMixerPanel::setupUI() {
-  QWidget *contentWidget = new QWidget(this);
-  auto *mainLayout = new QVBoxLayout(contentWidget);
+  QWidget* contentWidget = new QWidget(this);
+  auto* mainLayout = new QVBoxLayout(contentWidget);
   mainLayout->setContentsMargins(8, 8, 8, 8);
   mainLayout->setSpacing(8);
 
@@ -462,9 +494,9 @@ void NMAudioMixerPanel::setupUI() {
   setWidget(contentWidget);
 }
 
-void NMAudioMixerPanel::setupMusicPreviewControls(QWidget *parent) {
+void NMAudioMixerPanel::setupMusicPreviewControls(QWidget* parent) {
   m_previewGroup = new QGroupBox(tr("Now Playing"), parent);
-  auto *layout = new QVBoxLayout(m_previewGroup);
+  auto* layout = new QVBoxLayout(m_previewGroup);
 
   // Current track label
   m_currentTrackLabel = new QLabel(tr("No track selected"), m_previewGroup);
@@ -473,36 +505,32 @@ void NMAudioMixerPanel::setupMusicPreviewControls(QWidget *parent) {
   layout->addWidget(m_currentTrackLabel);
 
   // Transport controls row
-  auto *transportLayout = new QHBoxLayout();
-  auto &iconMgr = NMIconManager::instance();
+  auto* transportLayout = new QHBoxLayout();
+  auto& iconMgr = NMIconManager::instance();
 
   m_playBtn = new QPushButton(tr("Play"), m_previewGroup);
   m_playBtn->setIcon(iconMgr.getIcon("play", 16));
   m_playBtn->setToolTip(tr("Start playback (Space)"));
-  connect(m_playBtn, &QPushButton::clicked, this,
-          &NMAudioMixerPanel::onPlayClicked);
+  connect(m_playBtn, &QPushButton::clicked, this, &NMAudioMixerPanel::onPlayClicked);
   transportLayout->addWidget(m_playBtn);
 
   m_pauseBtn = new QPushButton(tr("Pause"), m_previewGroup);
   m_pauseBtn->setIcon(iconMgr.getIcon("pause", 16));
   m_pauseBtn->setToolTip(tr("Pause playback (Space)"));
-  connect(m_pauseBtn, &QPushButton::clicked, this,
-          &NMAudioMixerPanel::onPauseClicked);
+  connect(m_pauseBtn, &QPushButton::clicked, this, &NMAudioMixerPanel::onPauseClicked);
   transportLayout->addWidget(m_pauseBtn);
 
   m_stopBtn = new QPushButton(tr("Stop"), m_previewGroup);
   m_stopBtn->setIcon(iconMgr.getIcon("stop", 16));
   m_stopBtn->setToolTip(tr("Stop playback (Escape)"));
-  connect(m_stopBtn, &QPushButton::clicked, this,
-          &NMAudioMixerPanel::onStopClicked);
+  connect(m_stopBtn, &QPushButton::clicked, this, &NMAudioMixerPanel::onStopClicked);
   transportLayout->addWidget(m_stopBtn);
 
   transportLayout->addStretch();
 
   m_loopCheckBox = new QCheckBox(tr("Loop"), m_previewGroup);
   m_loopCheckBox->setToolTip(tr("Loop playback (L)"));
-  connect(m_loopCheckBox, &QCheckBox::toggled, this,
-          &NMAudioMixerPanel::onLoopToggled);
+  connect(m_loopCheckBox, &QCheckBox::toggled, this, &NMAudioMixerPanel::onLoopToggled);
   transportLayout->addWidget(m_loopCheckBox);
 
   layout->addLayout(transportLayout);
@@ -512,14 +540,12 @@ void NMAudioMixerPanel::setupMusicPreviewControls(QWidget *parent) {
   m_seekSlider->setRange(0, 1000);
   m_seekSlider->setValue(0);
   m_seekSlider->setEnabled(false);
-  connect(m_seekSlider, &QSlider::sliderMoved, this,
-          &NMAudioMixerPanel::onSeekSliderMoved);
-  connect(m_seekSlider, &QSlider::sliderReleased, this,
-          &NMAudioMixerPanel::onSeekSliderReleased);
+  connect(m_seekSlider, &QSlider::sliderMoved, this, &NMAudioMixerPanel::onSeekSliderMoved);
+  connect(m_seekSlider, &QSlider::sliderReleased, this, &NMAudioMixerPanel::onSeekSliderReleased);
   layout->addWidget(m_seekSlider);
 
   // Position/Duration row
-  auto *posLayout = new QHBoxLayout();
+  auto* posLayout = new QHBoxLayout();
   m_positionLabel = new QLabel("00:00.000", m_previewGroup);
   m_positionLabel->setStyleSheet("font-family: monospace;");
   posLayout->addWidget(m_positionLabel);
@@ -536,27 +562,26 @@ void NMAudioMixerPanel::setupMusicPreviewControls(QWidget *parent) {
   m_browseBtn = new QPushButton(tr("Browse Audio..."), m_previewGroup);
   m_browseBtn->setIcon(iconMgr.getIcon("folder-open", 16));
   m_browseBtn->setToolTip(tr("Select an audio file to preview"));
-  connect(m_browseBtn, &QPushButton::clicked, this,
-          &NMAudioMixerPanel::onBrowseAudioClicked);
+  connect(m_browseBtn, &QPushButton::clicked, this, &NMAudioMixerPanel::onBrowseAudioClicked);
   layout->addWidget(m_browseBtn);
 
-  if (auto *mainLayout = qobject_cast<QVBoxLayout *>(parent->layout())) {
+  if (auto* mainLayout = qobject_cast<QVBoxLayout*>(parent->layout())) {
     mainLayout->addWidget(m_previewGroup);
   }
 }
 
-void NMAudioMixerPanel::setupMixerControls(QWidget *parent) {
+void NMAudioMixerPanel::setupMixerControls(QWidget* parent) {
   m_mixerGroup = new QGroupBox(tr("Mixer"), parent);
-  auto *layout = new QHBoxLayout(m_mixerGroup);
+  auto* layout = new QHBoxLayout(m_mixerGroup);
   layout->setSpacing(4);
 
   // Master channel
-  auto *masterWidget = new QWidget(m_mixerGroup);
-  auto *masterLayout = new QVBoxLayout(masterWidget);
+  auto* masterWidget = new QWidget(m_mixerGroup);
+  auto* masterLayout = new QVBoxLayout(masterWidget);
   masterLayout->setSpacing(2);
   masterLayout->setContentsMargins(4, 4, 4, 4);
 
-  auto *masterLabel = new QLabel("MASTER", masterWidget);
+  auto* masterLabel = new QLabel("MASTER", masterWidget);
   masterLabel->setAlignment(Qt::AlignCenter);
   masterLabel->setStyleSheet(
       QString("font-weight: bold; color: %1;").arg(CHANNEL_COLORS[0].name()));
@@ -578,7 +603,7 @@ void NMAudioMixerPanel::setupMixerControls(QWidget *parent) {
   layout->addWidget(masterWidget);
 
   // Separator
-  auto *separator = new QFrame(m_mixerGroup);
+  auto* separator = new QFrame(m_mixerGroup);
   separator->setFrameShape(QFrame::VLine);
   separator->setFrameShadow(QFrame::Sunken);
   layout->addWidget(separator);
@@ -586,8 +611,8 @@ void NMAudioMixerPanel::setupMixerControls(QWidget *parent) {
   // Channel strips
   m_channelControls.clear();
   for (int i = 0; i < NUM_CHANNELS; ++i) {
-    auto *channelWidget = new QWidget(m_mixerGroup);
-    auto *channelLayout = new QVBoxLayout(channelWidget);
+    auto* channelWidget = new QWidget(m_mixerGroup);
+    auto* channelLayout = new QVBoxLayout(channelWidget);
     channelLayout->setSpacing(2);
     channelLayout->setContentsMargins(4, 4, 4, 4);
 
@@ -597,8 +622,8 @@ void NMAudioMixerPanel::setupMixerControls(QWidget *parent) {
     // Channel label
     ctrl.nameLabel = new QLabel(CHANNEL_NAMES[i + 1], channelWidget);
     ctrl.nameLabel->setAlignment(Qt::AlignCenter);
-    ctrl.nameLabel->setStyleSheet(QString("font-weight: bold; color: %1;")
-                                      .arg(CHANNEL_COLORS[i + 1].name()));
+    ctrl.nameLabel->setStyleSheet(
+        QString("font-weight: bold; color: %1;").arg(CHANNEL_COLORS[i + 1].name()));
     channelLayout->addWidget(ctrl.nameLabel);
 
     // Volume slider
@@ -606,40 +631,32 @@ void NMAudioMixerPanel::setupMixerControls(QWidget *parent) {
     ctrl.volumeSlider->setRange(0, 100);
     ctrl.volumeSlider->setValue(DEFAULT_VOLUMES[i + 1]);
     ctrl.volumeSlider->setMinimumHeight(120);
-    ctrl.volumeSlider->setToolTip(
-        tr("%1 channel volume").arg(CHANNEL_NAMES[i + 1]));
+    ctrl.volumeSlider->setToolTip(tr("%1 channel volume").arg(CHANNEL_NAMES[i + 1]));
     connect(ctrl.volumeSlider, &QSlider::valueChanged, this,
             &NMAudioMixerPanel::onChannelVolumeChanged);
     channelLayout->addWidget(ctrl.volumeSlider, 1, Qt::AlignHCenter);
 
     // Volume label
-    ctrl.volumeLabel =
-        new QLabel(QString("%1%").arg(DEFAULT_VOLUMES[i + 1]), channelWidget);
+    ctrl.volumeLabel = new QLabel(QString("%1%").arg(DEFAULT_VOLUMES[i + 1]), channelWidget);
     ctrl.volumeLabel->setAlignment(Qt::AlignCenter);
     channelLayout->addWidget(ctrl.volumeLabel);
 
     // Mute/Solo buttons
-    auto *btnLayout = new QHBoxLayout();
-    const auto &buttonSizes = NMStyleManager::instance().buttonSizes();
+    auto* btnLayout = new QHBoxLayout();
+    const auto& buttonSizes = NMStyleManager::instance().buttonSizes();
 
     ctrl.muteButton = new QPushButton("M", channelWidget);
     ctrl.muteButton->setCheckable(true);
-    NMStyleManager::configureSquareButton(ctrl.muteButton,
-                                          buttonSizes.squareMedium);
-    ctrl.muteButton->setToolTip(
-        tr("Mute %1 channel").arg(CHANNEL_NAMES[i + 1]));
-    connect(ctrl.muteButton, &QPushButton::toggled, this,
-            &NMAudioMixerPanel::onChannelMuteToggled);
+    NMStyleManager::configureSquareButton(ctrl.muteButton, buttonSizes.squareMedium);
+    ctrl.muteButton->setToolTip(tr("Mute %1 channel").arg(CHANNEL_NAMES[i + 1]));
+    connect(ctrl.muteButton, &QPushButton::toggled, this, &NMAudioMixerPanel::onChannelMuteToggled);
     btnLayout->addWidget(ctrl.muteButton);
 
     ctrl.soloButton = new QPushButton("S", channelWidget);
     ctrl.soloButton->setCheckable(true);
-    NMStyleManager::configureSquareButton(ctrl.soloButton,
-                                          buttonSizes.squareMedium);
-    ctrl.soloButton->setToolTip(
-        tr("Solo %1 channel").arg(CHANNEL_NAMES[i + 1]));
-    connect(ctrl.soloButton, &QPushButton::toggled, this,
-            &NMAudioMixerPanel::onChannelSoloToggled);
+    NMStyleManager::configureSquareButton(ctrl.soloButton, buttonSizes.squareMedium);
+    ctrl.soloButton->setToolTip(tr("Solo %1 channel").arg(CHANNEL_NAMES[i + 1]));
+    connect(ctrl.soloButton, &QPushButton::toggled, this, &NMAudioMixerPanel::onChannelSoloToggled);
     btnLayout->addWidget(ctrl.soloButton);
 
     channelLayout->addLayout(btnLayout);
@@ -648,16 +665,16 @@ void NMAudioMixerPanel::setupMixerControls(QWidget *parent) {
     m_channelControls.push_back(ctrl);
   }
 
-  if (auto *mainLayout = qobject_cast<QVBoxLayout *>(parent->layout())) {
+  if (auto* mainLayout = qobject_cast<QVBoxLayout*>(parent->layout())) {
     mainLayout->addWidget(m_mixerGroup);
   }
 }
 
-void NMAudioMixerPanel::setupCrossfadeControls(QWidget *parent) {
+void NMAudioMixerPanel::setupCrossfadeControls(QWidget* parent) {
   m_crossfadeGroup = new QGroupBox(tr("Crossfade"), parent);
   m_crossfadeGroup->setCheckable(true);
   m_crossfadeGroup->setChecked(false);
-  auto *layout = new QHBoxLayout(m_crossfadeGroup);
+  auto* layout = new QHBoxLayout(m_crossfadeGroup);
 
   layout->addWidget(new QLabel(tr("Duration:"), m_crossfadeGroup));
 
@@ -666,54 +683,49 @@ void NMAudioMixerPanel::setupCrossfadeControls(QWidget *parent) {
   m_crossfadeDurationSpin->setValue(1000.0);
   m_crossfadeDurationSpin->setSuffix(" ms");
   m_crossfadeDurationSpin->setToolTip(tr("Crossfade duration in milliseconds"));
-  connect(m_crossfadeDurationSpin,
-          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+  connect(m_crossfadeDurationSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
           &NMAudioMixerPanel::onCrossfadeDurationChanged);
   layout->addWidget(m_crossfadeDurationSpin);
 
   layout->addStretch();
 
-  auto &iconMgr = NMIconManager::instance();
+  auto& iconMgr = NMIconManager::instance();
   m_crossfadeBtn = new QPushButton(tr("Crossfade To..."), m_crossfadeGroup);
   m_crossfadeBtn->setIcon(iconMgr.getIcon("refresh", 16));
   m_crossfadeBtn->setToolTip(tr("Start crossfade to another track"));
-  connect(m_crossfadeBtn, &QPushButton::clicked, this,
-          &NMAudioMixerPanel::onCrossfadeToClicked);
+  connect(m_crossfadeBtn, &QPushButton::clicked, this, &NMAudioMixerPanel::onCrossfadeToClicked);
   layout->addWidget(m_crossfadeBtn);
 
-  if (auto *mainLayout = qobject_cast<QVBoxLayout *>(parent->layout())) {
+  if (auto* mainLayout = qobject_cast<QVBoxLayout*>(parent->layout())) {
     mainLayout->addWidget(m_crossfadeGroup);
   }
 }
 
-void NMAudioMixerPanel::setupDuckingControls(QWidget *parent) {
+void NMAudioMixerPanel::setupDuckingControls(QWidget* parent) {
   m_duckingGroup = new QGroupBox(tr("Auto-Ducking"), parent);
   m_duckingGroup->setCheckable(true);
   m_duckingGroup->setChecked(false);
-  auto *layout = new QVBoxLayout(m_duckingGroup);
+  auto* layout = new QVBoxLayout(m_duckingGroup);
 
   // Enable checkbox
-  m_duckingEnabledCheckBox = new QCheckBox(
-      tr("Enable Auto-Ducking (music ducks when voice plays)"), m_duckingGroup);
+  m_duckingEnabledCheckBox =
+      new QCheckBox(tr("Enable Auto-Ducking (music ducks when voice plays)"), m_duckingGroup);
   m_duckingEnabledCheckBox->setChecked(true);
-  m_duckingEnabledCheckBox->setToolTip(
-      tr("Automatically reduce music volume when voice plays"));
+  m_duckingEnabledCheckBox->setToolTip(tr("Automatically reduce music volume when voice plays"));
   connect(m_duckingEnabledCheckBox, &QCheckBox::toggled, this,
           &NMAudioMixerPanel::onDuckingEnabledToggled);
   layout->addWidget(m_duckingEnabledCheckBox);
 
   // Parameters row
-  auto *paramsLayout = new QHBoxLayout();
+  auto* paramsLayout = new QHBoxLayout();
 
   paramsLayout->addWidget(new QLabel(tr("Duck Amount:"), m_duckingGroup));
   m_duckAmountSpin = new QDoubleSpinBox(m_duckingGroup);
   m_duckAmountSpin->setRange(0.0, 100.0);
   m_duckAmountSpin->setValue(30.0);
   m_duckAmountSpin->setSuffix(" %");
-  m_duckAmountSpin->setToolTip(
-      tr("How much to reduce music volume when voice plays"));
-  connect(m_duckAmountSpin,
-          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+  m_duckAmountSpin->setToolTip(tr("How much to reduce music volume when voice plays"));
+  connect(m_duckAmountSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
           &NMAudioMixerPanel::onDuckAmountChanged);
   paramsLayout->addWidget(m_duckAmountSpin);
 
@@ -722,10 +734,8 @@ void NMAudioMixerPanel::setupDuckingControls(QWidget *parent) {
   m_duckAttackSpin->setRange(0.0, 1000.0);
   m_duckAttackSpin->setValue(200.0);
   m_duckAttackSpin->setSuffix(" ms");
-  m_duckAttackSpin->setToolTip(
-      tr("How quickly music fades down when voice starts"));
-  connect(m_duckAttackSpin,
-          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+  m_duckAttackSpin->setToolTip(tr("How quickly music fades down when voice starts"));
+  connect(m_duckAttackSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
           &NMAudioMixerPanel::onDuckAttackChanged);
   paramsLayout->addWidget(m_duckAttackSpin);
 
@@ -734,21 +744,19 @@ void NMAudioMixerPanel::setupDuckingControls(QWidget *parent) {
   m_duckReleaseSpin->setRange(0.0, 2000.0);
   m_duckReleaseSpin->setValue(200.0);
   m_duckReleaseSpin->setSuffix(" ms");
-  m_duckReleaseSpin->setToolTip(
-      tr("How quickly music returns when voice stops"));
-  connect(m_duckReleaseSpin,
-          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+  m_duckReleaseSpin->setToolTip(tr("How quickly music returns when voice stops"));
+  connect(m_duckReleaseSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
           &NMAudioMixerPanel::onDuckReleaseChanged);
   paramsLayout->addWidget(m_duckReleaseSpin);
 
   layout->addLayout(paramsLayout);
 
-  if (auto *mainLayout = qobject_cast<QVBoxLayout *>(parent->layout())) {
+  if (auto* mainLayout = qobject_cast<QVBoxLayout*>(parent->layout())) {
     mainLayout->addWidget(m_duckingGroup);
   }
 }
 
-void NMAudioMixerPanel::setupAssetBrowser(QWidget *) {
+void NMAudioMixerPanel::setupAssetBrowser(QWidget*) {
   // Asset browser integration is handled via onBrowseAudioClicked and signals
 }
 
@@ -797,7 +805,7 @@ void NMAudioMixerPanel::resetPlaybackUI() {
   updatePlaybackState();
 }
 
-void NMAudioMixerPanel::setPlaybackError(const QString &message) {
+void NMAudioMixerPanel::setPlaybackError(const QString& message) {
   if (m_currentTrackLabel) {
     m_currentTrackLabel->setText(QString::fromUtf8("❌ ") + message);
   }
@@ -821,12 +829,12 @@ void NMAudioMixerPanel::applyChannelVolumes() {
 
   // Apply master volume
   if (m_masterVolumeSlider) {
-    m_previewAudioManager->setMasterVolume(
-        static_cast<f32>(m_masterVolumeSlider->value()) / 100.0f);
+    m_previewAudioManager->setMasterVolume(static_cast<f32>(m_masterVolumeSlider->value()) /
+                                           100.0f);
   }
 
   // Apply channel volumes
-  for (const auto &ctrl : m_channelControls) {
+  for (const auto& ctrl : m_channelControls) {
     if (ctrl.volumeSlider) {
       m_previewAudioManager->setChannelVolume(
           ctrl.channel, static_cast<f32>(ctrl.volumeSlider->value()) / 100.0f);
@@ -841,7 +849,7 @@ void NMAudioMixerPanel::updateSoloState() {
   // If no solo is active, unmute all channels
   if (m_soloChannelIndex < 0) {
     for (size_t i = 0; i < m_channelControls.size(); ++i) {
-      auto &ctrl = m_channelControls[i];
+      auto& ctrl = m_channelControls[i];
       // Only unmute if the mute button is not checked
       if (!ctrl.muteButton->isChecked()) {
         m_previewAudioManager->setChannelMuted(ctrl.channel, false);
@@ -851,20 +859,65 @@ void NMAudioMixerPanel::updateSoloState() {
   } else {
     // Solo is active - mute all except the soloed channel
     for (size_t i = 0; i < m_channelControls.size(); ++i) {
-      auto &ctrl = m_channelControls[i];
+      auto& ctrl = m_channelControls[i];
       bool isSoloed = (static_cast<int>(i) == m_soloChannelIndex);
 
       if (isSoloed) {
         m_previewAudioManager->setChannelMuted(ctrl.channel, false);
-        ctrl.soloButton->setStyleSheet(
-            "QPushButton { background-color: #FFC107; color: black; "
-            "font-weight: bold; }");
+        ctrl.soloButton->setStyleSheet("QPushButton { background-color: #FFC107; color: black; "
+                                       "font-weight: bold; }");
       } else {
         m_previewAudioManager->setChannelMuted(ctrl.channel, true);
         ctrl.soloButton->setChecked(false);
         ctrl.soloButton->setStyleSheet("");
       }
     }
+  }
+}
+
+void NMAudioMixerPanel::showAudioWarningBanner(const QString& message) {
+  if (!m_audioWarningBanner) {
+    m_audioWarningBanner = new QFrame(widget());
+    m_audioWarningBanner->setObjectName("AudioWarningBanner");
+    m_audioWarningBanner->setStyleSheet("QFrame#AudioWarningBanner {"
+                                        "  background-color: #d97706;"
+                                        "  border: 1px solid #f59e0b;"
+                                        "  border-radius: 4px;"
+                                        "  padding: 6px 12px;"
+                                        "  margin: 4px 8px;"
+                                        "}");
+
+    auto* bannerLayout = new QHBoxLayout(m_audioWarningBanner);
+    bannerLayout->setContentsMargins(8, 4, 8, 4);
+    bannerLayout->setSpacing(8);
+
+    // Warning icon
+    auto* iconLabel = new QLabel(QString::fromUtf8("\xE2\x9A\xA0"), // ⚠
+                                 m_audioWarningBanner);
+    iconLabel->setStyleSheet("font-size: 14px; color: #fffbeb;");
+    bannerLayout->addWidget(iconLabel);
+
+    m_audioWarningLabel = new QLabel(m_audioWarningBanner);
+    m_audioWarningLabel->setStyleSheet("color: #fffbeb; font-weight: bold;");
+    m_audioWarningLabel->setWordWrap(true);
+    bannerLayout->addWidget(m_audioWarningLabel);
+
+    bannerLayout->addStretch();
+
+    // Insert banner at the top of the main widget
+    if (auto* layout = qobject_cast<QVBoxLayout*>(widget()->layout())) {
+      // Insert at the very top (index 0)
+      layout->insertWidget(0, m_audioWarningBanner);
+    }
+  }
+
+  m_audioWarningLabel->setText(message);
+  m_audioWarningBanner->setVisible(true);
+}
+
+void NMAudioMixerPanel::hideAudioWarningBanner() {
+  if (m_audioWarningBanner) {
+    m_audioWarningBanner->setVisible(false);
   }
 }
 
