@@ -114,6 +114,14 @@ struct PanelAccents {
 };
 
 /**
+ * @brief Theme selection
+ */
+enum class Theme {
+  Dark,  // Dark theme (default)
+  Light  // Light theme
+};
+
+/**
  * @brief Color palette for the editor theme
  */
 struct EditorPalette {
@@ -225,6 +233,22 @@ public:
    * @brief Apply the dark theme to the application
    */
   void applyDarkTheme();
+
+  /**
+   * @brief Apply the light theme to the application
+   */
+  void applyLightTheme();
+
+  /**
+   * @brief Apply a specific theme to the application
+   * @param theme Theme to apply
+   */
+  void applyTheme(Theme theme);
+
+  /**
+   * @brief Get the current theme
+   */
+  [[nodiscard]] Theme currentTheme() const { return m_currentTheme; }
 
   /**
    * @brief Get the current color palette
@@ -355,8 +379,11 @@ private:
 
   void setupFonts();
   void setupHighDpi();
+  EditorPalette createDarkPalette() const;
+  EditorPalette createLightPalette() const;
 
   QApplication *m_app = nullptr;
+  Theme m_currentTheme = Theme::Dark;
   EditorPalette m_palette;
   SpacingTokens m_spacing;
   RadiusTokens m_radius;
