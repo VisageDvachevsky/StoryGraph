@@ -159,6 +159,8 @@ public:
    * @brief Configure whether to validate asset references
    */
   void setValidateAssets(bool validate);
+
+  /**
    * @brief Set the source code for context in error messages
    * @param source The full source code string
    */
