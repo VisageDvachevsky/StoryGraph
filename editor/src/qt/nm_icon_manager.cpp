@@ -24,7 +24,7 @@ void NMIconManager::initializeIcons() {
   //
   // Icon Pack: Lucide (https://lucide.dev)
   // License: ISC License
-  // Total Icons: 138 mapped icons
+  // Total Icons: 146 mapped icons
 
   // Icon name mapping to Lucide icon files
   // Format: m_iconFilePaths["icon-name"] = ":/icons/lucide/icon-file.svg";
@@ -56,6 +56,16 @@ void NMIconManager::initializeIcons() {
   m_iconFilePaths["audio-waveform"] = ":/icons/lucide/audio-waveform.svg";
   m_iconFilePaths["microphone"] = ":/icons/lucide/mic.svg";
   m_iconFilePaths["microphone-off"] = ":/icons/lucide/mic-off.svg";
+
+  // Debug and Script Inspector Icons
+  m_iconFilePaths["check"] = ":/icons/lucide/check.svg";
+  m_iconFilePaths["clear"] = ":/icons/lucide/x-circle.svg";
+  m_iconFilePaths["flag"] = ":/icons/lucide/flag.svg";
+  m_iconFilePaths["history"] = ":/icons/lucide/history.svg";
+  m_iconFilePaths["step-into"] = ":/icons/lucide/arrow-down-to-line.svg";
+  m_iconFilePaths["step-out"] = ":/icons/lucide/arrow-up-to-line.svg";
+  m_iconFilePaths["step-over"] = ":/icons/lucide/arrow-right-to-line.svg";
+  m_iconFilePaths["wait"] = ":/icons/lucide/loader.svg";
 
   // Edit Operations
   m_iconFilePaths["copy"] = ":/icons/lucide/copy.svg";
@@ -232,7 +242,7 @@ void NMIconManager::initializeIcons() {
   // Edit Actions
   m_iconFilePaths["edit-rename"] = ":/icons/lucide/pencil.svg";
 
-  // Total icons mapped: 150
+  // Total icons mapped: 158
 }
 
 QIcon NMIconManager::getIcon(const QString &iconName, int size,
