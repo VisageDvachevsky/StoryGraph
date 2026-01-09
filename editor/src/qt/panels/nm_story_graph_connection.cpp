@@ -97,7 +97,25 @@ void NMGraphConnectionItem::paint(QPainter *painter,
 
   painter->setRenderHint(QPainter::Antialiasing);
 
-  // Determine connection color based on branch type
+  // Issue #345: Determine connection type for visual differentiation
+  enum class ConnectionType { SameScene, SceneTransition, CrossScene };
+  ConnectionType connType = ConnectionType::SameScene;
+
+  if (m_startNode && m_endNode) {
+    const bool startIsScene = m_startNode->isSceneNode();
+    const bool endIsScene = m_endNode->isSceneNode();
+
+    if (startIsScene || endIsScene) {
+      // Connection involves a scene node
+      connType = ConnectionType::SceneTransition;
+    }
+    if (startIsScene && endIsScene) {
+      // Both ends are scene nodes - cross-scene connection
+      connType = ConnectionType::CrossScene;
+    }
+  }
+
+  // Determine connection color based on branch type and connection type
   QColor lineColor = palette.connectionLine;
   if (!m_label.isEmpty()) {
     // Use different colors for different branch types
@@ -118,16 +136,47 @@ void NMGraphConnectionItem::paint(QPainter *painter,
     }
   }
 
-  // Issue #325: Visual feedback for selected connections
+  // Issue #345: Apply connection type styling
   qreal lineWidth = 2;
-  if (isSelected()) {
-    lineColor = lineColor.lighter(150); // Brighten when selected
-    lineWidth = 3; // Make thicker when selected
+  Qt::PenStyle penStyle = Qt::SolidLine;
+
+  switch (connType) {
+  case ConnectionType::SceneTransition:
+    // Scene transitions: thicker, scene-colored line
+    lineColor = QColor(100, 200, 150); // Scene green
+    lineWidth = 2.5;
+    break;
+  case ConnectionType::CrossScene:
+    // Cross-scene: dashed line indicating major scene change
+    lineColor = QColor(255, 200, 100); // Warm orange for emphasis
+    lineWidth = 2.5;
+    penStyle = Qt::DashLine;
+    break;
+  case ConnectionType::SameScene:
+  default:
+    // Same-scene connections: standard styling (already set)
+    break;
   }
 
-  painter->setPen(QPen(lineColor, lineWidth));
+  // Issue #325: Visual feedback for selected connections
+  if (isSelected()) {
+    lineColor = lineColor.lighter(150); // Brighten when selected
+    lineWidth = lineWidth + 1; // Make thicker when selected
+  }
+
+  QPen connectionPen(lineColor, lineWidth, penStyle);
+  if (penStyle == Qt::DashLine) {
+    connectionPen.setDashPattern({6, 4});
+  }
+  painter->setPen(connectionPen);
   painter->setBrush(Qt::NoBrush);
   painter->drawPath(m_path);
+
+  // Issue #345: Draw scene transition indicator icon at midpoint
+  if (connType == ConnectionType::SceneTransition || connType == ConnectionType::CrossScene) {
+    QPointF midPoint = m_path.pointAtPercent(0.5);
+    drawSceneTransitionIndicator(painter, midPoint, connType == ConnectionType::CrossScene);
+  }
 
   // Draw edge label if set
   if (!m_label.isEmpty()) {
@@ -164,6 +213,54 @@ void NMGraphConnectionItem::paint(QPainter *painter,
   }
 
   // Restore painter state
+  painter->restore();
+}
+
+void NMGraphConnectionItem::drawSceneTransitionIndicator(QPainter *painter,
+                                                          const QPointF &pos,
+                                                          bool isCrossScene) {
+  // Issue #345: Draw a small visual indicator showing scene transition
+  // For scene transitions: overlapping rectangle icon
+  // For cross-scene: double rectangle icon with arrow
+
+  painter->save();
+  painter->setRenderHint(QPainter::Antialiasing, true);
+
+  const qreal size = 14.0;
+  const QColor iconColor = isCrossScene ? QColor(255, 200, 100, 220) // Warm orange
+                                        : QColor(100, 200, 150, 220); // Scene green
+  const QColor borderColor = iconColor.darker(130);
+
+  // Draw two overlapping rectangles representing scene transition
+  QRectF rect1(pos.x() - size/2 - 2, pos.y() - size/2 - 2, size * 0.6, size * 0.6);
+  QRectF rect2(pos.x() - size/2 + 4, pos.y() - size/2 + 2, size * 0.6, size * 0.6);
+
+  // Draw background for icon area
+  painter->setBrush(QColor(30, 34, 42, 200));
+  painter->setPen(Qt::NoPen);
+  painter->drawEllipse(pos, size * 0.6, size * 0.6);
+
+  // Draw first rectangle (back)
+  painter->setBrush(iconColor.darker(140));
+  painter->setPen(QPen(borderColor.darker(120), 1));
+  painter->drawRoundedRect(rect1, 2, 2);
+
+  // Draw second rectangle (front)
+  painter->setBrush(iconColor);
+  painter->setPen(QPen(borderColor, 1));
+  painter->drawRoundedRect(rect2, 2, 2);
+
+  // For cross-scene, add a small arrow indicator
+  if (isCrossScene) {
+    painter->setPen(QPen(QColor(255, 255, 255, 200), 1.5));
+    QPointF arrowStart = pos + QPointF(size * 0.3, 0);
+    QPointF arrowEnd = pos + QPointF(size * 0.5, 0);
+    painter->drawLine(arrowStart, arrowEnd);
+    // Arrow head
+    painter->drawLine(arrowEnd, arrowEnd + QPointF(-3, -2));
+    painter->drawLine(arrowEnd, arrowEnd + QPointF(-3, 2));
+  }
+
   painter->restore();
 }
 

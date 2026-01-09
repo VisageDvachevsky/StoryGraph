@@ -728,6 +728,66 @@ void NMStoryGraphScene::setReadOnly(bool readOnly) {
   }
 }
 
+// ============================================================================
+// Scene Container Visualization (Issue #345)
+// ============================================================================
+
+void NMStoryGraphScene::setSceneContainersVisible(bool enabled) {
+  if (m_showSceneContainers == enabled) {
+    return;
+  }
+  m_showSceneContainers = enabled;
+  update(); // Trigger repaint
+}
+
+QList<NMGraphNodeItem *>
+NMStoryGraphScene::findDialogueNodesInScene(NMGraphNodeItem *sceneNode) const {
+  QList<NMGraphNodeItem *> result;
+  if (!sceneNode || !sceneNode->isSceneNode()) {
+    return result;
+  }
+
+  // Build adjacency list for outgoing connections
+  QHash<uint64_t, QList<uint64_t>> adj;
+  for (auto *conn : m_connections) {
+    if (conn->startNode() && conn->endNode()) {
+      adj[conn->startNode()->nodeId()].append(conn->endNode()->nodeId());
+    }
+  }
+
+  // BFS from scene node, stop at other Scene nodes
+  QSet<uint64_t> visited;
+  QList<uint64_t> queue;
+  queue.append(sceneNode->nodeId());
+  visited.insert(sceneNode->nodeId());
+
+  while (!queue.isEmpty()) {
+    uint64_t currentId = queue.takeFirst();
+
+    for (uint64_t nextId : adj.value(currentId)) {
+      if (visited.contains(nextId)) {
+        continue;
+      }
+      visited.insert(nextId);
+
+      auto *nextNode = findNode(nextId);
+      if (!nextNode) {
+        continue;
+      }
+
+      // Stop at Scene nodes - they belong to their own container
+      if (nextNode->isSceneNode()) {
+        continue;
+      }
+
+      result.append(nextNode);
+      queue.append(nextId);
+    }
+  }
+
+  return result;
+}
+
 void NMStoryGraphScene::keyPressEvent(QKeyEvent *event) {
   // Block delete in read-only mode
   if (m_readOnly) {
@@ -820,6 +880,86 @@ void NMStoryGraphScene::drawBackground(QPainter *painter, const QRectF &rect) {
   if (rect.top() <= 0 && rect.bottom() >= 0) {
     painter->drawLine(QLineF(rect.left(), 0, rect.right(), 0));
   }
+
+  // Issue #345: Draw scene containers behind nodes
+  if (m_showSceneContainers) {
+    drawSceneContainers(painter, rect);
+  }
+}
+
+void NMStoryGraphScene::drawSceneContainers(QPainter *painter, const QRectF &viewRect) {
+  // Colors for scene containers - use scene's green accent with transparency
+  const QColor containerFill(100, 200, 150, 25);   // Very transparent green fill
+  const QColor containerBorder(100, 200, 150, 80); // Semi-transparent green border
+  const QColor labelColor(100, 200, 150, 160);     // Scene label color
+  constexpr qreal containerPadding = 25.0;
+  constexpr qreal cornerRadius = 16.0;
+
+  painter->save();
+  painter->setRenderHint(QPainter::Antialiasing, true);
+
+  // Draw containers for each scene node
+  for (auto *node : m_nodes) {
+    if (!node->isSceneNode()) {
+      continue;
+    }
+
+    // Calculate container bounds including all dialogue nodes in this scene
+    QRectF containerBounds = node->sceneBoundingRect();
+
+    QList<NMGraphNodeItem *> dialogueNodes = findDialogueNodesInScene(node);
+    for (auto *dialogueNode : dialogueNodes) {
+      containerBounds = containerBounds.united(dialogueNode->sceneBoundingRect());
+    }
+
+    // Add padding
+    containerBounds.adjust(-containerPadding, -containerPadding - 20, // Extra top for label
+                           containerPadding, containerPadding);
+
+    // Skip if container is not visible in view
+    if (!viewRect.intersects(containerBounds)) {
+      continue;
+    }
+
+    // Draw container fill
+    painter->setBrush(containerFill);
+    painter->setPen(Qt::NoPen);
+    painter->drawRoundedRect(containerBounds, cornerRadius, cornerRadius);
+
+    // Draw container border (dashed line)
+    QPen borderPen(containerBorder, 1.5, Qt::DashLine);
+    borderPen.setDashPattern({6, 4});
+    painter->setPen(borderPen);
+    painter->setBrush(Qt::NoBrush);
+    painter->drawRoundedRect(containerBounds, cornerRadius, cornerRadius);
+
+    // Draw scene label in top-left corner of container
+    const QString sceneLabel = node->sceneId().isEmpty() ? node->title() : node->sceneId();
+    painter->setPen(labelColor);
+    QFont labelFont = painter->font();
+    labelFont.setPointSize(9);
+    labelFont.setWeight(QFont::Medium);
+    painter->setFont(labelFont);
+
+    QRectF labelRect(containerBounds.left() + 10,
+                     containerBounds.top() + 4,
+                     containerBounds.width() - 20,
+                     18);
+    painter->drawText(labelRect, Qt::AlignLeft | Qt::AlignTop, sceneLabel);
+
+    // If there are embedded dialogue nodes, show count indicator
+    if (!dialogueNodes.isEmpty()) {
+      QString countText = QString("(%1 nodes)").arg(dialogueNodes.size());
+      QFontMetrics fm(labelFont);
+      int labelWidth = fm.horizontalAdvance(sceneLabel);
+
+      painter->setPen(QColor(100, 200, 150, 100));
+      painter->drawText(labelRect.adjusted(labelWidth + 10, 0, 0, 0),
+                        Qt::AlignLeft | Qt::AlignTop, countText);
+    }
+  }
+
+  painter->restore();
 }
 
 // ============================================================================
