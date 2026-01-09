@@ -278,6 +278,8 @@ EditorPalette NMStyleManager::createLightPalette() const {
   p.dropZone = QColor(0xdb, 0xea, 0xfe);
 
   return p;
+}
+
 void NMStyleManager::configureToolbarButton(QAbstractButton *button,
                                              const QIcon &icon) {
   if (!button)
