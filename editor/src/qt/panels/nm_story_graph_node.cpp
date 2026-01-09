@@ -7,6 +7,7 @@
 
 #include <QAction>
 #include <QDir>
+#include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
 #include <QFrame>
@@ -628,6 +629,7 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event) {
   QAction* editLayoutAction = nullptr;
   QAction* editDialogueFlowAction = nullptr;
   QAction* openScriptAction = nullptr;
+  QAction* rebindSceneAction = nullptr;
 
   QAction* editAnimationsAction = nullptr;
 
@@ -648,6 +650,14 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event) {
       openScriptAction = menu.addAction("Open Script");
       openScriptAction->setIcon(iconMgr.getIcon("panel-script-editor", 16));
       openScriptAction->setToolTip("Open .nms script file");
+    }
+
+    // Add "Rebind Scene" action if validation error exists (Issue #332)
+    if (m_hasSceneValidationError) {
+      rebindSceneAction = menu.addAction("Rebind Scene...");
+      rebindSceneAction->setIcon(iconMgr.getIcon("link", 16));
+      rebindSceneAction->setToolTip(
+          "Fix orphaned scene reference by selecting a valid scene");
     }
 
     menu.addSeparator();
@@ -900,6 +910,63 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event) {
     if (ok && !newName.isEmpty() && newName != m_title) {
       setTitle(newName);
       qDebug() << "[StoryGraph] Renamed scene:" << m_sceneId << "to" << newName;
+    }
+  } else if (isScene && rebindSceneAction && selectedAction == rebindSceneAction) {
+    // Issue #332: Rebind orphaned scene reference to a valid scene
+    // Get project path to scan for available scenes
+    const QString rebindProjectPath = QString::fromStdString(
+        ProjectManager::instance().getProjectPath());
+    if (!rebindProjectPath.isEmpty()) {
+      // Scan for available .nmscene files
+      QDir scenesDir(rebindProjectPath + "/Scenes");
+      QStringList sceneFiles;
+      if (scenesDir.exists()) {
+        QDirIterator it(rebindProjectPath + "/Scenes", QStringList() << "*.nmscene",
+                        QDir::Files, QDirIterator::Subdirectories);
+        while (it.hasNext()) {
+          QString filePath = it.next();
+          QFileInfo fileInfo(filePath);
+          sceneFiles.append(fileInfo.completeBaseName());
+        }
+      }
+
+      if (sceneFiles.isEmpty()) {
+        QMessageBox::warning(nullptr, "No Scenes Found",
+                             "No .nmscene files found in Scenes folder.");
+      } else {
+        // Show selection dialog
+        bool ok = false;
+        QString selectedScene = QInputDialog::getItem(
+            nullptr, "Rebind Scene",
+            QString("Current scene '%1' not found.\nSelect a valid scene:")
+                .arg(m_sceneId),
+            sceneFiles, 0, false, &ok);
+
+        if (ok && !selectedScene.isEmpty()) {
+          // Rebind to new scene
+          setSceneId(selectedScene);
+          setTitle(selectedScene); // Update title to match new scene
+
+          // Clear validation error
+          setSceneValidationError(false);
+          setSceneValidationMessage(QString());
+          update();
+
+          qDebug() << "[StoryGraph] Rebound scene node" << m_nodeIdString
+                   << "from" << m_sceneId << "to" << selectedScene;
+
+          // Update validation status in parent panel
+          if (auto* rebindGraphScene = qobject_cast<NMStoryGraphScene*>(scene())) {
+            for (QObject* obj = rebindGraphScene; obj; obj = obj->parent()) {
+              if (auto* panel = qobject_cast<NMStoryGraphPanel*>(obj)) {
+                // Trigger validation status update
+                rebindGraphScene->updateSceneValidationState(rebindProjectPath);
+                break;
+              }
+            }
+          }
+        }
+      }
     }
   } else if (isDialogue && assignVoiceAction && selectedAction == assignVoiceAction) {
     // Emit signal to open voice clip assignment dialog
