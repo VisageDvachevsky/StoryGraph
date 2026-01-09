@@ -457,7 +457,7 @@ void NMScriptEditorPanel::setupToolBar() {
 
   // Toggle Preview action (issue #240)
   m_togglePreviewAction = m_toolBar->addAction(tr("👁️ Preview"));
-  m_togglePreviewAction->setIcon(iconMgr.getIcon("eye", 16));
+  m_togglePreviewAction->setIcon(iconMgr.getIcon("visible", 16));
   m_togglePreviewAction->setToolTip(
       tr("Toggle live scene preview (Ctrl+Shift+V)"));
   m_togglePreviewAction->setCheckable(true);
