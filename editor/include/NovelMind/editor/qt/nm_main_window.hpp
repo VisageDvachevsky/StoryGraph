@@ -34,6 +34,7 @@ class PanelMediatorManager;
 namespace NovelMind::editor::qt {
 
 // Forward declarations
+class NMCommandPalette;
 class NMDockPanel;
 class NMSceneViewPanel;
 class NMStoryGraphPanel;
@@ -313,7 +314,7 @@ private:
   void configureDocking();
   void applyLayoutPreset(LayoutPreset preset);
   void focusNextDock(bool reverse = false);
-  void showCommandPalette();
+  void showCommandPalette(bool panelsOnly = false);
   void addDockContextActions(QDockWidget *dock);
   void handleNavigationRequest(const QString &locationString);
   void toggleFocusMode(bool enabled);
