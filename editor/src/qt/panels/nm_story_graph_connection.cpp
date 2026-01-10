@@ -43,6 +43,24 @@ namespace NovelMind::editor::qt {
 NMGraphConnectionItem::NMGraphConnectionItem(NMGraphNodeItem *startNode,
                                              NMGraphNodeItem *endNode)
     : QGraphicsItem(), m_startNode(startNode), m_endNode(endNode) {
+  // Issue #395: Validate node pointers in constructor to prevent crashes
+  Q_ASSERT_X(startNode != nullptr, "NMGraphConnectionItem",
+             "startNode cannot be null");
+  Q_ASSERT_X(endNode != nullptr, "NMGraphConnectionItem",
+             "endNode cannot be null");
+
+  if (!startNode || !endNode) {
+    qCritical() << "[NMGraphConnectionItem] Attempted to create connection with "
+                   "null node!"
+                << "startNode:" << startNode << "endNode:" << endNode;
+    m_isValid = false;
+    // Still set flags so object can be properly cleaned up
+    setZValue(-1);
+    setFlag(QGraphicsItem::ItemIsSelectable, true);
+    return;
+  }
+
+  m_isValid = true;
   setZValue(-1); // Draw behind nodes
   setFlag(QGraphicsItem::ItemIsSelectable, true); // Issue #325: Allow selection for deletion
   // Don't call updatePath() in constructor - let the scene call it after adding
@@ -96,6 +114,30 @@ void NMGraphConnectionItem::paint(QPainter *painter,
   const auto &palette = NMStyleManager::instance().palette();
 
   painter->setRenderHint(QPainter::Antialiasing);
+
+  // Issue #395: Handle invalid connections with visual indication
+  if (!m_isValid || !m_startNode || !m_endNode) {
+    // Draw broken connection with red dashed line
+    QPen brokenPen(QColor(200, 50, 50), 2, Qt::DashLine);
+    brokenPen.setDashPattern({4, 4});
+    painter->setPen(brokenPen);
+    painter->setBrush(Qt::NoBrush);
+    painter->drawPath(m_path);
+
+    // Draw warning indicator
+    if (!m_path.isEmpty()) {
+      QPointF midPoint = m_path.pointAtPercent(0.5);
+      painter->setBrush(QColor(200, 50, 50, 220));
+      painter->setPen(Qt::NoPen);
+      painter->drawEllipse(midPoint, 8, 8);
+      painter->setPen(QPen(Qt::white, 2));
+      painter->drawText(QRectF(midPoint.x() - 6, midPoint.y() - 6, 12, 12),
+                        Qt::AlignCenter, "!");
+    }
+
+    painter->restore();
+    return;
+  }
 
   // Issue #345: Determine connection type for visual differentiation
   enum class ConnectionType { SameScene, SceneTransition, CrossScene };

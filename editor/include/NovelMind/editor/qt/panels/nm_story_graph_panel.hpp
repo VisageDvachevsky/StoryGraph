@@ -322,6 +322,7 @@ private:
   QPainterPath m_path;
   QString m_label;        // Branch label (e.g., "true", "Option 1")
   int m_branchIndex = -1; // -1 means no specific branch
+  bool m_isValid = true;  // Track validity state (Issue #395)
 };
 
 /**
