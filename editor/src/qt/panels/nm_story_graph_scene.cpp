@@ -578,10 +578,7 @@ QStringList NMStoryGraphScene::validateGraph() const {
 
     // End nodes don't need outgoing connections
     if (!hasOutgoing && !node->nodeType().contains("End", Qt::CaseInsensitive)) {
-      // Also skip entry nodes if they have no other nodes
-      if (!node->isEntry() || m_nodes.size() > 1) {
-        errors.append(tr("Dead end: '%1' has no outgoing connections").arg(node->title()));
-      }
+      errors.append(tr("Dead end: '%1' has no outgoing connections").arg(node->title()));
     }
   }
 
@@ -885,14 +882,10 @@ void NMStoryGraphScene::drawBackground(QPainter* painter, const QRectF& rect) {
 }
 
 void NMStoryGraphScene::drawSceneContainers(QPainter* painter, const QRectF& viewRect) {
-  // Issue #389: Colors for scene containers - use palette colors with transparency
-  const auto& palette = NMStyleManager::instance().palette();
-  QColor containerFill = palette.sceneContainerFill;
-  containerFill.setAlpha(25); // Very transparent green fill
-  QColor containerBorder = palette.sceneContainerBorder;
-  containerBorder.setAlpha(80); // Semi-transparent green border
-  QColor labelColor = palette.sceneContainerBorder;
-  labelColor.setAlpha(160); // Scene label color
+  // Colors for scene containers - use scene's green accent with transparency
+  const QColor containerFill(100, 200, 150, 25);   // Very transparent green fill
+  const QColor containerBorder(100, 200, 150, 80); // Semi-transparent green border
+  const QColor labelColor(100, 200, 150, 160);     // Scene label color
   constexpr qreal containerPadding = 25.0;
   constexpr qreal cornerRadius = 16.0;
 
@@ -952,10 +945,7 @@ void NMStoryGraphScene::drawSceneContainers(QPainter* painter, const QRectF& vie
       QFontMetrics fm(labelFont);
       int labelWidth = fm.horizontalAdvance(sceneLabel);
 
-      // Issue #389: Use palette color with transparency
-      QColor countColor = palette.sceneContainerBorder;
-      countColor.setAlpha(100);
-      painter->setPen(countColor);
+      painter->setPen(QColor(100, 200, 150, 100));
       painter->drawText(labelRect.adjusted(labelWidth + 10, 0, 0, 0), Qt::AlignLeft | Qt::AlignTop,
                         countText);
     }
