@@ -53,13 +53,13 @@ struct JsonValue {
  */
 class SimpleJsonParser {
 public:
-  static Result<JsonValue> parse(const std::string &json) {
+  static Result<JsonValue> parse(const std::string& json) {
     SimpleJsonParser parser(json);
     return parser.parseValue();
   }
 
 private:
-  explicit SimpleJsonParser(const std::string &json) : m_json(json), m_pos(0) {}
+  explicit SimpleJsonParser(const std::string& json) : m_json(json), m_pos(0) {}
 
   void skipWhitespace() {
     while (m_pos < m_json.size() && std::isspace(m_json[m_pos])) {
@@ -198,8 +198,7 @@ private:
     while (m_pos < m_json.size() && m_json[m_pos] != '"') {
       // Check string length limit to prevent hang
       if (++charCount > MAX_STRING_LENGTH) {
-        return Result<JsonValue>::error(
-            "String too long (> 1 MB) - possibly unterminated string");
+        return Result<JsonValue>::error("String too long (> 1 MB) - possibly unterminated string");
       }
 
       if (m_json[m_pos] == '\\' && m_pos + 1 < m_json.size()) {
@@ -247,8 +246,7 @@ private:
     if (m_json[m_pos] == '-') {
       ++m_pos;
     }
-    while (m_pos < m_json.size() &&
-           (std::isdigit(m_json[m_pos]) || m_json[m_pos] == '.')) {
+    while (m_pos < m_json.size() && (std::isdigit(m_json[m_pos]) || m_json[m_pos] == '.')) {
       ++m_pos;
     }
 
@@ -285,14 +283,14 @@ private:
     return Result<JsonValue>::error("Expected null");
   }
 
-  const std::string &m_json;
+  const std::string& m_json;
   size_t m_pos;
 };
 
 /**
  * @brief Helper to get string value from JsonValue object
  */
-std::string jsonGetString(const JsonValue &obj, const std::string &key) {
+std::string jsonGetString(const JsonValue& obj, const std::string& key) {
   auto it = obj.objectValue.find(key);
   if (it != obj.objectValue.end() && it->second.type == "string") {
     return it->second.stringValue;
@@ -303,7 +301,7 @@ std::string jsonGetString(const JsonValue &obj, const std::string &key) {
 /**
  * @brief Escape special characters in dialogue text for NMScript
  */
-std::string escapeDialogueText(const std::string &text) {
+std::string escapeDialogueText(const std::string& text) {
   std::string escaped;
   escaped.reserve(text.size() + 10);
   for (char c : text) {
@@ -331,7 +329,7 @@ std::string escapeDialogueText(const std::string &text) {
 /**
  * @brief Check if a node has a specific type (case-insensitive)
  */
-bool nodeTypeEquals(const std::string &nodeType, const std::string &target) {
+bool nodeTypeEquals(const std::string& nodeType, const std::string& target) {
   if (nodeType.size() != target.size())
     return false;
   for (size_t i = 0; i < nodeType.size(); ++i) {
@@ -362,7 +360,7 @@ bool nodeTypeEquals(const std::string &nodeType, const std::string &target) {
  * - Event nodes -> event triggers
  * - Script nodes -> inline script blocks
  */
-std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
+std::string generateScriptFromGraphJson(const JsonValue& graphJson) {
   std::ostringstream script;
 
   // Get entry scene
@@ -370,25 +368,24 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
 
   // Process nodes array
   auto nodesIt = graphJson.objectValue.find("nodes");
-  if (nodesIt == graphJson.objectValue.end() ||
-      nodesIt->second.type != "array") {
+  if (nodesIt == graphJson.objectValue.end() || nodesIt->second.type != "array") {
     return "";
   }
 
   // Categorize nodes by type for proper ordering
-  std::vector<const JsonValue *> sceneNodes;
-  std::vector<const JsonValue *> dialogueNodes;
-  std::vector<const JsonValue *> choiceNodes;
-  std::vector<const JsonValue *> conditionNodes;
-  std::vector<const JsonValue *> jumpNodes;
-  std::vector<const JsonValue *> variableNodes;
-  std::vector<const JsonValue *> randomNodes;
-  std::vector<const JsonValue *> endNodes;
-  std::vector<const JsonValue *> labelNodes;
-  std::vector<const JsonValue *> eventNodes;
-  std::vector<const JsonValue *> scriptNodes;
+  std::vector<const JsonValue*> sceneNodes;
+  std::vector<const JsonValue*> dialogueNodes;
+  std::vector<const JsonValue*> choiceNodes;
+  std::vector<const JsonValue*> conditionNodes;
+  std::vector<const JsonValue*> jumpNodes;
+  std::vector<const JsonValue*> variableNodes;
+  std::vector<const JsonValue*> randomNodes;
+  std::vector<const JsonValue*> endNodes;
+  std::vector<const JsonValue*> labelNodes;
+  std::vector<const JsonValue*> eventNodes;
+  std::vector<const JsonValue*> scriptNodes;
 
-  for (const auto &node : nodesIt->second.arrayValue) {
+  for (const auto& node : nodesIt->second.arrayValue) {
     if (node.type != "object") {
       continue;
     }
@@ -426,8 +423,8 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
   script << "// ========================================\n\n";
 
   // Generate script from scene nodes (primary containers)
-  for (const auto *nodePtr : sceneNodes) {
-    const JsonValue &node = *nodePtr;
+  for (const auto* nodePtr : sceneNodes) {
+    const JsonValue& node = *nodePtr;
     std::string nodeId = jsonGetString(node, "id");
     std::string title = jsonGetString(node, "title");
     std::string dialogueText = jsonGetString(node, "dialogueText");
@@ -480,16 +477,14 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
 
     // Check for choice targets (branching)
     auto choiceTargetsIt = node.objectValue.find("choiceTargets");
-    if (choiceTargetsIt != node.objectValue.end() &&
-        choiceTargetsIt->second.type == "object" &&
+    if (choiceTargetsIt != node.objectValue.end() && choiceTargetsIt->second.type == "object" &&
         !choiceTargetsIt->second.objectValue.empty()) {
       script << "    choice {\n";
-      for (const auto &[optionText, targetValue] :
-           choiceTargetsIt->second.objectValue) {
+      for (const auto& [optionText, targetValue] : choiceTargetsIt->second.objectValue) {
         if (targetValue.type == "string") {
           std::string escapedOption = escapeDialogueText(optionText);
-          script << "        \"" << escapedOption << "\" -> goto "
-                 << targetValue.stringValue << "\n";
+          script << "        \"" << escapedOption << "\" -> goto " << targetValue.stringValue
+                 << "\n";
         }
       }
       script << "    }\n";
@@ -500,8 +495,8 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
 
   // Generate standalone Dialogue nodes (not embedded in scenes)
   // These are wrapped in auto-generated scenes
-  for (const auto *nodePtr : dialogueNodes) {
-    const JsonValue &node = *nodePtr;
+  for (const auto* nodePtr : dialogueNodes) {
+    const JsonValue& node = *nodePtr;
     std::string nodeId = jsonGetString(node, "id");
     std::string dialogueText = jsonGetString(node, "dialogueText");
     if (dialogueText.empty()) {
@@ -521,13 +516,11 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
 
       // Check for outgoing connections (stored as choiceTargets for single target)
       auto choiceTargetsIt = node.objectValue.find("choiceTargets");
-      if (choiceTargetsIt != node.objectValue.end() &&
-          choiceTargetsIt->second.type == "object" &&
+      if (choiceTargetsIt != node.objectValue.end() && choiceTargetsIt->second.type == "object" &&
           !choiceTargetsIt->second.objectValue.empty()) {
         // If single target, use goto
         if (choiceTargetsIt->second.objectValue.size() == 1) {
-          for (const auto &[key, targetValue] :
-               choiceTargetsIt->second.objectValue) {
+          for (const auto& [key, targetValue] : choiceTargetsIt->second.objectValue) {
             if (targetValue.type == "string") {
               script << "    goto " << targetValue.stringValue << "\n";
             }
@@ -539,8 +532,8 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
   }
 
   // Generate Choice nodes
-  for (const auto *nodePtr : choiceNodes) {
-    const JsonValue &node = *nodePtr;
+  for (const auto* nodePtr : choiceNodes) {
+    const JsonValue& node = *nodePtr;
     std::string nodeId = jsonGetString(node, "id");
     std::string dialogueText = jsonGetString(node, "dialogueText");
     if (dialogueText.empty()) {
@@ -562,16 +555,14 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
 
     // Generate choice block
     auto choiceTargetsIt = node.objectValue.find("choiceTargets");
-    if (choiceTargetsIt != node.objectValue.end() &&
-        choiceTargetsIt->second.type == "object" &&
+    if (choiceTargetsIt != node.objectValue.end() && choiceTargetsIt->second.type == "object" &&
         !choiceTargetsIt->second.objectValue.empty()) {
       script << "    choice {\n";
-      for (const auto &[optionText, targetValue] :
-           choiceTargetsIt->second.objectValue) {
+      for (const auto& [optionText, targetValue] : choiceTargetsIt->second.objectValue) {
         if (targetValue.type == "string") {
           std::string escapedOption = escapeDialogueText(optionText);
-          script << "        \"" << escapedOption << "\" -> goto "
-                 << targetValue.stringValue << "\n";
+          script << "        \"" << escapedOption << "\" -> goto " << targetValue.stringValue
+                 << "\n";
         }
       }
       script << "    }\n";
@@ -580,8 +571,8 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
   }
 
   // Generate Condition nodes
-  for (const auto *nodePtr : conditionNodes) {
-    const JsonValue &node = *nodePtr;
+  for (const auto* nodePtr : conditionNodes) {
+    const JsonValue& node = *nodePtr;
     std::string nodeId = jsonGetString(node, "id");
     std::string conditionExpression = jsonGetString(node, "conditionExpression");
 
@@ -592,7 +583,6 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
       if (conditionTargetsIt != node.objectValue.end() &&
           conditionTargetsIt->second.type == "object" &&
           !conditionTargetsIt->second.objectValue.empty()) {
-
         script << "    if " << conditionExpression << " {\n";
 
         // Find true branch
@@ -620,8 +610,8 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
   }
 
   // Generate Variable nodes
-  for (const auto *nodePtr : variableNodes) {
-    const JsonValue &node = *nodePtr;
+  for (const auto* nodePtr : variableNodes) {
+    const JsonValue& node = *nodePtr;
     std::string nodeId = jsonGetString(node, "id");
     std::string variableName = jsonGetString(node, "variableName");
     std::string variableValue = jsonGetString(node, "variableValue");
@@ -636,11 +626,9 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
 
     // Check for next node (goto)
     auto choiceTargetsIt = node.objectValue.find("choiceTargets");
-    if (choiceTargetsIt != node.objectValue.end() &&
-        choiceTargetsIt->second.type == "object" &&
+    if (choiceTargetsIt != node.objectValue.end() && choiceTargetsIt->second.type == "object" &&
         !choiceTargetsIt->second.objectValue.empty()) {
-      for (const auto &[key, targetValue] :
-           choiceTargetsIt->second.objectValue) {
+      for (const auto& [key, targetValue] : choiceTargetsIt->second.objectValue) {
         if (targetValue.type == "string") {
           script << "    goto " << targetValue.stringValue << "\n";
           break; // Only first connection
@@ -651,8 +639,8 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
   }
 
   // Generate Random nodes
-  for (const auto *nodePtr : randomNodes) {
-    const JsonValue &node = *nodePtr;
+  for (const auto* nodePtr : randomNodes) {
+    const JsonValue& node = *nodePtr;
     std::string nodeId = jsonGetString(node, "id");
 
     script << "scene " << nodeId << " {\n";
@@ -664,11 +652,9 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
         !conditionTargetsIt->second.objectValue.empty()) {
       // Generate random logic using choice with equal probability markers
       script << "    choice {\n";
-      for (const auto &[label, targetValue] :
-           conditionTargetsIt->second.objectValue) {
+      for (const auto& [label, targetValue] : conditionTargetsIt->second.objectValue) {
         if (targetValue.type == "string") {
-          script << "        \"" << label << "\" -> goto "
-                 << targetValue.stringValue << "\n";
+          script << "        \"" << label << "\" -> goto " << targetValue.stringValue << "\n";
         }
       }
       script << "    }\n";
@@ -677,8 +663,8 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
   }
 
   // Generate Jump nodes (simple goto)
-  for (const auto *nodePtr : jumpNodes) {
-    const JsonValue &node = *nodePtr;
+  for (const auto* nodePtr : jumpNodes) {
+    const JsonValue& node = *nodePtr;
     std::string nodeId = jsonGetString(node, "id");
     std::string jumpTarget = jsonGetString(node, "jumpTarget");
 
@@ -688,11 +674,9 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
     } else {
       // Check choiceTargets for connection target
       auto choiceTargetsIt = node.objectValue.find("choiceTargets");
-      if (choiceTargetsIt != node.objectValue.end() &&
-          choiceTargetsIt->second.type == "object" &&
+      if (choiceTargetsIt != node.objectValue.end() && choiceTargetsIt->second.type == "object" &&
           !choiceTargetsIt->second.objectValue.empty()) {
-        for (const auto &[key, targetValue] :
-             choiceTargetsIt->second.objectValue) {
+        for (const auto& [key, targetValue] : choiceTargetsIt->second.objectValue) {
           if (targetValue.type == "string") {
             script << "    goto " << targetValue.stringValue << "\n";
             break;
@@ -704,8 +688,8 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
   }
 
   // Generate Event nodes
-  for (const auto *nodePtr : eventNodes) {
-    const JsonValue &node = *nodePtr;
+  for (const auto* nodePtr : eventNodes) {
+    const JsonValue& node = *nodePtr;
     std::string nodeId = jsonGetString(node, "id");
     std::string eventName = jsonGetString(node, "eventName");
 
@@ -717,11 +701,9 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
 
     // Check for next node
     auto choiceTargetsIt = node.objectValue.find("choiceTargets");
-    if (choiceTargetsIt != node.objectValue.end() &&
-        choiceTargetsIt->second.type == "object" &&
+    if (choiceTargetsIt != node.objectValue.end() && choiceTargetsIt->second.type == "object" &&
         !choiceTargetsIt->second.objectValue.empty()) {
-      for (const auto &[key, targetValue] :
-           choiceTargetsIt->second.objectValue) {
+      for (const auto& [key, targetValue] : choiceTargetsIt->second.objectValue) {
         if (targetValue.type == "string") {
           script << "    goto " << targetValue.stringValue << "\n";
           break;
@@ -732,8 +714,8 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
   }
 
   // Generate Script nodes (inline script)
-  for (const auto *nodePtr : scriptNodes) {
-    const JsonValue &node = *nodePtr;
+  for (const auto* nodePtr : scriptNodes) {
+    const JsonValue& node = *nodePtr;
     std::string nodeId = jsonGetString(node, "id");
     std::string scriptContent = jsonGetString(node, "scriptContent");
 
@@ -745,11 +727,9 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
 
     // Check for next node
     auto choiceTargetsIt = node.objectValue.find("choiceTargets");
-    if (choiceTargetsIt != node.objectValue.end() &&
-        choiceTargetsIt->second.type == "object" &&
+    if (choiceTargetsIt != node.objectValue.end() && choiceTargetsIt->second.type == "object" &&
         !choiceTargetsIt->second.objectValue.empty()) {
-      for (const auto &[key, targetValue] :
-           choiceTargetsIt->second.objectValue) {
+      for (const auto& [key, targetValue] : choiceTargetsIt->second.objectValue) {
         if (targetValue.type == "string") {
           script << "    goto " << targetValue.stringValue << "\n";
           break;
@@ -760,8 +740,8 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
   }
 
   // Generate End nodes
-  for (const auto *nodePtr : endNodes) {
-    const JsonValue &node = *nodePtr;
+  for (const auto* nodePtr : endNodes) {
+    const JsonValue& node = *nodePtr;
     std::string nodeId = jsonGetString(node, "id");
 
     script << "scene " << nodeId << " {\n";
@@ -779,16 +759,18 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
 /**
  * @brief Load story graph from project's .novelmind/story_graph.json
  */
-Result<std::string> loadStoryGraphScript(const std::string &projectPath) {
+Result<std::string> loadStoryGraphScript(const std::string& projectPath) {
   fs::path graphPath = fs::path(projectPath) / ".novelmind" / "story_graph.json";
-  qDebug() << "[loadStoryGraphScript] Looking for graph at:" << QString::fromStdString(graphPath.string());
+  qDebug() << "[loadStoryGraphScript] Looking for graph at:"
+           << QString::fromStdString(graphPath.string());
 
   if (!fs::exists(graphPath)) {
     qWarning() << "[loadStoryGraphScript] Story graph file NOT FOUND!";
-    qWarning() << "[loadStoryGraphScript] Expected location:" << QString::fromStdString(graphPath.string());
-    qWarning() << "[loadStoryGraphScript] This file should be created when you modify nodes in Story Graph panel";
-    return Result<std::string>::error("Story graph file not found: " +
-                                      graphPath.string());
+    qWarning() << "[loadStoryGraphScript] Expected location:"
+               << QString::fromStdString(graphPath.string());
+    qWarning() << "[loadStoryGraphScript] This file should be created when you modify nodes in "
+                  "Story Graph panel";
+    return Result<std::string>::error("Story graph file not found: " + graphPath.string());
   }
 
   // Check file size before loading to prevent issues with malformed files
@@ -796,25 +778,24 @@ Result<std::string> loadStoryGraphScript(const std::string &projectPath) {
   std::error_code ec;
   auto fileSize = fs::file_size(graphPath, ec);
   if (ec) {
-    qCritical() << "[loadStoryGraphScript] Failed to get file size:" << QString::fromStdString(ec.message());
-    return Result<std::string>::error("Failed to get story graph file size: " +
-                                      ec.message());
+    qCritical() << "[loadStoryGraphScript] Failed to get file size:"
+                << QString::fromStdString(ec.message());
+    return Result<std::string>::error("Failed to get story graph file size: " + ec.message());
   }
 
   if (fileSize > MAX_STORY_GRAPH_SIZE) {
-    qCritical() << "[loadStoryGraphScript] File too large:" << fileSize << "bytes (max:" << MAX_STORY_GRAPH_SIZE << ")";
-    return Result<std::string>::error(
-        "Story graph file too large (" + std::to_string(fileSize) +
-        " bytes, max " + std::to_string(MAX_STORY_GRAPH_SIZE) + " bytes). " +
-        "The file may be corrupted.");
+    qCritical() << "[loadStoryGraphScript] File too large:" << fileSize
+                << "bytes (max:" << MAX_STORY_GRAPH_SIZE << ")";
+    return Result<std::string>::error("Story graph file too large (" + std::to_string(fileSize) +
+                                      " bytes, max " + std::to_string(MAX_STORY_GRAPH_SIZE) +
+                                      " bytes). " + "The file may be corrupted.");
   }
 
   qDebug() << "[loadStoryGraphScript] File exists, opening...";
   std::ifstream file(graphPath);
   if (!file) {
     qCritical() << "[loadStoryGraphScript] Failed to open file (permissions?)";
-    return Result<std::string>::error("Failed to open story graph file: " +
-                                      graphPath.string());
+    return Result<std::string>::error("Failed to open story graph file: " + graphPath.string());
   }
 
   std::ostringstream buffer;
@@ -828,9 +809,9 @@ Result<std::string> loadStoryGraphScript(const std::string &projectPath) {
   qDebug() << "[loadStoryGraphScript] Parsing JSON...";
   auto parseResult = SimpleJsonParser::parse(jsonContent);
   if (!parseResult.isOk()) {
-    qCritical() << "[loadStoryGraphScript] JSON parse error:" << QString::fromStdString(parseResult.error());
-    return Result<std::string>::error("Failed to parse story graph JSON: " +
-                                      parseResult.error());
+    qCritical() << "[loadStoryGraphScript] JSON parse error:"
+                << QString::fromStdString(parseResult.error());
+    return Result<std::string>::error("Failed to parse story graph JSON: " + parseResult.error());
   }
 
   qDebug() << "[loadStoryGraphScript] JSON parsed successfully, converting to script...";
@@ -842,7 +823,8 @@ Result<std::string> loadStoryGraphScript(const std::string &projectPath) {
     return Result<std::string>::error("No scene nodes found in story graph");
   }
 
-  qDebug() << "[loadStoryGraphScript] Script generated successfully, length:" << script.size() << "characters";
+  qDebug() << "[loadStoryGraphScript] Script generated successfully, length:" << script.size()
+           << "characters";
   return Result<std::string>::ok(std::move(script));
 }
 
@@ -850,7 +832,7 @@ Result<std::string> loadStoryGraphScript(const std::string &projectPath) {
  * @brief Get the current playback source mode from project settings
  */
 PlaybackSourceMode getPlaybackSourceMode() {
-  auto &pm = ProjectManager::instance();
+  auto& pm = ProjectManager::instance();
   if (!pm.hasOpenProject()) {
     return PlaybackSourceMode::Script; // Default to script mode
   }
@@ -860,7 +842,7 @@ PlaybackSourceMode getPlaybackSourceMode() {
 /**
  * @brief Collect entry scene from story graph if available
  */
-std::string getGraphEntryScene(const std::string &projectPath) {
+std::string getGraphEntryScene(const std::string& projectPath) {
   fs::path graphPath = fs::path(projectPath) / ".novelmind" / "story_graph.json";
 
   if (!fs::exists(graphPath)) {
@@ -910,18 +892,20 @@ Result<void> EditorRuntimeHost::compileProject() {
       // Load story graph and convert to script
       auto graphScriptResult = loadStoryGraphScript(m_project.path);
       if (!graphScriptResult.isOk()) {
-        qCritical() << "[EditorRuntimeHost] GRAPH LOAD FAILED:" << QString::fromStdString(graphScriptResult.error());
-        qCritical() << "[EditorRuntimeHost] Expected file:" << QString::fromStdString(m_project.path) << "/.novelmind/story_graph.json";
+        qCritical() << "[EditorRuntimeHost] GRAPH LOAD FAILED:"
+                    << QString::fromStdString(graphScriptResult.error());
+        qCritical() << "[EditorRuntimeHost] Expected file:"
+                    << QString::fromStdString(m_project.path) << "/.novelmind/story_graph.json";
         // Fall back to script mode if graph is not available
         return Result<void>::error(
-            "Graph mode selected but story graph not available: " +
-            graphScriptResult.error() +
+            "Graph mode selected but story graph not available: " + graphScriptResult.error() +
             ". Switch to Script mode or create a Story Graph.");
       }
       qDebug() << "[EditorRuntimeHost] Story graph loaded successfully, converting to script...";
       allScripts = "// Generated from Story Graph (Graph Mode)\n";
       allScripts += graphScriptResult.value();
-      qDebug() << "[EditorRuntimeHost] Generated script length:" << allScripts.size() << "characters";
+      qDebug() << "[EditorRuntimeHost] Generated script length:" << allScripts.size()
+               << "characters";
 
       // Use graph entry scene if available
       std::string graphEntry = getGraphEntryScene(m_project.path);
@@ -935,7 +919,7 @@ Result<void> EditorRuntimeHost::compileProject() {
       // First load all script files (base content)
       fs::path scriptsPath(m_project.scriptsPath);
       if (fs::exists(scriptsPath)) {
-        for (const auto &entry : fs::recursive_directory_iterator(scriptsPath)) {
+        for (const auto& entry : fs::recursive_directory_iterator(scriptsPath)) {
           if (entry.is_regular_file()) {
             std::string ext = entry.path().extension().string();
             if (ext == ".nms" || ext == ".nm") {
@@ -946,10 +930,9 @@ Result<void> EditorRuntimeHost::compileProject() {
                   allScripts += "\n// File: " + entry.path().string() + "\n";
                   allScripts += content;
 
-                  u64 modTime = static_cast<u64>(
-                      std::chrono::duration_cast<std::chrono::seconds>(
-                          entry.last_write_time().time_since_epoch())
-                          .count());
+                  u64 modTime = static_cast<u64>(std::chrono::duration_cast<std::chrono::seconds>(
+                                                     entry.last_write_time().time_since_epoch())
+                                                     .count());
                   m_fileTimestamps[entry.path().string()] = modTime;
                 }
               }
@@ -982,11 +965,10 @@ Result<void> EditorRuntimeHost::compileProject() {
       fs::path scriptsPath(m_project.scriptsPath);
 
       if (!fs::exists(scriptsPath)) {
-        return Result<void>::error("Scripts path does not exist: " +
-                                   m_project.scriptsPath);
+        return Result<void>::error("Scripts path does not exist: " + m_project.scriptsPath);
       }
 
-      for (const auto &entry : fs::recursive_directory_iterator(scriptsPath)) {
+      for (const auto& entry : fs::recursive_directory_iterator(scriptsPath)) {
         if (entry.is_regular_file()) {
           std::string ext = entry.path().extension().string();
           if (ext == ".nms" || ext == ".nm") {
@@ -994,17 +976,15 @@ Result<void> EditorRuntimeHost::compileProject() {
             if (file) {
               std::string content;
               if (!detail::readFileToString(file, content)) {
-                return Result<void>::error("Failed to read script file: " +
-                                           entry.path().string());
+                return Result<void>::error("Failed to read script file: " + entry.path().string());
               }
               allScripts += "\n// File: " + entry.path().string() + "\n";
               allScripts += content;
 
               // Track file timestamps for hot reload
-              u64 modTime = static_cast<u64>(
-                  std::chrono::duration_cast<std::chrono::seconds>(
-                      entry.last_write_time().time_since_epoch())
-                      .count());
+              u64 modTime = static_cast<u64>(std::chrono::duration_cast<std::chrono::seconds>(
+                                                 entry.last_write_time().time_since_epoch())
+                                                 .count());
               m_fileTimestamps[entry.path().string()] = modTime;
             }
           }
@@ -1030,7 +1010,8 @@ Result<void> EditorRuntimeHost::compileProject() {
     auto tokensResult = lexer.tokenize(allScripts);
 
     if (!tokensResult.isOk()) {
-      qCritical() << "[EditorRuntimeHost] Lexer error:" << QString::fromStdString(tokensResult.error());
+      qCritical() << "[EditorRuntimeHost] Lexer error:"
+                  << QString::fromStdString(tokensResult.error());
       return Result<void>::error("Lexer error: " + tokensResult.error());
     }
     qDebug() << "[EditorRuntimeHost] Lexer: Generated" << tokensResult.value().size() << "tokens";
@@ -1041,15 +1022,15 @@ Result<void> EditorRuntimeHost::compileProject() {
     auto parseResult = parser.parse(tokensResult.value());
 
     if (!parseResult.isOk()) {
-      qCritical() << "[EditorRuntimeHost] Parse error:" << QString::fromStdString(parseResult.error());
+      qCritical() << "[EditorRuntimeHost] Parse error:"
+                  << QString::fromStdString(parseResult.error());
       return Result<void>::error("Parse error: " + parseResult.error());
     }
 
-    m_program =
-        std::make_unique<scripting::Program>(std::move(parseResult.value()));
+    m_program = std::make_unique<scripting::Program>(std::move(parseResult.value()));
 
     // Extract scene names
-    for (const auto &scene : m_program->scenes) {
+    for (const auto& scene : m_program->scenes) {
       m_sceneNames.push_back(scene.name);
     }
     qDebug() << "[EditorRuntimeHost] Parser: Found" << m_sceneNames.size() << "scenes";
@@ -1061,9 +1042,10 @@ Result<void> EditorRuntimeHost::compileProject() {
 
     if (validationResult.hasErrors()) {
       std::string errorMsg = "Validation errors:\n";
-      for (const auto &err : validationResult.errors.errors()) {
+      for (const auto& err : validationResult.errors.errors()) {
         errorMsg += "  " + err.format() + "\n";
-        qCritical() << "[EditorRuntimeHost] Validation error:" << QString::fromStdString(err.format());
+        qCritical() << "[EditorRuntimeHost] Validation error:"
+                    << QString::fromStdString(err.format());
       }
       return Result<void>::error(errorMsg);
     }
@@ -1075,19 +1057,19 @@ Result<void> EditorRuntimeHost::compileProject() {
     auto compileResult = compiler.compile(*m_program);
 
     if (!compileResult.isOk()) {
-      qCritical() << "[EditorRuntimeHost] Compilation error:" << QString::fromStdString(compileResult.error());
+      qCritical() << "[EditorRuntimeHost] Compilation error:"
+                  << QString::fromStdString(compileResult.error());
       return Result<void>::error("Compilation error: " + compileResult.error());
     }
 
-    m_compiledScript = std::make_unique<scripting::CompiledScript>(
-        std::move(compileResult.value()));
+    m_compiledScript =
+        std::make_unique<scripting::CompiledScript>(std::move(compileResult.value()));
 
     qDebug() << "[EditorRuntimeHost] === COMPILATION SUCCESSFUL ===";
     qDebug() << "[EditorRuntimeHost] Scenes available:" << m_sceneNames.size();
     return Result<void>::ok();
-  } catch (const std::exception &e) {
-    return Result<void>::error(std::string("Exception during compilation: ") +
-                               e.what());
+  } catch (const std::exception& e) {
+    return Result<void>::error(std::string("Exception during compilation: ") + e.what());
   }
 }
 
@@ -1109,7 +1091,7 @@ Result<void> EditorRuntimeHost::initializeRuntime() {
 
   // Create audio manager (dev mode - unencrypted)
   m_audioManager = std::make_unique<audio::AudioManager>();
-  m_audioManager->setDataProvider([this](const std::string &id) {
+  m_audioManager->setDataProvider([this](const std::string& id) {
     if (!m_resourceManager) {
       return Result<std::vector<u8>>::error("Resource manager unavailable");
     }
@@ -1136,7 +1118,7 @@ Result<void> EditorRuntimeHost::initializeRuntime() {
 
   // Set up event callback
   m_scriptRuntime->setEventCallback(
-      [this](const scripting::ScriptEvent &event) { onRuntimeEvent(event); });
+      [this](const scripting::ScriptEvent& event) { onRuntimeEvent(event); });
 
   return Result<void>::ok();
 }
@@ -1154,9 +1136,8 @@ void EditorRuntimeHost::resetRuntime() {
   m_targetInstructionPointer = 0;
 }
 
-bool EditorRuntimeHost::checkBreakpoint(
-    const scripting::SourceLocation &location) {
-  for (const auto &bp : m_breakpoints) {
+bool EditorRuntimeHost::checkBreakpoint(const scripting::SourceLocation& location) {
+  for (const auto& bp : m_breakpoints) {
     if (bp.enabled && bp.line == location.line) {
       // Check file match (simplified)
       if (bp.condition.empty()) {
@@ -1175,7 +1156,7 @@ void EditorRuntimeHost::fireStateChanged(EditorRuntimeState newState) {
   }
 }
 
-void EditorRuntimeHost::fireBreakpointHit(const Breakpoint &bp) {
+void EditorRuntimeHost::fireBreakpointHit(const Breakpoint& bp) {
   if (m_onBreakpointHit) {
     m_state = EditorRuntimeState::Paused;
     auto stack = getScriptCallStack();
@@ -1183,7 +1164,7 @@ void EditorRuntimeHost::fireBreakpointHit(const Breakpoint &bp) {
   }
 }
 
-void EditorRuntimeHost::onRuntimeEvent(const scripting::ScriptEvent &event) {
+void EditorRuntimeHost::onRuntimeEvent(const scripting::ScriptEvent& event) {
   switch (event.type) {
   case scripting::ScriptEventType::SceneChange:
     // Update scene graph with new scene ID
@@ -1205,8 +1186,7 @@ void EditorRuntimeHost::onRuntimeEvent(const scripting::ScriptEvent &event) {
   case scripting::ScriptEventType::CharacterShow: {
     if (m_sceneGraph) {
       // event.value may hold desired slot (int). Default to Center.
-      scene::CharacterObject::Position pos =
-          scene::CharacterObject::Position::Center;
+      scene::CharacterObject::Position pos = scene::CharacterObject::Position::Center;
       if (std::holds_alternative<i32>(event.value)) {
         i32 posCode = std::get<i32>(event.value);
         switch (posCode) {
@@ -1259,7 +1239,7 @@ void EditorRuntimeHost::onRuntimeEvent(const scripting::ScriptEvent &event) {
 
   case scripting::ScriptEventType::ChoiceStart: {
     if (m_scriptRuntime && m_sceneGraph) {
-      const auto &choices = m_scriptRuntime->getCurrentChoices();
+      const auto& choices = m_scriptRuntime->getCurrentChoices();
       std::vector<scene::ChoiceUIObject::ChoiceOption> options;
       options.reserve(choices.size());
       for (size_t i = 0; i < choices.size(); ++i) {
@@ -1296,7 +1276,7 @@ void EditorRuntimeHost::onRuntimeEvent(const scripting::ScriptEvent &event) {
   }
 }
 
-void EditorRuntimeHost::applySceneDocument(const std::string &sceneId) {
+void EditorRuntimeHost::applySceneDocument(const std::string& sceneId) {
   if (!m_sceneGraph || sceneId.empty()) {
     return;
   }
@@ -1306,8 +1286,7 @@ void EditorRuntimeHost::applySceneDocument(const std::string &sceneId) {
   }
 
   namespace fs = std::filesystem;
-  const fs::path scenePath =
-      fs::path(m_project.scenesPath) / (sceneId + ".nmscene");
+  const fs::path scenePath = fs::path(m_project.scenesPath) / (sceneId + ".nmscene");
   const auto result = loadSceneDocument(scenePath.string());
   if (!result.isOk()) {
     return;
@@ -1316,8 +1295,8 @@ void EditorRuntimeHost::applySceneDocument(const std::string &sceneId) {
   m_sceneGraph->clear();
   m_sceneGraph->setSceneId(sceneId);
 
-  const auto &doc = result.value();
-  for (const auto &item : doc.objects) {
+  const auto& doc = result.value();
+  for (const auto& item : doc.objects) {
     scene::SceneObjectState state;
     state.id = item.id;
     state.x = item.x;
@@ -1330,7 +1309,7 @@ void EditorRuntimeHost::applySceneDocument(const std::string &sceneId) {
     state.zOrder = item.zOrder;
     state.properties = item.properties;
 
-    const std::string &type = item.type;
+    const std::string& type = item.type;
     if (type == "Background") {
       state.type = scene::SceneObjectType::Background;
       auto obj = std::make_unique<scene::BackgroundObject>(state.id);
@@ -1343,8 +1322,7 @@ void EditorRuntimeHost::applySceneDocument(const std::string &sceneId) {
       if (it != state.properties.end() && !it->second.empty()) {
         characterId = it->second;
       }
-      auto obj =
-          std::make_unique<scene::CharacterObject>(state.id, characterId);
+      auto obj = std::make_unique<scene::CharacterObject>(state.id, characterId);
       obj->loadState(state);
       m_sceneGraph->addToLayer(scene::LayerType::Characters, std::move(obj));
     } else if (type == "Effect") {
