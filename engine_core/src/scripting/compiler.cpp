@@ -395,7 +395,7 @@ void Compiler::compileChoiceStmt(const ChoiceStmt &stmt, const SourceLocation &l
   }
 }
 
-void Compiler::compileIfStmt(const IfStmt &stmt, const SourceLocation &loc) {
+void Compiler::compileIfStmt(const IfStmt &stmt, [[maybe_unused]] const SourceLocation &loc) {
   // Compile condition
   compileExpression(*stmt.condition);
 
@@ -474,7 +474,7 @@ void Compiler::compileSetStmt(const SetStmt &stmt, const SourceLocation &loc) {
   }
 }
 
-void Compiler::compileTransitionStmt(const TransitionStmt &stmt, const SourceLocation &loc) {
+void Compiler::compileTransitionStmt(const TransitionStmt &stmt, [[maybe_unused]] const SourceLocation &loc) {
   u32 typeIndex = addString(stmt.type);
   u32 durInt = 0;
   std::memcpy(&durInt, &stmt.duration, sizeof(f32));
@@ -482,7 +482,7 @@ void Compiler::compileTransitionStmt(const TransitionStmt &stmt, const SourceLoc
   emitOp(OpCode::TRANSITION, typeIndex);
 }
 
-void Compiler::compileMoveStmt(const MoveStmt &stmt, const SourceLocation &loc) {
+void Compiler::compileMoveStmt(const MoveStmt &stmt, [[maybe_unused]] const SourceLocation &loc) {
   // Push character ID string
   u32 charIndex = addString(stmt.characterId);
   emitOp(OpCode::PUSH_STRING, charIndex);
@@ -526,7 +526,7 @@ void Compiler::compileMoveStmt(const MoveStmt &stmt, const SourceLocation &loc) 
   emitOp(OpCode::MOVE_CHARACTER, charIndex);
 }
 
-void Compiler::compileBlockStmt(const BlockStmt &stmt, const SourceLocation &loc) {
+void Compiler::compileBlockStmt(const BlockStmt &stmt, [[maybe_unused]] const SourceLocation &loc) {
   for (const auto &s : stmt.statements) {
     if (s) {
       compileStatement(*s);
@@ -534,7 +534,7 @@ void Compiler::compileBlockStmt(const BlockStmt &stmt, const SourceLocation &loc
   }
 }
 
-void Compiler::compileExpressionStmt(const ExpressionStmt &stmt, const SourceLocation &loc) {
+void Compiler::compileExpressionStmt(const ExpressionStmt &stmt, [[maybe_unused]] const SourceLocation &loc) {
   if (stmt.expression) {
     compileExpression(*stmt.expression);
     emitOp(OpCode::POP); // Discard result
