@@ -28,15 +28,15 @@ public:
 
   [[nodiscard]] explicit operator bool() const { return isOk(); }
 
-  [[nodiscard]] T &value() & { return m_value.value(); }
+  [[nodiscard]] T& value() & { return m_value.value(); }
 
-  [[nodiscard]] const T &value() const & { return m_value.value(); }
+  [[nodiscard]] const T& value() const& { return m_value.value(); }
 
-  [[nodiscard]] T &&value() && { return std::move(m_value.value()); }
+  [[nodiscard]] T&& value() && { return std::move(m_value.value()); }
 
-  [[nodiscard]] E &error() & { return m_error.value(); }
+  [[nodiscard]] E& error() & { return m_error.value(); }
 
-  [[nodiscard]] const E &error() const & { return m_error.value(); }
+  [[nodiscard]] const E& error() const& { return m_error.value(); }
 
   [[nodiscard]] T valueOr(T defaultValue) const {
     if (m_hasValue) {
@@ -71,9 +71,9 @@ public:
 
   [[nodiscard]] explicit operator bool() const { return isOk(); }
 
-  [[nodiscard]] E &error() & { return m_error.value(); }
+  [[nodiscard]] E& error() & { return m_error.value(); }
 
-  [[nodiscard]] const E &error() const & { return m_error.value(); }
+  [[nodiscard]] const E& error() const& { return m_error.value(); }
 
 private:
   std::optional<E> m_error;
