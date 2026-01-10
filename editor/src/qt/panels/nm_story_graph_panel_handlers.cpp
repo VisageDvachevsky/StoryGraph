@@ -93,14 +93,17 @@ void NMStoryGraphPanel::onAutoLayout() {
   const qreal orphanAreaGap = 100.0;      // Gap before orphan section
 
   // Build adjacency lists (forward and reverse)
-  QHash<uint64_t, QList<uint64_t>> successors;  // node -> children
+  QHash<uint64_t, QList<uint64_t>> successors;   // node -> children
   QHash<uint64_t, QList<uint64_t>> predecessors; // node -> parents
   QHash<uint64_t, int> inDegree;
   QHash<uint64_t, int> outDegree;
+  QSet<uint64_t> entryNodeSet;
 
   for (auto* node : nodes) {
-    adjacencyList[node->nodeId()] = QList<uint64_t>();
+    successors[node->nodeId()] = QList<uint64_t>();
+    predecessors[node->nodeId()] = QList<uint64_t>();
     inDegree[node->nodeId()] = 0;
+    outDegree[node->nodeId()] = 0;
   }
 
   for (auto* conn : m_scene->connections()) {
@@ -355,7 +358,7 @@ void NMStoryGraphPanel::onAutoLayout() {
       uint64_t nodeId = nodesInLayer[i];
       auto* node = m_scene->findNode(nodeId);
       if (node) {
-        node->setPos(layerStartX + i * horizontalSpacing, y);
+        node->setPos(x + i * horizontalSpacing, y);
       }
     }
   }

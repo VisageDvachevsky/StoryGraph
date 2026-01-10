@@ -217,6 +217,7 @@ add_library(novelmind_editor STATIC
     # Panel headers
     include/NovelMind/editor/qt/panels/nm_scene_view_panel.hpp
     include/NovelMind/editor/qt/panels/nm_story_graph_panel.hpp
+    include/NovelMind/editor/qt/panels/nm_story_graph_voice_integration.hpp
     include/NovelMind/editor/qt/panels/nm_story_graph_minimap.hpp
     include/NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp
     include/NovelMind/editor/qt/panels/nm_inspector_panel.hpp

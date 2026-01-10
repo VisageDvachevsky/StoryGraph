@@ -24,7 +24,6 @@ add_executable(unit_tests
     unit/test_parser.cpp
     unit/test_validator.cpp
     unit/test_story_graph.cpp
-    unit/test_voice_integration.cpp
     unit/test_dialogue_localization.cpp
     unit/test_dialogue_box.cpp
     unit/test_animation.cpp
@@ -87,6 +86,7 @@ if(NOVELMIND_BUILD_EDITOR)
         integration/test_scene_template_manager.cpp  
         integration/test_scene_validation.cpp 
         integration/test_scene_id_picker.cpp  
+        unit/test_voice_integration.cpp
         unit/test_performance_cache.cpp
         unit/test_tutorial_types.cpp
         unit/test_state_machine_robustness.cpp  

@@ -77,6 +77,34 @@ void SelectionMediator::initialize() {
               EventBus::instance().publish(event);
             });
 
+    connect(m_storyGraph, &qt::NMStoryGraphPanel::scriptNodeRequested, this,
+            [](const QString &scriptPath) {
+              qDebug() << "[SelectionMediator] Publishing ScriptNodeRequestedEvent for script:"
+                       << scriptPath;
+              events::ScriptNodeRequestedEvent event;
+              event.scriptPath = scriptPath;
+              EventBus::instance().publish(event);
+            });
+
+    connect(m_storyGraph, &qt::NMStoryGraphPanel::editDialogueFlowRequested, this,
+            [](const QString &sceneId) {
+              qDebug() << "[SelectionMediator] Publishing EditDialogueFlowRequestedEvent for scene:"
+                       << sceneId;
+              events::EditDialogueFlowRequestedEvent event;
+              event.sceneId = sceneId;
+              EventBus::instance().publish(event);
+            });
+
+    connect(m_storyGraph, &qt::NMStoryGraphPanel::openSceneScriptRequested, this,
+            [](const QString &sceneId, const QString &scriptPath) {
+              qDebug() << "[SelectionMediator] Publishing OpenSceneScriptRequestedEvent for scene:"
+                       << sceneId << "script:" << scriptPath;
+              events::OpenSceneScriptRequestedEvent event;
+              event.sceneId = sceneId;
+              event.scriptPath = scriptPath;
+              EventBus::instance().publish(event);
+            });
+
     // Issue #239: Connect navigateToScriptDefinitionRequested signal
     connect(m_storyGraph, &qt::NMStoryGraphPanel::navigateToScriptDefinitionRequested,
             this, [](const QString &sceneId, const QString &scriptPath) {
