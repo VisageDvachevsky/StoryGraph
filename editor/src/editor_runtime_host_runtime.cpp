@@ -41,6 +41,15 @@ struct JsonValue {
 
 /**
  * @brief Minimal JSON parser for story_graph.json
+ *
+ * Note: This custom parser is used instead of QJsonDocument to maintain
+ * separation between editor and engine_core components. The parser includes
+ * safety limits (file size < 10 MB, string length < 1 MB) to prevent hangs
+ * on malformed JSON files with unterminated strings.
+ *
+ * For production use, consider migrating to QJsonDocument if engine_core
+ * architecture allows Qt dependencies, as it provides better error handling
+ * and performance optimizations.
  */
 class SimpleJsonParser {
 public:
@@ -178,8 +187,21 @@ private:
     }
     ++m_pos;
 
+    // Maximum string length to prevent hang on malformed JSON
+    // Story graph files are typically small (< 100 KB), so 1 MB limit is safe
+    const size_t MAX_STRING_LENGTH = 1024 * 1024; // 1 MB
+
     std::string str;
+    str.reserve(256); // Reserve reasonable initial capacity
+
+    size_t charCount = 0;
     while (m_pos < m_json.size() && m_json[m_pos] != '"') {
+      // Check string length limit to prevent hang
+      if (++charCount > MAX_STRING_LENGTH) {
+        return Result<JsonValue>::error(
+            "String too long (> 1 MB) - possibly unterminated string");
+      }
+
       if (m_json[m_pos] == '\\' && m_pos + 1 < m_json.size()) {
         ++m_pos;
         char escaped = m_json[m_pos];
@@ -767,6 +789,24 @@ Result<std::string> loadStoryGraphScript(const std::string &projectPath) {
     qWarning() << "[loadStoryGraphScript] This file should be created when you modify nodes in Story Graph panel";
     return Result<std::string>::error("Story graph file not found: " +
                                       graphPath.string());
+  }
+
+  // Check file size before loading to prevent issues with malformed files
+  const size_t MAX_STORY_GRAPH_SIZE = 10 * 1024 * 1024; // 10 MB
+  std::error_code ec;
+  auto fileSize = fs::file_size(graphPath, ec);
+  if (ec) {
+    qCritical() << "[loadStoryGraphScript] Failed to get file size:" << QString::fromStdString(ec.message());
+    return Result<std::string>::error("Failed to get story graph file size: " +
+                                      ec.message());
+  }
+
+  if (fileSize > MAX_STORY_GRAPH_SIZE) {
+    qCritical() << "[loadStoryGraphScript] File too large:" << fileSize << "bytes (max:" << MAX_STORY_GRAPH_SIZE << ")";
+    return Result<std::string>::error(
+        "Story graph file too large (" + std::to_string(fileSize) +
+        " bytes, max " + std::to_string(MAX_STORY_GRAPH_SIZE) + " bytes). " +
+        "The file may be corrupted.");
   }
 
   qDebug() << "[loadStoryGraphScript] File exists, opening...";
