@@ -60,8 +60,7 @@ namespace NovelMind::editor::qt {
  * @param defaultPrefix Prefix to use for empty or all-invalid inputs
  * @return A valid NMScript identifier string
  */
-static QString sanitizeToIdentifier(const QString &input,
-                                    const QString &defaultPrefix = "node") {
+static QString sanitizeToIdentifier(const QString& input, const QString& defaultPrefix = "node") {
   if (input.isEmpty()) {
     return defaultPrefix;
   }
@@ -70,7 +69,7 @@ static QString sanitizeToIdentifier(const QString &input,
   result.reserve(input.length() + 1);
 
   bool firstChar = true;
-  for (const QChar &ch : input) {
+  for (const QChar& ch : input) {
     if (ch.isLetter() || ch == '_') {
       // Valid character
       result.append(ch);
@@ -109,18 +108,17 @@ static QString sanitizeToIdentifier(const QString &input,
 // NMStoryGraphScene
 // ============================================================================
 
-NMStoryGraphScene::NMStoryGraphScene(QObject *parent) : QGraphicsScene(parent) {
+NMStoryGraphScene::NMStoryGraphScene(QObject* parent) : QGraphicsScene(parent) {
   setSceneRect(-5000, -5000, 10000, 10000);
 }
 
-NMGraphNodeItem *NMStoryGraphScene::addNode(const QString &title,
-                                            const QString &nodeType,
-                                            const QPointF &pos, uint64_t nodeId,
-                                            const QString &nodeIdString) {
+NMGraphNodeItem* NMStoryGraphScene::addNode(const QString& title, const QString& nodeType,
+                                            const QPointF& pos, uint64_t nodeId,
+                                            const QString& nodeIdString) {
   // MEM-1 fix: Use unique_ptr for exception-safe allocation, then transfer
   // ownership to scene via addItem()
   auto nodePtr = std::make_unique<NMGraphNodeItem>(title, nodeType);
-  auto *node = nodePtr.get();
+  auto* node = nodePtr.get();
   node->setPos(pos);
 
   if (nodeId == 0) {
@@ -154,18 +152,14 @@ NMGraphNodeItem *NMStoryGraphScene::addNode(const QString &title,
     }
   }
 
-  const bool isEntryNode =
-      (nodeType.compare("Entry", Qt::CaseInsensitive) == 0);
+  const bool isEntryNode = (nodeType.compare("Entry", Qt::CaseInsensitive) == 0);
   if (!isEntryNode) {
-    const auto scriptsDir =
-        QString::fromStdString(ProjectManager::instance().getFolderPath(
-            ProjectFolder::ScriptsGenerated));
+    const auto scriptsDir = QString::fromStdString(
+        ProjectManager::instance().getFolderPath(ProjectFolder::ScriptsGenerated));
     if (!scriptsDir.isEmpty()) {
-      const QString scriptPathAbs =
-          scriptsDir + "/" + node->nodeIdString() + ".nms";
-      const QString scriptPathRel =
-          QString::fromStdString(ProjectManager::instance().toRelativePath(
-              scriptPathAbs.toStdString()));
+      const QString scriptPathAbs = scriptsDir + "/" + node->nodeIdString() + ".nms";
+      const QString scriptPathRel = QString::fromStdString(
+          ProjectManager::instance().toRelativePath(scriptPathAbs.toStdString()));
       node->setScriptPath(scriptPathRel);
 
       QFile scriptFile(scriptPathAbs);
@@ -202,8 +196,7 @@ NMGraphNodeItem *NMStoryGraphScene::addNode(const QString &title,
           if (scriptFile.error() != QFile::NoError) {
             const QString errorMsg = scriptFile.errorString();
             qWarning() << "[StoryGraph] Failed to write script file for node"
-                       << node->nodeIdString() << ":"
-                       << errorMsg;
+                       << node->nodeIdString() << ":" << errorMsg;
 
             // Mark the node with an error state
             node->setScriptFileError(true);
@@ -213,13 +206,12 @@ NMGraphNodeItem *NMStoryGraphScene::addNode(const QString &title,
             // Emit signal to notify that there was an error
             emit scriptFileCreationFailed(node->nodeId(), node->nodeIdString(), errorMsg);
           } else {
-            qDebug() << "[StoryGraph] Successfully created script file:"
-                     << scriptPathRel;
+            qDebug() << "[StoryGraph] Successfully created script file:" << scriptPathRel;
           }
         } else {
           const QString errorMsg = scriptFile.errorString();
-          qWarning() << "[StoryGraph] Failed to open script file for writing:"
-                     << scriptPathAbs << "-" << errorMsg;
+          qWarning() << "[StoryGraph] Failed to open script file for writing:" << scriptPathAbs
+                     << "-" << errorMsg;
 
           // Mark the node with an error state
           node->setScriptFileError(true);
@@ -242,18 +234,17 @@ NMGraphNodeItem *NMStoryGraphScene::addNode(const QString &title,
   return node;
 }
 
-NMGraphConnectionItem *NMStoryGraphScene::addConnection(NMGraphNodeItem *from,
-                                                        NMGraphNodeItem *to) {
+NMGraphConnectionItem* NMStoryGraphScene::addConnection(NMGraphNodeItem* from,
+                                                        NMGraphNodeItem* to) {
   if (!from || !to) {
     return nullptr;
   }
   return addConnection(from->nodeId(), to->nodeId());
 }
 
-NMGraphConnectionItem *NMStoryGraphScene::addConnection(uint64_t fromNodeId,
-                                                        uint64_t toNodeId) {
-  auto *from = findNode(fromNodeId);
-  auto *to = findNode(toNodeId);
+NMGraphConnectionItem* NMStoryGraphScene::addConnection(uint64_t fromNodeId, uint64_t toNodeId) {
+  auto* from = findNode(fromNodeId);
+  auto* to = findNode(toNodeId);
   if (!from || !to || hasConnection(fromNodeId, toNodeId)) {
     return nullptr;
   }
@@ -261,7 +252,7 @@ NMGraphConnectionItem *NMStoryGraphScene::addConnection(uint64_t fromNodeId,
   // MEM-1 fix: Use unique_ptr for exception-safe allocation, then transfer
   // ownership to scene via addItem()
   auto connectionPtr = std::make_unique<NMGraphConnectionItem>(from, to);
-  auto *connection = connectionPtr.get();
+  auto* connection = connectionPtr.get();
   addItem(connectionPtr.release()); // Scene takes ownership
   m_connections.append(connection);
 
@@ -273,13 +264,13 @@ NMGraphConnectionItem *NMStoryGraphScene::addConnection(uint64_t fromNodeId,
 }
 
 void NMStoryGraphScene::clearGraph() {
-  for (auto *conn : m_connections) {
+  for (auto* conn : m_connections) {
     removeItem(conn);
     delete conn;
   }
   m_connections.clear();
 
-  for (auto *node : m_nodes) {
+  for (auto* node : m_nodes) {
     removeItem(node);
     delete node;
   }
@@ -288,7 +279,7 @@ void NMStoryGraphScene::clearGraph() {
   m_nextNodeId = 1;
 }
 
-void NMStoryGraphScene::removeNode(NMGraphNodeItem *node) {
+void NMStoryGraphScene::removeNode(NMGraphNodeItem* node) {
   if (!node)
     return;
 
@@ -297,7 +288,7 @@ void NMStoryGraphScene::removeNode(NMGraphNodeItem *node) {
 
   // Remove all connections attached to this node
   auto connections = findConnectionsForNode(node);
-  for (auto *conn : connections) {
+  for (auto* conn : connections) {
     removeConnection(conn);
   }
 
@@ -312,7 +303,7 @@ void NMStoryGraphScene::removeNode(NMGraphNodeItem *node) {
   update(nodeRect);
 }
 
-void NMStoryGraphScene::removeConnection(NMGraphConnectionItem *connection) {
+void NMStoryGraphScene::removeConnection(NMGraphConnectionItem* connection) {
   if (!connection)
     return;
 
@@ -322,8 +313,7 @@ void NMStoryGraphScene::removeConnection(NMGraphConnectionItem *connection) {
   m_connections.removeAll(connection);
   removeItem(connection);
   if (connection && connection->startNode() && connection->endNode()) {
-    emit connectionDeleted(connection->startNode()->nodeId(),
-                           connection->endNode()->nodeId());
+    emit connectionDeleted(connection->startNode()->nodeId(), connection->endNode()->nodeId());
   }
   delete connection;
 
@@ -331,11 +321,9 @@ void NMStoryGraphScene::removeConnection(NMGraphConnectionItem *connection) {
   update(connRect);
 }
 
-bool NMStoryGraphScene::removeConnection(uint64_t fromNodeId,
-                                         uint64_t toNodeId) {
-  for (auto *conn : m_connections) {
-    if (conn->startNode() && conn->endNode() &&
-        conn->startNode()->nodeId() == fromNodeId &&
+bool NMStoryGraphScene::removeConnection(uint64_t fromNodeId, uint64_t toNodeId) {
+  for (auto* conn : m_connections) {
+    if (conn->startNode() && conn->endNode() && conn->startNode()->nodeId() == fromNodeId &&
         conn->endNode()->nodeId() == toNodeId) {
       removeConnection(conn);
       return true;
@@ -344,10 +332,10 @@ bool NMStoryGraphScene::removeConnection(uint64_t fromNodeId,
   return false;
 }
 
-QList<NMGraphConnectionItem *>
-NMStoryGraphScene::findConnectionsForNode(NMGraphNodeItem *node) const {
-  QList<NMGraphConnectionItem *> result;
-  for (auto *conn : m_connections) {
+QList<NMGraphConnectionItem*>
+NMStoryGraphScene::findConnectionsForNode(NMGraphNodeItem* node) const {
+  QList<NMGraphConnectionItem*> result;
+  for (auto* conn : m_connections) {
     if (conn->startNode() == node || conn->endNode() == node) {
       result.append(conn);
     }
@@ -355,19 +343,17 @@ NMStoryGraphScene::findConnectionsForNode(NMGraphNodeItem *node) const {
   return result;
 }
 
-NMGraphNodeItem *NMStoryGraphScene::findNode(uint64_t nodeId) const {
+NMGraphNodeItem* NMStoryGraphScene::findNode(uint64_t nodeId) const {
   return m_nodeLookup.value(nodeId, nullptr);
 }
 
-void NMStoryGraphScene::requestEntryNode(const QString &nodeIdString) {
+void NMStoryGraphScene::requestEntryNode(const QString& nodeIdString) {
   emit entryNodeRequested(nodeIdString);
 }
 
-bool NMStoryGraphScene::hasConnection(uint64_t fromNodeId,
-                                      uint64_t toNodeId) const {
-  for (auto *conn : m_connections) {
-    if (conn->startNode() && conn->endNode() &&
-        conn->startNode()->nodeId() == fromNodeId &&
+bool NMStoryGraphScene::hasConnection(uint64_t fromNodeId, uint64_t toNodeId) const {
+  for (auto* conn : m_connections) {
+    if (conn->startNode() && conn->endNode() && conn->startNode()->nodeId() == fromNodeId &&
         conn->endNode()->nodeId() == toNodeId) {
       return true;
     }
@@ -375,8 +361,7 @@ bool NMStoryGraphScene::hasConnection(uint64_t fromNodeId,
   return false;
 }
 
-bool NMStoryGraphScene::wouldCreateCycle(uint64_t fromNodeId,
-                                         uint64_t toNodeId) const {
+bool NMStoryGraphScene::wouldCreateCycle(uint64_t fromNodeId, uint64_t toNodeId) const {
   // If adding an edge from -> to would create a cycle, we need to check
   // if there's already a path from 'to' back to 'from'
   if (fromNodeId == toNodeId) {
@@ -385,7 +370,7 @@ bool NMStoryGraphScene::wouldCreateCycle(uint64_t fromNodeId,
 
   // Build adjacency list
   QHash<uint64_t, QList<uint64_t>> adj;
-  for (auto *conn : m_connections) {
+  for (auto* conn : m_connections) {
     if (conn->startNode() && conn->endNode()) {
       adj[conn->startNode()->nodeId()].append(conn->endNode()->nodeId());
     }
@@ -426,11 +411,11 @@ QList<QList<uint64_t>> NMStoryGraphScene::detectCycles() const {
   QHash<uint64_t, QList<uint64_t>> adj;
   QSet<uint64_t> allNodes;
 
-  for (auto *node : m_nodes) {
+  for (auto* node : m_nodes) {
     allNodes.insert(node->nodeId());
   }
 
-  for (auto *conn : m_connections) {
+  for (auto* conn : m_connections) {
     if (conn->startNode() && conn->endNode()) {
       adj[conn->startNode()->nodeId()].append(conn->endNode()->nodeId());
     }
@@ -490,7 +475,7 @@ QList<uint64_t> NMStoryGraphScene::findUnreachableNodes() const {
 
   // Find entry nodes
   QList<uint64_t> entryNodes;
-  for (auto *node : m_nodes) {
+  for (auto* node : m_nodes) {
     if (node->isEntry()) {
       entryNodes.append(node->nodeId());
     }
@@ -498,7 +483,7 @@ QList<uint64_t> NMStoryGraphScene::findUnreachableNodes() const {
 
   // If no entry nodes, all nodes are potentially unreachable
   if (entryNodes.isEmpty()) {
-    for (auto *node : m_nodes) {
+    for (auto* node : m_nodes) {
       unreachable.append(node->nodeId());
     }
     return unreachable;
@@ -506,7 +491,7 @@ QList<uint64_t> NMStoryGraphScene::findUnreachableNodes() const {
 
   // Build adjacency list
   QHash<uint64_t, QList<uint64_t>> adj;
-  for (auto *conn : m_connections) {
+  for (auto* conn : m_connections) {
     if (conn->startNode() && conn->endNode()) {
       adj[conn->startNode()->nodeId()].append(conn->endNode()->nodeId());
     }
@@ -531,7 +516,7 @@ QList<uint64_t> NMStoryGraphScene::findUnreachableNodes() const {
   }
 
   // Find nodes not visited
-  for (auto *node : m_nodes) {
+  for (auto* node : m_nodes) {
     if (!visited.contains(node->nodeId())) {
       unreachable.append(node->nodeId());
     }
@@ -545,23 +530,22 @@ QStringList NMStoryGraphScene::validateGraph() const {
 
   // Check for entry node
   bool hasEntry = false;
-  for (auto *node : m_nodes) {
+  for (auto* node : m_nodes) {
     if (node->isEntry()) {
       hasEntry = true;
       break;
     }
   }
   if (!hasEntry && !m_nodes.isEmpty()) {
-    errors.append(
-        tr("No entry node defined. Set one node as the starting point."));
+    errors.append(tr("No entry node defined. Set one node as the starting point."));
   }
 
   // Check for cycles
   auto cycles = detectCycles();
-  for (const auto &cycle : cycles) {
+  for (const auto& cycle : cycles) {
     QStringList nodeNames;
     for (uint64_t id : cycle) {
-      auto *node = findNode(id);
+      auto* node = findNode(id);
       if (node) {
         nodeNames.append(node->title());
       }
@@ -574,7 +558,7 @@ QStringList NMStoryGraphScene::validateGraph() const {
   if (!unreachable.isEmpty()) {
     QStringList nodeNames;
     for (uint64_t id : unreachable) {
-      auto *node = findNode(id);
+      auto* node = findNode(id);
       if (node) {
         nodeNames.append(node->title());
       }
@@ -583,9 +567,9 @@ QStringList NMStoryGraphScene::validateGraph() const {
   }
 
   // Check for dead ends (nodes with no outgoing connections except End nodes)
-  for (auto *node : m_nodes) {
+  for (auto* node : m_nodes) {
     bool hasOutgoing = false;
-    for (auto *conn : m_connections) {
+    for (auto* conn : m_connections) {
       if (conn->startNode() == node) {
         hasOutgoing = true;
         break;
@@ -593,19 +577,16 @@ QStringList NMStoryGraphScene::validateGraph() const {
     }
 
     // End nodes don't need outgoing connections
-    if (!hasOutgoing &&
-        !node->nodeType().contains("End", Qt::CaseInsensitive)) {
+    if (!hasOutgoing && !node->nodeType().contains("End", Qt::CaseInsensitive)) {
       // Also skip entry nodes if they have no other nodes
       if (!node->isEntry() || m_nodes.size() > 1) {
-        errors.append(tr("Dead end: '%1' has no outgoing connections")
-                          .arg(node->title()));
+        errors.append(tr("Dead end: '%1' has no outgoing connections").arg(node->title()));
       }
     }
   }
 
   // Validate scene references from project manager
-  const QString projectPath = QString::fromStdString(
-      ProjectManager::instance().getProjectPath());
+  const QString projectPath = QString::fromStdString(ProjectManager::instance().getProjectPath());
   if (!projectPath.isEmpty()) {
     errors.append(validateSceneReferences(projectPath));
   }
@@ -613,7 +594,7 @@ QStringList NMStoryGraphScene::validateGraph() const {
   return errors;
 }
 
-QStringList NMStoryGraphScene::validateSceneReferences(const QString &projectPath) const {
+QStringList NMStoryGraphScene::validateSceneReferences(const QString& projectPath) const {
   QStringList errors;
 
   if (projectPath.isEmpty()) {
@@ -631,7 +612,8 @@ QStringList NMStoryGraphScene::validateSceneReferences(const QString &projectPat
 
   // Collect all available .nmscene files
   QSet<QString> availableScenes;
-  QDirIterator it(scenesPath, QStringList() << "*.nmscene", QDir::Files, QDirIterator::Subdirectories);
+  QDirIterator it(scenesPath, QStringList() << "*.nmscene", QDir::Files,
+                  QDirIterator::Subdirectories);
   while (it.hasNext()) {
     QString filePath = it.next();
     QFileInfo fileInfo(filePath);
@@ -641,7 +623,7 @@ QStringList NMStoryGraphScene::validateSceneReferences(const QString &projectPat
   }
 
   // Check each scene node for valid references
-  for (auto *node : m_nodes) {
+  for (auto* node : m_nodes) {
     if (!node->isSceneNode()) {
       continue;
     }
@@ -650,25 +632,24 @@ QStringList NMStoryGraphScene::validateSceneReferences(const QString &projectPat
 
     // Check if scene ID is empty
     if (sceneId.isEmpty()) {
-      errors.append(tr("Scene node '%1' has no scene ID assigned")
-                        .arg(node->title()));
+      errors.append(tr("Scene node '%1' has no scene ID assigned").arg(node->title()));
       continue;
     }
 
     // Check if .nmscene file exists
     if (!availableScenes.contains(sceneId)) {
-      errors.append(tr("Scene '%1' not found - Missing file: Scenes/%2.nmscene")
-                        .arg(node->title(), sceneId));
+      errors.append(
+          tr("Scene '%1' not found - Missing file: Scenes/%2.nmscene").arg(node->title(), sceneId));
     }
   }
 
   return errors;
 }
 
-void NMStoryGraphScene::updateSceneValidationState(const QString &projectPath) {
+void NMStoryGraphScene::updateSceneValidationState(const QString& projectPath) {
   if (projectPath.isEmpty()) {
     // Clear validation state if no project
-    for (auto *node : m_nodes) {
+    for (auto* node : m_nodes) {
       if (node->isSceneNode()) {
         node->setSceneValidationError(false);
         node->setSceneValidationWarning(false);
@@ -685,7 +666,8 @@ void NMStoryGraphScene::updateSceneValidationState(const QString &projectPath) {
   // Collect all available .nmscene files
   QSet<QString> availableScenes;
   if (scenesDir.exists()) {
-    QDirIterator it(scenesPath, QStringList() << "*.nmscene", QDir::Files, QDirIterator::Subdirectories);
+    QDirIterator it(scenesPath, QStringList() << "*.nmscene", QDir::Files,
+                    QDirIterator::Subdirectories);
     while (it.hasNext()) {
       QString filePath = it.next();
       QFileInfo fileInfo(filePath);
@@ -695,7 +677,7 @@ void NMStoryGraphScene::updateSceneValidationState(const QString &projectPath) {
   }
 
   // Update validation state for each scene node
-  for (auto *node : m_nodes) {
+  for (auto* node : m_nodes) {
     if (!node->isSceneNode()) {
       // Clear validation for non-scene nodes
       node->setSceneValidationError(false);
@@ -735,7 +717,7 @@ void NMStoryGraphScene::setReadOnly(bool readOnly) {
   m_readOnly = readOnly;
 
   // Update item flags for all nodes
-  for (auto *node : m_nodes) {
+  for (auto* node : m_nodes) {
     if (readOnly) {
       // Allow selection but not movement
       node->setFlag(QGraphicsItem::ItemIsMovable, false);
@@ -758,16 +740,16 @@ void NMStoryGraphScene::setSceneContainersVisible(bool enabled) {
   update(); // Trigger repaint
 }
 
-QList<NMGraphNodeItem *>
-NMStoryGraphScene::findDialogueNodesInScene(NMGraphNodeItem *sceneNode) const {
-  QList<NMGraphNodeItem *> result;
+QList<NMGraphNodeItem*>
+NMStoryGraphScene::findDialogueNodesInScene(NMGraphNodeItem* sceneNode) const {
+  QList<NMGraphNodeItem*> result;
   if (!sceneNode || !sceneNode->isSceneNode()) {
     return result;
   }
 
   // Build adjacency list for outgoing connections
   QHash<uint64_t, QList<uint64_t>> adj;
-  for (auto *conn : m_connections) {
+  for (auto* conn : m_connections) {
     if (conn->startNode() && conn->endNode()) {
       adj[conn->startNode()->nodeId()].append(conn->endNode()->nodeId());
     }
@@ -788,7 +770,7 @@ NMStoryGraphScene::findDialogueNodesInScene(NMGraphNodeItem *sceneNode) const {
       }
       visited.insert(nextId);
 
-      auto *nextNode = findNode(nextId);
+      auto* nextNode = findNode(nextId);
       if (!nextNode) {
         continue;
       }
@@ -806,7 +788,7 @@ NMStoryGraphScene::findDialogueNodesInScene(NMGraphNodeItem *sceneNode) const {
   return result;
 }
 
-void NMStoryGraphScene::keyPressEvent(QKeyEvent *event) {
+void NMStoryGraphScene::keyPressEvent(QKeyEvent* event) {
   // Block delete in read-only mode
   if (m_readOnly) {
     event->accept();
@@ -822,19 +804,18 @@ void NMStoryGraphScene::keyPressEvent(QKeyEvent *event) {
   QGraphicsScene::keyPressEvent(event);
 }
 
-void NMStoryGraphScene::mousePressEvent(QGraphicsSceneMouseEvent *event) {
+void NMStoryGraphScene::mousePressEvent(QGraphicsSceneMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     // Track starting positions for all selected nodes (or the clicked node)
     m_dragStartPositions.clear();
-    QList<QGraphicsItem *> targets;
-    QGraphicsItem *clicked = itemAt(event->scenePos(), QTransform());
-    if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(clicked)) {
+    QList<QGraphicsItem*> targets;
+    QGraphicsItem* clicked = itemAt(event->scenePos(), QTransform());
+    if (auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(clicked)) {
       // Include all selected nodes if the clicked node is part of selection
-      targets = selectedItems().contains(node) ? selectedItems()
-                                               : QList<QGraphicsItem *>{node};
+      targets = selectedItems().contains(node) ? selectedItems() : QList<QGraphicsItem*>{node};
     }
-    for (auto *item : targets) {
-      if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
+    for (auto* item : targets) {
+      if (auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item)) {
         m_dragStartPositions.insert(node->nodeId(), node->pos());
       }
     }
@@ -844,20 +825,18 @@ void NMStoryGraphScene::mousePressEvent(QGraphicsSceneMouseEvent *event) {
   QGraphicsScene::mousePressEvent(event);
 }
 
-void NMStoryGraphScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
+void NMStoryGraphScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
   if (event->button() == Qt::LeftButton && m_isDraggingNodes) {
     QVector<GraphNodeMove> moves;
-    for (auto it = m_dragStartPositions.constBegin();
-         it != m_dragStartPositions.constEnd(); ++it) {
+    for (auto it = m_dragStartPositions.constBegin(); it != m_dragStartPositions.constEnd(); ++it) {
       const uint64_t nodeId = it.key();
-      auto *node = findNode(nodeId);
+      auto* node = findNode(nodeId);
       if (!node) {
         continue;
       }
       const QPointF oldPos = it.value();
       const QPointF newPos = node->pos();
-      if (!qFuzzyCompare(oldPos.x(), newPos.x()) ||
-          !qFuzzyCompare(oldPos.y(), newPos.y())) {
+      if (!qFuzzyCompare(oldPos.x(), newPos.x()) || !qFuzzyCompare(oldPos.y(), newPos.y())) {
         moves.push_back(GraphNodeMove{nodeId, oldPos, newPos});
       }
     }
@@ -871,8 +850,8 @@ void NMStoryGraphScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
   QGraphicsScene::mouseReleaseEvent(event);
 }
 
-void NMStoryGraphScene::drawBackground(QPainter *painter, const QRectF &rect) {
-  const auto &palette = NMStyleManager::instance().palette();
+void NMStoryGraphScene::drawBackground(QPainter* painter, const QRectF& rect) {
+  const auto& palette = NMStyleManager::instance().palette();
 
   // Fill background
   painter->fillRect(rect, palette.bgDarkest);
@@ -905,11 +884,15 @@ void NMStoryGraphScene::drawBackground(QPainter *painter, const QRectF &rect) {
   }
 }
 
-void NMStoryGraphScene::drawSceneContainers(QPainter *painter, const QRectF &viewRect) {
-  // Colors for scene containers - use scene's green accent with transparency
-  const QColor containerFill(100, 200, 150, 25);   // Very transparent green fill
-  const QColor containerBorder(100, 200, 150, 80); // Semi-transparent green border
-  const QColor labelColor(100, 200, 150, 160);     // Scene label color
+void NMStoryGraphScene::drawSceneContainers(QPainter* painter, const QRectF& viewRect) {
+  // Issue #389: Colors for scene containers - use palette colors with transparency
+  const auto& palette = NMStyleManager::instance().palette();
+  QColor containerFill = palette.sceneContainerFill;
+  containerFill.setAlpha(25); // Very transparent green fill
+  QColor containerBorder = palette.sceneContainerBorder;
+  containerBorder.setAlpha(80); // Semi-transparent green border
+  QColor labelColor = palette.sceneContainerBorder;
+  labelColor.setAlpha(160); // Scene label color
   constexpr qreal containerPadding = 25.0;
   constexpr qreal cornerRadius = 16.0;
 
@@ -917,7 +900,7 @@ void NMStoryGraphScene::drawSceneContainers(QPainter *painter, const QRectF &vie
   painter->setRenderHint(QPainter::Antialiasing, true);
 
   // Draw containers for each scene node
-  for (auto *node : m_nodes) {
+  for (auto* node : m_nodes) {
     if (!node->isSceneNode()) {
       continue;
     }
@@ -925,8 +908,8 @@ void NMStoryGraphScene::drawSceneContainers(QPainter *painter, const QRectF &vie
     // Calculate container bounds including all dialogue nodes in this scene
     QRectF containerBounds = node->sceneBoundingRect();
 
-    QList<NMGraphNodeItem *> dialogueNodes = findDialogueNodesInScene(node);
-    for (auto *dialogueNode : dialogueNodes) {
+    QList<NMGraphNodeItem*> dialogueNodes = findDialogueNodesInScene(node);
+    for (auto* dialogueNode : dialogueNodes) {
       containerBounds = containerBounds.united(dialogueNode->sceneBoundingRect());
     }
 
@@ -959,10 +942,8 @@ void NMStoryGraphScene::drawSceneContainers(QPainter *painter, const QRectF &vie
     labelFont.setWeight(QFont::Medium);
     painter->setFont(labelFont);
 
-    QRectF labelRect(containerBounds.left() + 10,
-                     containerBounds.top() + 4,
-                     containerBounds.width() - 20,
-                     18);
+    QRectF labelRect(containerBounds.left() + 10, containerBounds.top() + 4,
+                     containerBounds.width() - 20, 18);
     painter->drawText(labelRect, Qt::AlignLeft | Qt::AlignTop, sceneLabel);
 
     // If there are embedded dialogue nodes, show count indicator
@@ -971,9 +952,12 @@ void NMStoryGraphScene::drawSceneContainers(QPainter *painter, const QRectF &vie
       QFontMetrics fm(labelFont);
       int labelWidth = fm.horizontalAdvance(sceneLabel);
 
-      painter->setPen(QColor(100, 200, 150, 100));
-      painter->drawText(labelRect.adjusted(labelWidth + 10, 0, 0, 0),
-                        Qt::AlignLeft | Qt::AlignTop, countText);
+      // Issue #389: Use palette color with transparency
+      QColor countColor = palette.sceneContainerBorder;
+      countColor.setAlpha(100);
+      painter->setPen(countColor);
+      painter->drawText(labelRect.adjusted(labelWidth + 10, 0, 0, 0), Qt::AlignLeft | Qt::AlignTop,
+                        countText);
     }
   }
 
