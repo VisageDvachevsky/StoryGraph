@@ -20,6 +20,16 @@
 #include <iomanip>
 #include <sstream>
 
+#ifdef NOVELMIND_QT6_GUI
+#include <QAudioDecoder>
+#include <QEventLoop>
+#include <QImage>
+#include <QObject>
+#include <QString>
+#include <QTimer>
+#include <QUrl>
+#endif
+
 namespace fs = std::filesystem;
 
 namespace NovelMind::editor {
@@ -293,9 +303,45 @@ void BuildSizeAnalyzer::removeListener(IBuildSizeListener *listener) {
 
 Result<void>
 BuildSizeAnalyzer::applyOptimization(const OptimizationSuggestion &suggestion) {
-  // Placeholder implementation
-  (void)suggestion;
-  return Result<void>::error("Optimization application not yet implemented");
+  try {
+    switch (suggestion.type) {
+    case OptimizationSuggestion::Type::RemoveDuplicate: {
+      // Remove the duplicate file
+      if (fs::exists(suggestion.assetPath)) {
+        fs::remove(suggestion.assetPath);
+        return Result<void>::ok();
+      }
+      return Result<void>::error("File not found: " + suggestion.assetPath);
+    }
+
+    case OptimizationSuggestion::Type::RemoveUnused: {
+      // Remove the unused asset
+      if (fs::exists(suggestion.assetPath)) {
+        fs::remove(suggestion.assetPath);
+        return Result<void>::ok();
+      }
+      return Result<void>::error("File not found: " + suggestion.assetPath);
+    }
+
+    case OptimizationSuggestion::Type::ResizeImage:
+    case OptimizationSuggestion::Type::CompressImage:
+    case OptimizationSuggestion::Type::CompressAudio:
+    case OptimizationSuggestion::Type::ConvertFormat:
+    case OptimizationSuggestion::Type::EnableCompression:
+    case OptimizationSuggestion::Type::ReduceQuality:
+    case OptimizationSuggestion::Type::SplitAsset:
+    case OptimizationSuggestion::Type::MergeAssets:
+      // These require manual intervention or external tools
+      return Result<void>::error(
+          "This optimization type requires manual intervention");
+
+    default:
+      return Result<void>::error("Unknown optimization type");
+    }
+  } catch (const std::exception &e) {
+    return Result<void>::error(std::string("Failed to apply optimization: ") +
+                                e.what());
+  }
 }
 
 Result<void> BuildSizeAnalyzer::applyAllAutoOptimizations() {
@@ -319,13 +365,73 @@ Result<void> BuildSizeAnalyzer::applyAllAutoOptimizations() {
 }
 
 Result<void> BuildSizeAnalyzer::removeDuplicates() {
-  // Placeholder implementation
-  return Result<void>::error("Duplicate removal not yet implemented");
+  try {
+    i32 removedCount = 0;
+    std::vector<std::string> errors;
+
+    for (const auto &dupGroup : m_analysis.duplicates) {
+      // Keep the first file, remove all duplicates
+      for (size_t i = 1; i < dupGroup.paths.size(); i++) {
+        const auto &path = dupGroup.paths[i];
+        if (fs::exists(path)) {
+          try {
+            fs::remove(path);
+            removedCount++;
+          } catch (const std::exception &e) {
+            errors.push_back("Failed to remove " + path + ": " + e.what());
+          }
+        }
+      }
+    }
+
+    if (!errors.empty()) {
+      std::ostringstream oss;
+      oss << "Removed " << removedCount << " duplicates, but encountered "
+          << errors.size() << " errors:\n";
+      for (const auto &error : errors) {
+        oss << "  - " << error << "\n";
+      }
+      return Result<void>::error(oss.str());
+    }
+
+    return Result<void>::ok();
+  } catch (const std::exception &e) {
+    return Result<void>::error(std::string("Failed to remove duplicates: ") +
+                                e.what());
+  }
 }
 
 Result<void> BuildSizeAnalyzer::removeUnusedAssets() {
-  // Placeholder implementation
-  return Result<void>::error("Unused asset removal not yet implemented");
+  try {
+    i32 removedCount = 0;
+    std::vector<std::string> errors;
+
+    for (const auto &assetPath : m_analysis.unusedAssets) {
+      if (fs::exists(assetPath)) {
+        try {
+          fs::remove(assetPath);
+          removedCount++;
+        } catch (const std::exception &e) {
+          errors.push_back("Failed to remove " + assetPath + ": " + e.what());
+        }
+      }
+    }
+
+    if (!errors.empty()) {
+      std::ostringstream oss;
+      oss << "Removed " << removedCount << " unused assets, but encountered "
+          << errors.size() << " errors:\n";
+      for (const auto &error : errors) {
+        oss << "  - " << error << "\n";
+      }
+      return Result<void>::error(oss.str());
+    }
+
+    return Result<void>::ok();
+  } catch (const std::exception &e) {
+    return Result<void>::error(std::string("Failed to remove unused assets: ") +
+                                e.what());
+  }
 }
 
 Result<std::string> BuildSizeAnalyzer::exportAsJson() const {
@@ -673,9 +779,25 @@ void BuildSizeAnalyzer::analyzeAsset(AssetSizeInfo &info) {
 
   // Image-specific analysis
   if (info.category == AssetCategory::Images) {
-    // Placeholder - would use image library to get dimensions
-    // info.imageWidth = ...;
-    // info.imageHeight = ...;
+    // Use Qt to get image dimensions
+#ifdef NOVELMIND_QT6_GUI
+    QImage image(QString::fromStdString(info.path));
+    if (!image.isNull()) {
+      info.imageWidth = image.width();
+      info.imageHeight = image.height();
+      info.imageBitDepth = image.depth();
+
+      // Check for oversized dimensions
+      if (info.imageWidth > m_config.maxImageDimension ||
+          info.imageHeight > m_config.maxImageDimension) {
+        info.isOversized = true;
+        info.optimizationSuggestions.push_back(
+            "Image dimensions exceed " +
+            std::to_string(m_config.maxImageDimension) +
+            "px. Consider resizing.");
+      }
+    }
+#endif
 
     // Check for oversized images
     if (info.originalSize > m_config.largeImageThreshold) {
@@ -687,9 +809,57 @@ void BuildSizeAnalyzer::analyzeAsset(AssetSizeInfo &info) {
 
   // Audio-specific analysis
   if (info.category == AssetCategory::Audio) {
-    // Placeholder - would use audio library
-    // info.audioDuration = ...;
-    // info.audioSampleRate = ...;
+    // Use Qt Multimedia to analyze audio
+#ifdef NOVELMIND_QT6_GUI
+    QAudioDecoder decoder;
+    decoder.setSource(QUrl::fromLocalFile(QString::fromStdString(info.path)));
+
+    // Event loop to wait for format information
+    QEventLoop loop;
+    bool formatAvailable = false;
+
+    QObject::connect(&decoder, &QAudioDecoder::bufferReady, [&]() {
+      if (!formatAvailable && decoder.bufferAvailable()) {
+        formatAvailable = true;
+        loop.quit();
+      }
+    });
+
+    QObject::connect(&decoder, &QAudioDecoder::finished, [&]() { loop.quit(); });
+
+    QObject::connect(
+        &decoder,
+        static_cast<void (QAudioDecoder::*)(QAudioDecoder::Error)>(
+            &QAudioDecoder::error),
+        [&](QAudioDecoder::Error) { loop.quit(); });
+
+    // Timeout to prevent hanging
+    QTimer::singleShot(1000, &loop, &QEventLoop::quit);
+
+    decoder.start();
+    loop.exec();
+
+    if (formatAvailable && decoder.bufferAvailable()) {
+      auto format = decoder.audioFormat();
+      info.audioSampleRate = format.sampleRate();
+      info.audioChannels = format.channelCount();
+
+      // Calculate duration from file size and format
+      // This is a rough estimate
+      if (info.audioSampleRate > 0 && info.audioChannels > 0) {
+        i32 bytesPerSample = format.bytesPerSample();
+        if (bytesPerSample > 0) {
+          f64 totalSamples = static_cast<f64>(info.originalSize) /
+                             static_cast<f64>(bytesPerSample) /
+                             static_cast<f64>(info.audioChannels);
+          info.audioDuration = static_cast<f32>(totalSamples) /
+                               static_cast<f32>(info.audioSampleRate);
+        }
+      }
+    }
+
+    decoder.stop();
+#endif
 
     if (info.originalSize > m_config.largeAudioThreshold) {
       info.isOversized = true;
@@ -744,13 +914,116 @@ void BuildSizeAnalyzer::detectDuplicates() {
 }
 
 void BuildSizeAnalyzer::detectUnused() {
-  // Placeholder - would need to parse scripts and scenes to find references
-  // For now, mark nothing as unused
+  // Parse all scripts and scenes to find asset references
+  m_referencedAssets.clear();
 
-  // In a real implementation:
-  // 1. Parse all scripts for asset references
-  // 2. Parse all scene files for asset references
-  // 3. Mark any assets not in the reference set as unused
+  if (m_projectPath.empty()) {
+    return;
+  }
+
+  fs::path projectDir(m_projectPath);
+
+  // Parse script files for asset references
+  fs::path scriptsDir = projectDir / "scripts";
+  if (fs::exists(scriptsDir)) {
+    for (const auto &entry : fs::recursive_directory_iterator(scriptsDir)) {
+      if (entry.is_regular_file()) {
+        std::string ext = entry.path().extension().string();
+        if (ext == ".nms" || ext == ".nmscript") {
+          parseFileForAssetReferences(entry.path().string());
+        }
+      }
+    }
+  }
+
+  // Parse scene files for asset references
+  fs::path scenesDir = projectDir / "scenes";
+  if (fs::exists(scenesDir)) {
+    for (const auto &entry : fs::recursive_directory_iterator(scenesDir)) {
+      if (entry.is_regular_file()) {
+        std::string ext = entry.path().extension().string();
+        if (ext == ".json" || ext == ".scene") {
+          parseFileForAssetReferences(entry.path().string());
+        }
+      }
+    }
+  }
+
+  // Mark assets as unused if they're not referenced
+  for (auto &asset : m_analysis.assets) {
+    // Check if the asset path or filename is referenced
+    bool isReferenced = false;
+
+    // Check full path
+    if (m_referencedAssets.find(asset.path) != m_referencedAssets.end()) {
+      isReferenced = true;
+    }
+
+    // Check filename only
+    if (m_referencedAssets.find(asset.name) != m_referencedAssets.end()) {
+      isReferenced = true;
+    }
+
+    // Check relative path from project
+    fs::path assetPath(asset.path);
+    fs::path relativePath = fs::relative(assetPath, projectDir);
+    if (m_referencedAssets.find(relativePath.string()) !=
+        m_referencedAssets.end()) {
+      isReferenced = true;
+    }
+
+    if (!isReferenced) {
+      asset.isUnused = true;
+      m_analysis.unusedAssets.push_back(asset.path);
+      m_analysis.unusedSpace += asset.originalSize;
+    }
+  }
+}
+
+void BuildSizeAnalyzer::parseFileForAssetReferences(const std::string &filePath) {
+  std::ifstream file(filePath);
+  if (!file.is_open()) {
+    return;
+  }
+
+  std::string line;
+  while (std::getline(file, line)) {
+    // Look for common asset reference patterns
+    // Pattern: "path/to/asset.ext"
+    size_t pos = 0;
+    while ((pos = line.find('"', pos)) != std::string::npos) {
+      size_t end = line.find('"', pos + 1);
+      if (end != std::string::npos) {
+        std::string reference = line.substr(pos + 1, end - pos - 1);
+
+        // Check if it looks like an asset path
+        if (reference.find('.') != std::string::npos) {
+          // Extract file extension
+          size_t extPos = reference.find_last_of('.');
+          if (extPos != std::string::npos) {
+            std::string ext = reference.substr(extPos);
+            // Check if it's a known asset extension
+            if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" ||
+                ext == ".ogg" || ext == ".wav" || ext == ".mp3" ||
+                ext == ".ttf" || ext == ".otf" || ext == ".mp4" ||
+                ext == ".webm") {
+              m_referencedAssets.insert(reference);
+
+              // Also add just the filename
+              size_t lastSlash = reference.find_last_of("/\\");
+              if (lastSlash != std::string::npos) {
+                m_referencedAssets.insert(reference.substr(lastSlash + 1));
+              }
+            }
+          }
+        }
+
+        pos = end + 1;
+      } else {
+        break;
+      }
+    }
+  }
 }
 
 void BuildSizeAnalyzer::generateSuggestions() {
@@ -992,7 +1265,11 @@ void BuildSizeAnalyzerPanel::update([[maybe_unused]] f64 deltaTime) {
 }
 
 void BuildSizeAnalyzerPanel::render() {
-  // Placeholder - would render using ImGui or similar
+  // TODO: Implement UI rendering
+  // This class needs to be migrated to Qt6 (NMDockPanel) to match the
+  // new editor architecture. The rendering should use Qt widgets instead
+  // of the legacy rendering system.
+  // For now, use BuildSizeAnalyzer methods to access analysis data.
 }
 
 void BuildSizeAnalyzerPanel::onResize([[maybe_unused]] i32 width,
@@ -1049,37 +1326,44 @@ void BuildSizeAnalyzerPanel::setOnOptimizationApplied(
 }
 
 void BuildSizeAnalyzerPanel::renderOverview() {
-  // Placeholder
+  // TODO: Migrate to Qt6 - render overview with total size, file count, etc.
+  // Use m_analyzer->getAnalysis() to access data
 }
 
 void BuildSizeAnalyzerPanel::renderCategoryBreakdown() {
-  // Placeholder
+  // TODO: Migrate to Qt6 - render category pie chart and list
+  // Use m_analysis.categorySummaries for data
 }
 
 void BuildSizeAnalyzerPanel::renderSizeList() {
-  // Placeholder
+  // TODO: Migrate to Qt6 - render sortable list of all assets
+  // Use m_analysis.assets with filtering based on m_filter and m_categoryFilter
 }
 
 void BuildSizeAnalyzerPanel::renderDuplicates() {
-  // Placeholder
+  // TODO: Migrate to Qt6 - render duplicate groups with ability to remove
+  // Use m_analysis.duplicates for data
 }
 
 void BuildSizeAnalyzerPanel::renderUnused() {
-  // Placeholder
+  // TODO: Migrate to Qt6 - render list of unused assets
+  // Use m_analysis.unusedAssets for data
 }
 
 void BuildSizeAnalyzerPanel::renderSuggestions() {
-  // Placeholder
+  // TODO: Migrate to Qt6 - render optimization suggestions with priority
+  // Use m_analysis.suggestions for data
 }
 
 void BuildSizeAnalyzerPanel::renderToolbar() {
-  // Placeholder
+  // TODO: Migrate to Qt6 - render toolbar with refresh, export, filter buttons
 }
 
 void BuildSizeAnalyzerPanel::renderPieChart([[maybe_unused]] f32 x,
                                             [[maybe_unused]] f32 y,
                                             [[maybe_unused]] f32 radius) {
-  // Placeholder
+  // TODO: Migrate to Qt6 - use QPainter to draw pie chart
+  // or use QtCharts module
 }
 
 void BuildSizeAnalyzerPanel::renderSizeBar([[maybe_unused]] f32 x,
@@ -1088,7 +1372,8 @@ void BuildSizeAnalyzerPanel::renderSizeBar([[maybe_unused]] f32 x,
                                            [[maybe_unused]] f32 height,
                                            [[maybe_unused]] u64 size,
                                            [[maybe_unused]] u64 total) {
-  // Placeholder
+  // TODO: Migrate to Qt6 - use QPainter to draw progress bar
+  // showing size/total ratio
 }
 
 std::string BuildSizeAnalyzerPanel::formatSize(u64 bytes) const {
