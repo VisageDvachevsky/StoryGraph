@@ -27,7 +27,9 @@ inline bool safeIsXdigit(char c) {
 
 // UTF-8 helper functions for Unicode identifier support
 // Checks if a byte is a UTF-8 continuation byte (10xxxxxx)
-inline bool isUtf8Continuation(unsigned char c) { return (c & 0xC0) == 0x80; }
+inline bool isUtf8Continuation(unsigned char c) {
+  return (c & 0xC0) == 0x80;
+}
 
 // Checks if a character starts a valid UTF-8 multibyte sequence
 // Returns the number of bytes in the sequence (2-4), or 0 if not a valid start
@@ -44,7 +46,7 @@ inline int utf8SequenceLength(unsigned char c) {
 // Decodes a UTF-8 code point from a string view starting at position pos
 // Returns the Unicode code point and advances pos past the decoded character
 // Returns 0 and doesn't advance pos on error
-inline uint32_t decodeUtf8(std::string_view source, size_t &pos) {
+inline uint32_t decodeUtf8(std::string_view source, size_t& pos) {
   if (pos >= source.size())
     return 0;
 
@@ -72,27 +74,18 @@ inline uint32_t decodeUtf8(std::string_view source, size_t &pos) {
   switch (seqLen) {
   case 2:
     codePoint = static_cast<uint32_t>(c & 0x1F) << 6;
-    codePoint |= static_cast<uint32_t>(
-        static_cast<unsigned char>(source[pos + 1]) & 0x3F);
+    codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(source[pos + 1]) & 0x3F);
     break;
   case 3:
     codePoint = static_cast<uint32_t>(c & 0x0F) << 12;
-    codePoint |= static_cast<uint32_t>(
-                     static_cast<unsigned char>(source[pos + 1]) & 0x3F)
-                 << 6;
-    codePoint |= static_cast<uint32_t>(
-        static_cast<unsigned char>(source[pos + 2]) & 0x3F);
+    codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(source[pos + 1]) & 0x3F) << 6;
+    codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(source[pos + 2]) & 0x3F);
     break;
   case 4:
     codePoint = static_cast<uint32_t>(c & 0x07) << 18;
-    codePoint |= static_cast<uint32_t>(
-                     static_cast<unsigned char>(source[pos + 1]) & 0x3F)
-                 << 12;
-    codePoint |= static_cast<uint32_t>(
-                     static_cast<unsigned char>(source[pos + 2]) & 0x3F)
-                 << 6;
-    codePoint |= static_cast<uint32_t>(
-        static_cast<unsigned char>(source[pos + 3]) & 0x3F);
+    codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(source[pos + 1]) & 0x3F) << 12;
+    codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(source[pos + 2]) & 0x3F) << 6;
+    codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(source[pos + 3]) & 0x3F);
     break;
   default:
     return 0;
@@ -105,8 +98,7 @@ inline uint32_t decodeUtf8(std::string_view source, size_t &pos) {
 // Supports Latin, Cyrillic, Greek, and other common alphabets
 inline bool isUnicodeIdentifierStart(uint32_t codePoint) {
   // ASCII letters
-  if ((codePoint >= 'A' && codePoint <= 'Z') ||
-      (codePoint >= 'a' && codePoint <= 'z')) {
+  if ((codePoint >= 'A' && codePoint <= 'Z') || (codePoint >= 'a' && codePoint <= 'z')) {
     return true;
   }
   // Latin Extended-A, Extended-B, Extended Additional
@@ -159,9 +151,7 @@ inline bool isUnicodeIdentifierPart(uint32_t codePoint) {
 }
 } // anonymous namespace
 
-Lexer::Lexer()
-    : m_source(), m_start(0), m_current(0), m_line(1), m_column(1),
-      m_startColumn(1) {
+Lexer::Lexer() : m_source(), m_start(0), m_current(0), m_line(1), m_column(1), m_startColumn(1) {
   initKeywords();
 }
 
@@ -229,8 +219,7 @@ Result<std::vector<Token>> Lexer::tokenize(std::string_view source) {
   }
 
   // Add end-of-file token
-  tokens.emplace_back(TokenType::EndOfFile, "",
-                      SourceLocation(m_line, m_column));
+  tokens.emplace_back(TokenType::EndOfFile, "", SourceLocation(m_line, m_column));
 
   if (!m_errors.empty()) {
     return Result<std::vector<Token>>::error(m_errors[0].message);
@@ -239,9 +228,13 @@ Result<std::vector<Token>> Lexer::tokenize(std::string_view source) {
   return Result<std::vector<Token>>::ok(std::move(tokens));
 }
 
-const std::vector<LexerError> &Lexer::getErrors() const { return m_errors; }
+const std::vector<LexerError>& Lexer::getErrors() const {
+  return m_errors;
+}
 
-bool Lexer::isAtEnd() const { return m_current >= m_source.size(); }
+bool Lexer::isAtEnd() const {
+  return m_current >= m_source.size();
+}
 
 char Lexer::peek() const {
   if (isAtEnd())
@@ -300,6 +293,8 @@ void Lexer::skipLineComment() {
 void Lexer::skipBlockComment() {
   // Skip /* ... */
   int depth = 1;
+  u32 startLine = m_line;
+
   while (!isAtEnd() && depth > 0) {
     if (peek() == '/' && peekNext() == '*') {
       advance();
@@ -313,138 +308,151 @@ void Lexer::skipBlockComment() {
       advance();
     }
   }
+
+  // Check if comment was properly closed
+  if (depth > 0) {
+    m_errors.emplace_back("Unclosed block comment starting at line " + std::to_string(startLine),
+                          SourceLocation(startLine, 1));
+  }
 }
 
 Token Lexer::scanToken() {
-  skipWhitespace();
+  // Use iteration instead of recursion to avoid stack overflow with many comments
+  while (true) {
+    skipWhitespace();
 
-  m_start = m_current;
-  m_startColumn = m_column;
+    m_start = m_current;
+    m_startColumn = m_column;
 
-  if (isAtEnd()) {
-    return makeToken(TokenType::EndOfFile);
-  }
-
-  char c = advance();
-
-  // Handle newlines
-  if (c == '\n') {
-    return makeToken(TokenType::Newline);
-  }
-
-  // Handle comments
-  if (c == '/') {
-    if (match('/')) {
-      skipLineComment();
-      return scanToken(); // Recursively get next token
+    if (isAtEnd()) {
+      return makeToken(TokenType::EndOfFile);
     }
-    if (match('*')) {
-      skipBlockComment();
-      return scanToken();
+
+    char c = advance();
+
+    // Handle newlines
+    if (c == '\n') {
+      return makeToken(TokenType::Newline);
     }
-    return makeToken(TokenType::Slash);
-  }
 
-  // Handle numbers
-  if (safeIsDigit(c)) {
-    return scanNumber();
-  }
+    // Handle comments
+    if (c == '/') {
+      if (match('/')) {
+        skipLineComment();
+        continue; // Continue to next token
+      }
+      if (match('*')) {
+        skipBlockComment();
+        // Check if we hit an unclosed comment error
+        if (!m_errors.empty()) {
+          return errorToken(m_errors.back().message);
+        }
+        continue; // Continue to next token
+      }
+      return makeToken(TokenType::Slash);
+    }
 
-  // Handle identifiers and keywords (ASCII)
-  if (safeIsAlpha(c) || c == '_') {
-    return scanIdentifier();
-  }
+    // Handle numbers
+    if (safeIsDigit(c)) {
+      return scanNumber();
+    }
 
-  // Handle Unicode identifiers (Cyrillic, Greek, CJK, etc.)
-  // Check if this is a UTF-8 multibyte character that could start an identifier
-  unsigned char uc = static_cast<unsigned char>(c);
-  if (uc >= 0x80) {
-    // Rewind to re-examine this character as UTF-8
-    --m_current;
-    --m_column;
-    size_t checkPos = m_current;
-    uint32_t codePoint = decodeUtf8(m_source, checkPos);
-    if (codePoint != 0 && isUnicodeIdentifierStart(codePoint)) {
+    // Handle identifiers and keywords (ASCII)
+    if (safeIsAlpha(c) || c == '_') {
       return scanIdentifier();
     }
-    // Not a valid identifier start - advance past this char and continue
-    advance();
-  }
 
-  // Handle strings
-  if (c == '"') {
-    return scanString();
-  }
-
-  // Handle color literals
-  if (c == '#') {
-    if (safeIsXdigit(peek())) {
-      return scanColorLiteral();
+    // Handle Unicode identifiers (Cyrillic, Greek, CJK, etc.)
+    // Check if this is a UTF-8 multibyte character that could start an identifier
+    unsigned char uc = static_cast<unsigned char>(c);
+    if (uc >= 0x80) {
+      // Rewind to re-examine this character as UTF-8
+      --m_current;
+      --m_column;
+      size_t checkPos = m_current;
+      uint32_t codePoint = decodeUtf8(m_source, checkPos);
+      if (codePoint != 0 && isUnicodeIdentifierStart(codePoint)) {
+        return scanIdentifier();
+      }
+      // Not a valid identifier start - advance past this char and continue
+      advance();
     }
-    return makeToken(TokenType::Hash);
-  }
 
-  // Handle operators and delimiters
-  switch (c) {
-  case '(':
-    return makeToken(TokenType::LeftParen);
-  case ')':
-    return makeToken(TokenType::RightParen);
-  case '{':
-    return makeToken(TokenType::LeftBrace);
-  case '}':
-    return makeToken(TokenType::RightBrace);
-  case '[':
-    return makeToken(TokenType::LeftBracket);
-  case ']':
-    return makeToken(TokenType::RightBracket);
-  case ',':
-    return makeToken(TokenType::Comma);
-  case ':':
-    return makeToken(TokenType::Colon);
-  case ';':
-    return makeToken(TokenType::Semicolon);
-  case '.':
-    return makeToken(TokenType::Dot);
-  case '+':
-    return makeToken(TokenType::Plus);
-  case '*':
-    return makeToken(TokenType::Star);
-  case '%':
-    return makeToken(TokenType::Percent);
-
-  case '-':
-    if (match('>')) {
-      return makeToken(TokenType::Arrow);
+    // Handle strings
+    if (c == '"') {
+      return scanString();
     }
-    return makeToken(TokenType::Minus);
 
-  case '=':
-    if (match('=')) {
-      return makeToken(TokenType::Equal);
+    // Handle color literals
+    if (c == '#') {
+      if (safeIsXdigit(peek())) {
+        return scanColorLiteral();
+      }
+      return makeToken(TokenType::Hash);
     }
-    return makeToken(TokenType::Assign);
 
-  case '!':
-    if (match('=')) {
-      return makeToken(TokenType::NotEqual);
+    // Handle operators and delimiters
+    switch (c) {
+    case '(':
+      return makeToken(TokenType::LeftParen);
+    case ')':
+      return makeToken(TokenType::RightParen);
+    case '{':
+      return makeToken(TokenType::LeftBrace);
+    case '}':
+      return makeToken(TokenType::RightBrace);
+    case '[':
+      return makeToken(TokenType::LeftBracket);
+    case ']':
+      return makeToken(TokenType::RightBracket);
+    case ',':
+      return makeToken(TokenType::Comma);
+    case ':':
+      return makeToken(TokenType::Colon);
+    case ';':
+      return makeToken(TokenType::Semicolon);
+    case '.':
+      return makeToken(TokenType::Dot);
+    case '+':
+      return makeToken(TokenType::Plus);
+    case '*':
+      return makeToken(TokenType::Star);
+    case '%':
+      return makeToken(TokenType::Percent);
+
+    case '-':
+      if (match('>')) {
+        return makeToken(TokenType::Arrow);
+      }
+      return makeToken(TokenType::Minus);
+
+    case '=':
+      if (match('=')) {
+        return makeToken(TokenType::Equal);
+      }
+      return makeToken(TokenType::Assign);
+
+    case '!':
+      if (match('=')) {
+        return makeToken(TokenType::NotEqual);
+      }
+      return errorToken("Unexpected character '!'");
+
+    case '<':
+      if (match('=')) {
+        return makeToken(TokenType::LessEqual);
+      }
+      return makeToken(TokenType::Less);
+
+    case '>':
+      if (match('=')) {
+        return makeToken(TokenType::GreaterEqual);
+      }
+      return makeToken(TokenType::Greater);
     }
-    return errorToken("Unexpected character '!'");
 
-  case '<':
-    if (match('=')) {
-      return makeToken(TokenType::LessEqual);
-    }
-    return makeToken(TokenType::Less);
-
-  case '>':
-    if (match('=')) {
-      return makeToken(TokenType::GreaterEqual);
-    }
-    return makeToken(TokenType::Greater);
-  }
-
-  return errorToken("Unexpected character");
+    return errorToken("Unexpected character");
+  } // end while (true)
 }
 
 Token Lexer::makeToken(TokenType type) {
@@ -452,13 +460,12 @@ Token Lexer::makeToken(TokenType type) {
   return Token(type, std::move(lexeme), SourceLocation(m_line, m_startColumn));
 }
 
-Token Lexer::makeToken(TokenType type, const std::string &lexeme) {
+Token Lexer::makeToken(TokenType type, const std::string& lexeme) {
   return Token(type, lexeme, SourceLocation(m_line, m_startColumn));
 }
 
-Token Lexer::errorToken(const std::string &message) {
-  return Token(TokenType::Error, message,
-               SourceLocation(m_line, m_startColumn));
+Token Lexer::errorToken(const std::string& message) {
+  return Token(TokenType::Error, message, SourceLocation(m_line, m_startColumn));
 }
 
 Token Lexer::scanString() {
@@ -506,8 +513,7 @@ Token Lexer::scanString() {
 
   advance(); // Closing quote
 
-  Token token(TokenType::String, std::move(value),
-              SourceLocation(m_line, m_startColumn));
+  Token token(TokenType::String, std::move(value), SourceLocation(m_line, m_startColumn));
   return token;
 }
 
@@ -591,11 +597,10 @@ Token Lexer::scanColorLiteral() {
     return errorToken("Invalid color literal format");
   }
 
-  return Token(TokenType::String, std::move(lexeme),
-               SourceLocation(m_line, m_startColumn));
+  return Token(TokenType::String, std::move(lexeme), SourceLocation(m_line, m_startColumn));
 }
 
-TokenType Lexer::identifierType(const std::string &lexeme) const {
+TokenType Lexer::identifierType(const std::string& lexeme) const {
   auto it = m_keywords.find(lexeme);
   if (it != m_keywords.end()) {
     return it->second;
