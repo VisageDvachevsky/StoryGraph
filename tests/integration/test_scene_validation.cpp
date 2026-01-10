@@ -21,7 +21,7 @@ struct QtGuiAppFixture {
   QtGuiAppFixture() {
     if (!QApplication::instance()) {
       static int argc = 1;
-      static char *argv[] = {const_cast<char *>("test")};
+      static char* argv[] = {const_cast<char*>("test")};
       static QApplication app(argc, argv);
     }
   }
@@ -87,16 +87,14 @@ TEST_CASE("Scene reference validation", "[scene_validation]") {
     NMStoryGraphScene graphScene;
 
     // Add scene node with a scene ID
-    auto *node = graphScene.addNode("Forest Scene", "Scene", QPointF(0, 0));
+    auto* node = graphScene.addNode("Forest Scene", "Scene", QPointF(0, 0));
     node->setSceneId("forest");
 
     // Validate - forest.nmscene doesn't exist
     QStringList errors = graphScene.validateSceneReferences(projectPath);
     REQUIRE(errors.size() > 0);
-    REQUIRE_THAT(errors[0].toStdString(),
-                 Catch::Matchers::ContainsSubstring("Forest Scene"));
-    REQUIRE_THAT(errors[0].toStdString(),
-                 Catch::Matchers::ContainsSubstring("not found"));
+    REQUIRE_THAT(errors[0].toStdString(), Catch::Matchers::ContainsSubstring("Forest Scene"));
+    REQUIRE_THAT(errors[0].toStdString(), Catch::Matchers::ContainsSubstring("not found"));
   }
 
   SECTION("validateSceneReferences passes when scene files exist") {
@@ -107,7 +105,7 @@ TEST_CASE("Scene reference validation", "[scene_validation]") {
     sceneFile.close();
 
     NMStoryGraphScene graphScene;
-    auto *node = graphScene.addNode("Forest Scene", "Scene", QPointF(0, 0));
+    auto* node = graphScene.addNode("Forest Scene", "Scene", QPointF(0, 0));
     node->setSceneId("forest");
 
     // Validate - should pass
@@ -119,8 +117,7 @@ TEST_CASE("Scene reference validation", "[scene_validation]") {
     NMStoryGraphScene graphScene;
 
     // Add scene node without scene ID
-    [[maybe_unused]] auto *node =
-        graphScene.addNode("Unnamed Scene", "Scene", QPointF(0, 0));
+    [[maybe_unused]] auto* node = graphScene.addNode("Unnamed Scene", "Scene", QPointF(0, 0));
     // Don't set scene ID
 
     QStringList errors = graphScene.validateSceneReferences(projectPath);
@@ -145,7 +142,7 @@ TEST_CASE("Scene reference validation", "[scene_validation]") {
     NMStoryGraphScene graphScene;
 
     // Add scene node with invalid reference
-    auto *node = graphScene.addNode("Missing Scene", "Scene", QPointF(0, 0));
+    auto* node = graphScene.addNode("Missing Scene", "Scene", QPointF(0, 0));
     node->setSceneId("missing");
 
     // Update validation state
@@ -165,7 +162,7 @@ TEST_CASE("Scene reference validation", "[scene_validation]") {
     sceneFile.close();
 
     NMStoryGraphScene graphScene;
-    auto *node = graphScene.addNode("Valid Scene", "Scene", QPointF(0, 0));
+    auto* node = graphScene.addNode("Valid Scene", "Scene", QPointF(0, 0));
     node->setSceneId("valid");
 
     // Set error initially
@@ -183,7 +180,7 @@ TEST_CASE("Scene reference validation", "[scene_validation]") {
     NMStoryGraphScene graphScene;
 
     // Add scene node with invalid reference
-    auto *node = graphScene.addNode("Missing Scene", "Scene", QPointF(0, 0));
+    auto* node = graphScene.addNode("Missing Scene", "Scene", QPointF(0, 0));
     node->setSceneId("missing");
     node->setEntry(true); // Set as entry to avoid "no entry" error
 
@@ -192,7 +189,7 @@ TEST_CASE("Scene reference validation", "[scene_validation]") {
 
     // Should include scene validation errors
     bool hasSceneError = false;
-    for (const QString &error : errors) {
+    for (const QString& error : errors) {
       if (error.contains("not found") || error.contains("Missing")) {
         hasSceneError = true;
         break;
@@ -223,15 +220,15 @@ TEST_CASE("Scene validation in graph workflow", "[scene_validation]") {
     NMStoryGraphScene graphScene;
 
     // Valid scene
-    auto *validNode = graphScene.addNode("Intro", "Scene", QPointF(0, 0));
+    auto* validNode = graphScene.addNode("Intro", "Scene", QPointF(0, 0));
     validNode->setSceneId("intro");
 
     // Invalid scene (missing file)
-    auto *invalidNode = graphScene.addNode("Missing", "Scene", QPointF(200, 0));
+    auto* invalidNode = graphScene.addNode("Missing", "Scene", QPointF(200, 0));
     invalidNode->setSceneId("missing");
 
     // Empty scene ID
-    auto *emptyNode = graphScene.addNode("Unnamed", "Scene", QPointF(400, 0));
+    auto* emptyNode = graphScene.addNode("Unnamed", "Scene", QPointF(400, 0));
 
     // Update validation
     graphScene.updateSceneValidationState(projectPath);
@@ -240,5 +237,126 @@ TEST_CASE("Scene validation in graph workflow", "[scene_validation]") {
     REQUIRE_FALSE(validNode->hasSceneValidationError());
     REQUIRE(invalidNode->hasSceneValidationError());
     REQUIRE(emptyNode->hasSceneValidationError());
+  }
+}
+
+TEST_CASE("Dead end validation (Issue #394)", "[scene_validation][dead_end]") {
+  QtGuiAppFixture fixture;
+
+  SECTION("Entry node without outgoing connections is a dead end") {
+    NMStoryGraphScene graphScene;
+
+    // Create a single entry node with no outgoing connections
+    auto* entryNode = graphScene.addNode("Start", "Scene", QPointF(0, 0));
+    entryNode->setEntry(true);
+
+    QStringList errors = graphScene.validateGraph();
+
+    // Should report dead end error for entry node
+    bool hasDeadEndError = false;
+    for (const QString& error : errors) {
+      if (error.contains("Dead end") && error.contains("Start")) {
+        hasDeadEndError = true;
+        break;
+      }
+    }
+    REQUIRE(hasDeadEndError);
+  }
+
+  SECTION("Entry node with outgoing connection is not a dead end") {
+    NMStoryGraphScene graphScene;
+
+    // Create entry node and another node
+    auto* entryNode = graphScene.addNode("Start", "Scene", QPointF(0, 0));
+    entryNode->setEntry(true);
+    auto* nextNode = graphScene.addNode("Next", "Dialogue", QPointF(200, 0));
+
+    // Connect them
+    graphScene.addConnection(entryNode->nodeId(), nextNode->nodeId());
+
+    QStringList errors = graphScene.validateGraph();
+
+    // Should NOT report dead end error for entry node
+    bool hasDeadEndError = false;
+    for (const QString& error : errors) {
+      if (error.contains("Dead end") && error.contains("Start")) {
+        hasDeadEndError = true;
+        break;
+      }
+    }
+    REQUIRE_FALSE(hasDeadEndError);
+  }
+
+  SECTION("End-type node without outgoing connections is allowed") {
+    NMStoryGraphScene graphScene;
+
+    // Create entry node and end node
+    auto* entryNode = graphScene.addNode("Start", "Scene", QPointF(0, 0));
+    entryNode->setEntry(true);
+    auto* endNode = graphScene.addNode("The End", "End", QPointF(200, 0));
+
+    // Connect entry to end
+    graphScene.addConnection(entryNode->nodeId(), endNode->nodeId());
+
+    QStringList errors = graphScene.validateGraph();
+
+    // Should NOT report dead end error for End-type node
+    bool hasEndDeadEndError = false;
+    for (const QString& error : errors) {
+      if (error.contains("Dead end") && error.contains("The End")) {
+        hasEndDeadEndError = true;
+        break;
+      }
+    }
+    REQUIRE_FALSE(hasEndDeadEndError);
+  }
+
+  SECTION("Non-entry node without outgoing connections is a dead end") {
+    NMStoryGraphScene graphScene;
+
+    // Create entry node and dialogue node
+    auto* entryNode = graphScene.addNode("Start", "Scene", QPointF(0, 0));
+    entryNode->setEntry(true);
+    auto* dialogueNode = graphScene.addNode("Hello", "Dialogue", QPointF(200, 0));
+
+    // Connect entry to dialogue, but dialogue has no outgoing
+    graphScene.addConnection(entryNode->nodeId(), dialogueNode->nodeId());
+
+    QStringList errors = graphScene.validateGraph();
+
+    // Should report dead end error for dialogue node
+    bool hasDeadEndError = false;
+    for (const QString& error : errors) {
+      if (error.contains("Dead end") && error.contains("Hello")) {
+        hasDeadEndError = true;
+        break;
+      }
+    }
+    REQUIRE(hasDeadEndError);
+  }
+
+  SECTION("Multiple nodes with proper connections have no dead ends") {
+    NMStoryGraphScene graphScene;
+
+    // Create a valid graph: Start -> Dialogue -> End
+    auto* entryNode = graphScene.addNode("Start", "Scene", QPointF(0, 0));
+    entryNode->setEntry(true);
+    auto* dialogueNode = graphScene.addNode("Hello", "Dialogue", QPointF(200, 0));
+    auto* endNode = graphScene.addNode("The End", "End", QPointF(400, 0));
+
+    graphScene.addConnection(entryNode->nodeId(), dialogueNode->nodeId());
+    graphScene.addConnection(dialogueNode->nodeId(), endNode->nodeId());
+
+    QStringList errors = graphScene.validateGraph();
+
+    // Should NOT report any dead end errors
+    bool hasDeadEndError = false;
+    for (const QString& error : errors) {
+      if (error.contains("Dead end")) {
+        hasDeadEndError = true;
+        break;
+      }
+    }
+    REQUIRE_FALSE(hasDeadEndError);
   }
 }

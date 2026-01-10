@@ -152,22 +152,19 @@ void NMGraphConnectionItem::paint(QPainter* painter, const QStyleOptionGraphicsI
     }
   }
 
-  // Determine connection color based on branch type and connection type
+  // Issue #389: Determine connection color based on branch type and connection type
   QColor lineColor = palette.connectionLine;
   if (!m_label.isEmpty()) {
     // Use different colors for different branch types
     if (m_label.toLower() == "true") {
-      lineColor = QColor(100, 200, 100); // Green for true
+      lineColor = palette.connectionTrue;
     } else if (m_label.toLower() == "false") {
-      lineColor = QColor(200, 100, 100); // Red for false
+      lineColor = palette.connectionFalse;
     } else if (m_branchIndex >= 0) {
       // Use a color palette for choice options
-      static const QColor branchColors[] = {
-          QColor(100, 180, 255), // Blue
-          QColor(255, 180, 100), // Orange
-          QColor(180, 100, 255), // Purple
-          QColor(255, 100, 180), // Pink
-          QColor(100, 255, 180), // Cyan
+      const QColor branchColors[] = {
+          palette.connectionChoice1, palette.connectionChoice2, palette.connectionChoice3,
+          palette.connectionChoice4, palette.connectionChoice5,
       };
       lineColor = branchColors[m_branchIndex % 5];
     }
@@ -180,12 +177,12 @@ void NMGraphConnectionItem::paint(QPainter* painter, const QStyleOptionGraphicsI
   switch (connType) {
   case ConnectionType::SceneTransition:
     // Scene transitions: thicker, scene-colored line
-    lineColor = QColor(100, 200, 150); // Scene green
+    lineColor = palette.connectionSceneTransition; // Issue #389
     lineWidth = 2.5;
     break;
   case ConnectionType::CrossScene:
     // Cross-scene: dashed line indicating major scene change
-    lineColor = QColor(255, 200, 100); // Warm orange for emphasis
+    lineColor = palette.connectionCrossScene; // Issue #389
     lineWidth = 2.5;
     penStyle = Qt::DashLine;
     break;
@@ -240,7 +237,9 @@ void NMGraphConnectionItem::paint(QPainter* painter, const QStyleOptionGraphicsI
     QRectF bgRect(bgPos.x(), bgPos.y(), textRect.width(), textRect.height());
 
     // Draw rounded background
-    painter->setBrush(QColor(40, 44, 52, 220)); // Semi-transparent dark bg
+    QColor labelBg = palette.connectionLabelBg; // Issue #389
+    labelBg.setAlpha(220);
+    painter->setBrush(labelBg);
     painter->setPen(QPen(lineColor.darker(120), 1));
     painter->drawRoundedRect(bgRect, 4, 4);
 
@@ -262,6 +261,8 @@ void NMGraphConnectionItem::drawSceneTransitionIndicator(QPainter* painter, cons
   painter->save();
   painter->setRenderHint(QPainter::Antialiasing, true);
 
+  const auto &palette = NMStyleManager::instance().palette();
+
   const qreal size = 14.0;
   const QColor iconColor = isCrossScene ? QColor(255, 200, 100, 220)  // Warm orange
                                         : QColor(100, 200, 150, 220); // Scene green
@@ -272,7 +273,9 @@ void NMGraphConnectionItem::drawSceneTransitionIndicator(QPainter* painter, cons
   QRectF rect2(pos.x() - size / 2 + 4, pos.y() - size / 2 + 2, size * 0.6, size * 0.6);
 
   // Draw background for icon area
-  painter->setBrush(QColor(30, 34, 42, 200));
+  QColor iconBg = palette.sceneIconBg; // Issue #389
+  iconBg.setAlpha(200);
+  painter->setBrush(iconBg);
   painter->setPen(Qt::NoPen);
   painter->drawEllipse(pos, size * 0.6, size * 0.6);
 
