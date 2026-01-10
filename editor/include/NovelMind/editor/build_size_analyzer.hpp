@@ -294,6 +294,7 @@ private:
   std::string computeFileHash(const std::string &path);
   CompressionType detectCompression(const std::string &path);
   AssetCategory categorizeAsset(const std::string &path);
+  void parseFileForAssetReferences(const std::string &filePath);
 
   std::string m_projectPath;
   BuildSizeAnalysisConfig m_config;
