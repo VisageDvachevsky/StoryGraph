@@ -295,6 +295,26 @@ target_include_directories(novelmind_editor
         $<INSTALL_INTERFACE:include>
 )
 
+# Find OpenSSL for build system encryption (same as engine_core)
+find_package(OpenSSL QUIET)
+if(OpenSSL_FOUND)
+    target_link_libraries(novelmind_editor PRIVATE OpenSSL::Crypto)
+    target_compile_definitions(novelmind_editor PRIVATE NOVELMIND_HAS_OPENSSL)
+    message(STATUS "Editor: OpenSSL found - enabling build system encryption")
+else()
+    message(STATUS "Editor: OpenSSL not found - build encryption disabled")
+endif()
+
+# Find zlib for build system compression (same as engine_core)
+find_package(ZLIB QUIET)
+if(ZLIB_FOUND)
+    target_link_libraries(novelmind_editor PRIVATE ZLIB::ZLIB)
+    target_compile_definitions(novelmind_editor PRIVATE NOVELMIND_HAS_ZLIB)
+    message(STATUS "Editor: zlib found - enabling build system compression")
+else()
+    message(STATUS "Editor: zlib not found - build compression disabled")
+endif()
+
 target_link_libraries(novelmind_editor
     PUBLIC
         engine_core
