@@ -40,10 +40,9 @@ namespace NovelMind::editor::qt {
 // NMGraphConnectionItem
 // ============================================================================
 
-NMGraphConnectionItem::NMGraphConnectionItem(NMGraphNodeItem *startNode,
-                                             NMGraphNodeItem *endNode)
+NMGraphConnectionItem::NMGraphConnectionItem(NMGraphNodeItem* startNode, NMGraphNodeItem* endNode)
     : QGraphicsItem(), m_startNode(startNode), m_endNode(endNode) {
-  setZValue(-1); // Draw behind nodes
+  setZValue(-1);                                  // Draw behind nodes
   setFlag(QGraphicsItem::ItemIsSelectable, true); // Issue #325: Allow selection for deletion
   // Don't call updatePath() in constructor - let the scene call it after adding
 }
@@ -87,13 +86,12 @@ QRectF NMGraphConnectionItem::boundingRect() const {
   return rect;
 }
 
-void NMGraphConnectionItem::paint(QPainter *painter,
-                                  const QStyleOptionGraphicsItem * /*option*/,
-                                  QWidget * /*widget*/) {
+void NMGraphConnectionItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /*option*/,
+                                  QWidget* /*widget*/) {
   // Save painter state to prevent state leakage to other items
   painter->save();
 
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
 
   painter->setRenderHint(QPainter::Antialiasing);
 
@@ -126,11 +124,8 @@ void NMGraphConnectionItem::paint(QPainter *painter,
     } else if (m_branchIndex >= 0) {
       // Use a color palette for choice options
       const QColor branchColors[] = {
-          palette.connectionChoice1,
-          palette.connectionChoice2,
-          palette.connectionChoice3,
-          palette.connectionChoice4,
-          palette.connectionChoice5,
+          palette.connectionChoice1, palette.connectionChoice2, palette.connectionChoice3,
+          palette.connectionChoice4, palette.connectionChoice5,
       };
       lineColor = branchColors[m_branchIndex % 5];
     }
@@ -161,7 +156,7 @@ void NMGraphConnectionItem::paint(QPainter *painter,
   // Issue #325: Visual feedback for selected connections
   if (isSelected()) {
     lineColor = lineColor.lighter(150); // Brighten when selected
-    lineWidth = lineWidth + 1; // Make thicker when selected
+    lineWidth = lineWidth + 1;          // Make thicker when selected
   }
 
   QPen connectionPen(lineColor, lineWidth, penStyle);
@@ -218,9 +213,8 @@ void NMGraphConnectionItem::paint(QPainter *painter,
   painter->restore();
 }
 
-void NMGraphConnectionItem::drawSceneTransitionIndicator(QPainter *painter,
-                                                          const QPointF &pos,
-                                                          bool isCrossScene) {
+void NMGraphConnectionItem::drawSceneTransitionIndicator(QPainter* painter, const QPointF& pos,
+                                                         bool isCrossScene) {
   // Issue #345: Draw a small visual indicator showing scene transition
   // For scene transitions: overlapping rectangle icon
   // For cross-scene: double rectangle icon with arrow
@@ -230,13 +224,14 @@ void NMGraphConnectionItem::drawSceneTransitionIndicator(QPainter *painter,
 
   const qreal size = 14.0;
   // Issue #389: Use palette colors for scene transition indicators
-  QColor iconColor = isCrossScene ? palette.connectionCrossScene : palette.connectionSceneTransition;
+  QColor iconColor =
+      isCrossScene ? palette.connectionCrossScene : palette.connectionSceneTransition;
   iconColor.setAlpha(220);
   const QColor borderColor = iconColor.darker(130);
 
   // Draw two overlapping rectangles representing scene transition
-  QRectF rect1(pos.x() - size/2 - 2, pos.y() - size/2 - 2, size * 0.6, size * 0.6);
-  QRectF rect2(pos.x() - size/2 + 4, pos.y() - size/2 + 2, size * 0.6, size * 0.6);
+  QRectF rect1(pos.x() - size / 2 - 2, pos.y() - size / 2 - 2, size * 0.6, size * 0.6);
+  QRectF rect2(pos.x() - size / 2 + 4, pos.y() - size / 2 + 2, size * 0.6, size * 0.6);
 
   // Draw background for icon area
   QColor iconBg = palette.sceneIconBg; // Issue #389
@@ -269,26 +264,24 @@ void NMGraphConnectionItem::drawSceneTransitionIndicator(QPainter *painter,
   painter->restore();
 }
 
-void NMGraphConnectionItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
+void NMGraphConnectionItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event) {
   // Issue #325: Context menu for connection deletion
   QMenu menu;
-  auto &iconMgr = NMIconManager::instance();
+  auto& iconMgr = NMIconManager::instance();
 
   // Delete Connection action
-  QAction *deleteAction = menu.addAction("Delete Connection");
+  QAction* deleteAction = menu.addAction("Delete Connection");
   deleteAction->setIcon(iconMgr.getIcon("edit-delete", 16));
   deleteAction->setToolTip("Remove this connection (Del)");
 
   // Show menu and handle action
-  QAction *selectedAction = menu.exec(event->screenPos());
+  QAction* selectedAction = menu.exec(event->screenPos());
 
   if (selectedAction == deleteAction) {
-    if (auto *graphScene = qobject_cast<NMStoryGraphScene *>(scene())) {
+    if (auto* graphScene = qobject_cast<NMStoryGraphScene*>(scene())) {
       if (m_startNode && m_endNode) {
-        NMUndoManager::instance().pushCommand(
-            new DisconnectGraphNodesCommand(graphScene,
-                                           m_startNode->nodeId(),
-                                           m_endNode->nodeId()));
+        NMUndoManager::instance().pushCommand(new DisconnectGraphNodesCommand(
+            graphScene, m_startNode->nodeId(), m_endNode->nodeId()));
       }
     }
   }

@@ -239,7 +239,8 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
 
   // Header bar with icon
   QRectF headerRect(0, 0, NODE_WIDTH, 28);
-  painter->setBrush(isScene ? palette.nodeHeaderScene : palette.bgDark); // Issue #389: Greenish header for scenes
+  painter->setBrush(isScene ? palette.nodeHeaderScene
+                            : palette.bgDark); // Issue #389: Greenish header for scenes
   painter->setPen(Qt::NoPen);
   QPainterPath headerPath;
   headerPath.addRoundedRect(headerRect, CORNER_RADIUS, CORNER_RADIUS);
@@ -414,16 +415,16 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
 
       // Issue #389: Color based on binding status
       switch (m_voiceBindingStatus) {
-      case 1:  // Bound
+      case 1: // Bound
         playColor = palette.statusVoiceBound;
         break;
-      case 2:  // MissingFile
+      case 2: // MissingFile
         playColor = palette.statusVoiceMissing;
         break;
-      case 3:  // AutoMapped
+      case 3: // AutoMapped
         playColor = palette.statusVoiceAuto;
         break;
-      default:  // Unbound/Pending
+      default: // Unbound/Pending
         playColor = palette.statusVoiceUnbound;
         break;
       }
@@ -440,7 +441,8 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
 
     // Show record button (always visible for dialogue nodes)
     QRectF recordButtonRect(NODE_WIDTH - 22, bottomY, iconSize, iconSize);
-    QColor recordColor = hasVoiceClip() ? palette.indicatorRecord : palette.indicatorRecordLight; // Issue #389
+    QColor recordColor =
+        hasVoiceClip() ? palette.indicatorRecord : palette.indicatorRecordLight; // Issue #389
 
     // Draw record icon (circle)
     painter->setBrush(recordColor);
@@ -470,24 +472,24 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
       case 0: // NotLocalizable
         // No indicator for non-localizable content
         break;
-      case 1:  // Untranslated
+      case 1: // Untranslated
         locColor = palette.statusUntranslated;
         locTooltip = "Untranslated";
         break;
-      case 2:  // Translated
+      case 2: // Translated
         locColor = palette.statusTranslated;
         locTooltip = "Translated";
         break;
-      case 3:  // NeedsReview
+      case 3: // NeedsReview
         locColor = palette.statusNeedsReview;
         locTooltip = "Needs Review";
         break;
-      case 4:  // Missing
+      case 4: // Missing
         locColor = palette.statusMissing;
         locTooltip = "Missing Translation";
         break;
       default:
-        locColor = palette.statusVoiceUnbound;  // Gray
+        locColor = palette.statusVoiceUnbound; // Gray
         break;
       }
 
@@ -701,8 +703,7 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event) {
     if (m_hasSceneValidationError) {
       rebindSceneAction = menu.addAction("Rebind Scene...");
       rebindSceneAction->setIcon(iconMgr.getIcon("link", 16));
-      rebindSceneAction->setToolTip(
-          "Fix orphaned scene reference by selecting a valid scene");
+      rebindSceneAction->setToolTip("Fix orphaned scene reference by selecting a valid scene");
     }
 
     menu.addSeparator();
@@ -959,15 +960,15 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event) {
   } else if (isScene && rebindSceneAction && selectedAction == rebindSceneAction) {
     // Issue #332: Rebind orphaned scene reference to a valid scene
     // Get project path to scan for available scenes
-    const QString rebindProjectPath = QString::fromStdString(
-        ProjectManager::instance().getProjectPath());
+    const QString rebindProjectPath =
+        QString::fromStdString(ProjectManager::instance().getProjectPath());
     if (!rebindProjectPath.isEmpty()) {
       // Scan for available .nmscene files
       QDir scenesDir(rebindProjectPath + "/Scenes");
       QStringList sceneFiles;
       if (scenesDir.exists()) {
-        QDirIterator it(rebindProjectPath + "/Scenes", QStringList() << "*.nmscene",
-                        QDir::Files, QDirIterator::Subdirectories);
+        QDirIterator it(rebindProjectPath + "/Scenes", QStringList() << "*.nmscene", QDir::Files,
+                        QDirIterator::Subdirectories);
         while (it.hasNext()) {
           QString filePath = it.next();
           QFileInfo fileInfo(filePath);
@@ -983,8 +984,7 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event) {
         bool ok = false;
         QString selectedScene = QInputDialog::getItem(
             nullptr, "Rebind Scene",
-            QString("Current scene '%1' not found.\nSelect a valid scene:")
-                .arg(m_sceneId),
+            QString("Current scene '%1' not found.\nSelect a valid scene:").arg(m_sceneId),
             sceneFiles, 0, false, &ok);
 
         if (ok && !selectedScene.isEmpty()) {
@@ -997,8 +997,8 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event) {
           setSceneValidationMessage(QString());
           update();
 
-          qDebug() << "[StoryGraph] Rebound scene node" << m_nodeIdString
-                   << "from" << m_sceneId << "to" << selectedScene;
+          qDebug() << "[StoryGraph] Rebound scene node" << m_nodeIdString << "from" << m_sceneId
+                   << "to" << selectedScene;
 
           // Update validation status in parent panel
           if (auto* rebindGraphScene = qobject_cast<NMStoryGraphScene*>(scene())) {

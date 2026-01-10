@@ -11,7 +11,7 @@
 
 namespace NovelMind::editor::qt {
 
-NMStyleManager &NMStyleManager::instance() {
+NMStyleManager& NMStyleManager::instance() {
   static NMStyleManager instance;
   return instance;
 }
@@ -20,7 +20,7 @@ NMStyleManager::NMStyleManager() : QObject(nullptr) {
   m_palette = createDarkPalette();
 }
 
-void NMStyleManager::initialize(QApplication *app) {
+void NMStyleManager::initialize(QApplication* app) {
   m_app = app;
 
   setupHighDpi();
@@ -96,11 +96,11 @@ void NMStyleManager::applyTheme(Theme theme) {
   }
 
   // Update icon colors based on theme
-  auto &iconMgr = NMIconManager::instance();
+  auto& iconMgr = NMIconManager::instance();
   if (theme == Theme::Light) {
-    iconMgr.setDefaultColor(QColor(50, 50, 50));  // Dark gray for light theme
+    iconMgr.setDefaultColor(QColor(50, 50, 50)); // Dark gray for light theme
   } else {
-    iconMgr.setDefaultColor(QColor(220, 220, 220));  // Light gray for dark theme
+    iconMgr.setDefaultColor(QColor(220, 220, 220)); // Light gray for dark theme
   }
 
   // Use Fusion style as base (cross-platform, customizable)
@@ -263,40 +263,40 @@ EditorPalette NMStyleManager::createLightPalette() const {
   EditorPalette p;
 
   // Background colors (Layered surfaces) - inverted for light theme
-  p.bgDarkest = QColor(0xfa, 0xfa, 0xfa);      // Near white (base background)
-  p.bgDark = QColor(0xf5, 0xf5, 0xf5);         // Light gray (panel backgrounds)
-  p.bgMedium = QColor(0xff, 0xff, 0xff);       // White (elevated surfaces)
-  p.bgLight = QColor(0xe8, 0xe8, 0xe8);        // Hover states
-  p.bgElevated = QColor(0xff, 0xff, 0xff);     // Popups, dropdowns, tooltips
+  p.bgDarkest = QColor(0xfa, 0xfa, 0xfa);  // Near white (base background)
+  p.bgDark = QColor(0xf5, 0xf5, 0xf5);     // Light gray (panel backgrounds)
+  p.bgMedium = QColor(0xff, 0xff, 0xff);   // White (elevated surfaces)
+  p.bgLight = QColor(0xe8, 0xe8, 0xe8);    // Hover states
+  p.bgElevated = QColor(0xff, 0xff, 0xff); // Popups, dropdowns, tooltips
 
   // Text colors - dark for light background
-  p.textPrimary = QColor(0x1e, 0x1e, 0x1e);    // Near black (high contrast)
-  p.textSecondary = QColor(0x64, 0x64, 0x64);  // Dark gray (secondary text)
-  p.textMuted = QColor(0x96, 0x96, 0x96);      // Medium gray (muted text)
-  p.textDisabled = QColor(0xb4, 0xb4, 0xb4);   // Light gray (disabled text)
-  p.textInverse = QColor(0xff, 0xff, 0xff);    // White text on dark backgrounds
+  p.textPrimary = QColor(0x1e, 0x1e, 0x1e);   // Near black (high contrast)
+  p.textSecondary = QColor(0x64, 0x64, 0x64); // Dark gray (secondary text)
+  p.textMuted = QColor(0x96, 0x96, 0x96);     // Medium gray (muted text)
+  p.textDisabled = QColor(0xb4, 0xb4, 0xb4);  // Light gray (disabled text)
+  p.textInverse = QColor(0xff, 0xff, 0xff);   // White text on dark backgrounds
 
   // Accent colors - slightly adjusted for light theme
-  p.accentPrimary = QColor(0x3b, 0x82, 0xf6);  // Blue (selection, focus)
-  p.accentHover = QColor(0x25, 0x63, 0xeb);    // Darker blue (hover)
-  p.accentActive = QColor(0x1d, 0x4e, 0xd8);   // Even darker blue (active)
-  p.accentSubtle = QColor(0xdb, 0xea, 0xfe);   // Light blue background
+  p.accentPrimary = QColor(0x3b, 0x82, 0xf6); // Blue (selection, focus)
+  p.accentHover = QColor(0x25, 0x63, 0xeb);   // Darker blue (hover)
+  p.accentActive = QColor(0x1d, 0x4e, 0xd8);  // Even darker blue (active)
+  p.accentSubtle = QColor(0xdb, 0xea, 0xfe);  // Light blue background
 
   // Semantic/Status colors - vivid for light theme
-  p.error = QColor(0xef, 0x44, 0x44);          // Red (error states)
-  p.errorSubtle = QColor(0xfe, 0xe2, 0xe2);    // Light red background
-  p.warning = QColor(0xea, 0xb3, 0x08);        // Yellow/Orange (warning)
-  p.warningSubtle = QColor(0xfe, 0xf3, 0xc7);  // Light yellow background
-  p.success = QColor(0x22, 0xc5, 0x5e);        // Green (success)
-  p.successSubtle = QColor(0xd1, 0xfa, 0xe5);  // Light green background
-  p.info = QColor(0x3b, 0x82, 0xf6);           // Blue (info)
-  p.infoSubtle = QColor(0xdb, 0xea, 0xfe);     // Light blue background
+  p.error = QColor(0xef, 0x44, 0x44);         // Red (error states)
+  p.errorSubtle = QColor(0xfe, 0xe2, 0xe2);   // Light red background
+  p.warning = QColor(0xea, 0xb3, 0x08);       // Yellow/Orange (warning)
+  p.warningSubtle = QColor(0xfe, 0xf3, 0xc7); // Light yellow background
+  p.success = QColor(0x22, 0xc5, 0x5e);       // Green (success)
+  p.successSubtle = QColor(0xd1, 0xfa, 0xe5); // Light green background
+  p.info = QColor(0x3b, 0x82, 0xf6);          // Blue (info)
+  p.infoSubtle = QColor(0xdb, 0xea, 0xfe);    // Light blue background
 
   // Border colors - medium gray for light theme
-  p.borderDark = QColor(0xb4, 0xb4, 0xb4);     // Darker gray (strong borders)
-  p.borderDefault = QColor(0xc8, 0xc8, 0xc8);  // Default borders
-  p.borderLight = QColor(0xe0, 0xe0, 0xe0);    // Subtle borders
-  p.borderFocus = QColor(0x3b, 0x82, 0xf6);    // Blue focus ring
+  p.borderDark = QColor(0xb4, 0xb4, 0xb4);    // Darker gray (strong borders)
+  p.borderDefault = QColor(0xc8, 0xc8, 0xc8); // Default borders
+  p.borderLight = QColor(0xe0, 0xe0, 0xe0);   // Subtle borders
+  p.borderFocus = QColor(0x3b, 0x82, 0xf6);   // Blue focus ring
 
   // Graph/Node specific colors
   p.nodeDefault = QColor(0xff, 0xff, 0xff);
@@ -330,16 +330,16 @@ EditorPalette NMStyleManager::createLightPalette() const {
   p.dropZone = QColor(0xdb, 0xea, 0xfe);
 
   // Story Graph node type colors (Issue #389) - adjusted for light theme
-  p.nodeScene = QColor(0x22, 0xc5, 0x5e);        // Darker green for visibility
-  p.nodeDialogue = QColor(0x3b, 0x82, 0xf6);     // Standard blue
-  p.nodeChoice = QColor(0xea, 0xb3, 0x08);       // Orange-yellow
-  p.nodeEvent = QColor(0xd9, 0x77, 0x06);        // Darker yellow
-  p.nodeCondition = QColor(0xa8, 0x55, 0xf7);    // Purple
-  p.nodeRandom = QColor(0x14, 0xb8, 0xa6);       // Teal
-  p.nodeStart = QColor(0x22, 0xc5, 0x5e);        // Green
-  p.nodeEnd = QColor(0xef, 0x44, 0x44);          // Red
-  p.nodeJump = QColor(0x60, 0xa5, 0xfa);         // Light blue
-  p.nodeVariable = QColor(0xec, 0x48, 0x99);     // Pink
+  p.nodeScene = QColor(0x22, 0xc5, 0x5e);     // Darker green for visibility
+  p.nodeDialogue = QColor(0x3b, 0x82, 0xf6);  // Standard blue
+  p.nodeChoice = QColor(0xea, 0xb3, 0x08);    // Orange-yellow
+  p.nodeEvent = QColor(0xd9, 0x77, 0x06);     // Darker yellow
+  p.nodeCondition = QColor(0xa8, 0x55, 0xf7); // Purple
+  p.nodeRandom = QColor(0x14, 0xb8, 0xa6);    // Teal
+  p.nodeStart = QColor(0x22, 0xc5, 0x5e);     // Green
+  p.nodeEnd = QColor(0xef, 0x44, 0x44);       // Red
+  p.nodeJump = QColor(0x60, 0xa5, 0xfa);      // Light blue
+  p.nodeVariable = QColor(0xec, 0x48, 0x99);  // Pink
 
   // Story Graph status colors (Issue #389) - adjusted for light theme
   p.statusVoiceBound = QColor(0x22, 0xc5, 0x5e);
@@ -374,8 +374,8 @@ EditorPalette NMStyleManager::createLightPalette() const {
   p.indicatorRecordLight = QColor(0xf8, 0x71, 0x71);
 
   // Story Graph backgrounds (Issue #389) - adjusted for light theme
-  p.nodeHeaderScene = QColor(0xd1, 0xfa, 0xe5);  // Very light green
-  p.nodeBorderScene = QColor(0x22, 0xc5, 0x5e);  // Green border
+  p.nodeHeaderScene = QColor(0xd1, 0xfa, 0xe5); // Very light green
+  p.nodeBorderScene = QColor(0x22, 0xc5, 0x5e); // Green border
   p.sceneContainerFill = QColor(0x22, 0xc5, 0x5e);
   p.sceneContainerBorder = QColor(0x22, 0xc5, 0x5e);
   p.connectionLabelBg = QColor(0xff, 0xff, 0xff);
@@ -384,12 +384,11 @@ EditorPalette NMStyleManager::createLightPalette() const {
   return p;
 }
 
-void NMStyleManager::configureToolbarButton(QAbstractButton *button,
-                                             const QIcon &icon) {
+void NMStyleManager::configureToolbarButton(QAbstractButton* button, const QIcon& icon) {
   if (!button)
     return;
 
-  const auto &sizes = instance().buttonSizes();
+  const auto& sizes = instance().buttonSizes();
   button->setMinimumSize(sizes.toolbarButton, sizes.toolbarButton);
   button->setMaximumSize(sizes.toolbarButton, sizes.toolbarButton);
 
@@ -398,8 +397,7 @@ void NMStyleManager::configureToolbarButton(QAbstractButton *button,
   }
 }
 
-void NMStyleManager::configureSquareButton(QAbstractButton *button, int size,
-                                            const QIcon &icon) {
+void NMStyleManager::configureSquareButton(QAbstractButton* button, int size, const QIcon& icon) {
   if (!button)
     return;
 
@@ -410,8 +408,7 @@ void NMStyleManager::configureSquareButton(QAbstractButton *button, int size,
   }
 }
 
-void NMStyleManager::setButtonSize(QAbstractButton *button, int width,
-                                    int height) {
+void NMStyleManager::setButtonSize(QAbstractButton* button, int width, int height) {
   if (!button)
     return;
 
