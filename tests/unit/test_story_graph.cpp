@@ -1179,12 +1179,12 @@ TEST_CASE("Scene Container - Visual hierarchy properties (Issue #345)",
     // Scene transition: green
     const uint8_t sceneTransitionR = 100;
     const uint8_t sceneTransitionG = 200;
-    const uint8_t sceneTransitionB = 150;
+    [[maybe_unused]] const uint8_t sceneTransitionB = 150;
 
     // Cross-scene: orange/warm
     const uint8_t crossSceneR = 255;
     const uint8_t crossSceneG = 200;
-    const uint8_t crossSceneB = 100;
+    [[maybe_unused]] const uint8_t crossSceneB = 100;
 
     CHECK(sceneTransitionG > sceneTransitionR); // Green-dominant
     CHECK(crossSceneR > crossSceneG); // Red/orange-dominant

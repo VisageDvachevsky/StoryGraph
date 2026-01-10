@@ -90,7 +90,7 @@ void NMStoryGraphPanel::onAutoLayout() {
   const qreal verticalSpacing = 160.0;    // Increased for better readability
   const qreal startX = 100.0;             // Left margin
   const qreal startY = 100.0;             // Top margin
-  const qreal orphanAreaGap = 100.0;      // Gap before orphan section
+  [[maybe_unused]] const qreal orphanAreaGap = 100.0;      // Gap before orphan section
 
   // Build adjacency lists (forward and reverse)
   QHash<uint64_t, QList<uint64_t>> successors;   // node -> children
@@ -275,7 +275,7 @@ void NMStoryGraphPanel::onAutoLayout() {
         for (uint64_t predId : predecessors[nodeId]) {
           if (nodeLayers.contains(predId) && nodeLayers[predId] == layer - 1 &&
               layerNodes.contains(layer - 1)) {
-            int predIndex = layerNodes[layer - 1].indexOf(predId);
+            int predIndex = static_cast<int>(layerNodes[layer - 1].indexOf(predId));
             if (predIndex >= 0) {
               sum += predIndex;
               ++count;
@@ -287,7 +287,7 @@ void NMStoryGraphPanel::onAutoLayout() {
           barycenter[nodeId] = sum / count;
         } else {
           // No predecessors in previous layer, keep original position
-          barycenter[nodeId] = currentLayer.indexOf(nodeId);
+          barycenter[nodeId] = static_cast<qreal>(currentLayer.indexOf(nodeId));
         }
       }
 
@@ -315,7 +315,7 @@ void NMStoryGraphPanel::onAutoLayout() {
         for (uint64_t succId : successors[nodeId]) {
           if (nodeLayers.contains(succId) && nodeLayers[succId] == layer + 1 &&
               layerNodes.contains(layer + 1)) {
-            int succIndex = layerNodes[layer + 1].indexOf(succId);
+            int succIndex = static_cast<int>(layerNodes[layer + 1].indexOf(succId));
             if (succIndex >= 0) {
               sum += succIndex;
               ++count;
@@ -327,7 +327,7 @@ void NMStoryGraphPanel::onAutoLayout() {
           barycenter[nodeId] = sum / count;
         } else {
           // No successors in next layer, keep original position
-          barycenter[nodeId] = currentLayer.indexOf(nodeId);
+          barycenter[nodeId] = static_cast<qreal>(currentLayer.indexOf(nodeId));
         }
       }
 
