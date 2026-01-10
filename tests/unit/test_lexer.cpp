@@ -182,6 +182,20 @@ TEST_CASE("Lexer handles comments", "[lexer]")
         REQUIRE(tokens[0].type == TokenType::Show);
         REQUIRE(tokens[1].type == TokenType::Hide);
     }
+
+    SECTION("reports unclosed block comment")
+    {
+        auto result = lexer.tokenize("show /* this comment never closes\nhide");
+        REQUIRE(result.isError());
+        REQUIRE(result.error().find("Unclosed block comment") != std::string::npos);
+    }
+
+    SECTION("reports unclosed nested block comment")
+    {
+        auto result = lexer.tokenize("show /* outer /* inner */ missing close\nhide");
+        REQUIRE(result.isError());
+        REQUIRE(result.error().find("Unclosed block comment") != std::string::npos);
+    }
 }
 
 TEST_CASE("Lexer tracks source locations", "[lexer]")

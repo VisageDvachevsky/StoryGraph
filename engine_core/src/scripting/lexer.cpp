@@ -300,6 +300,8 @@ void Lexer::skipLineComment() {
 void Lexer::skipBlockComment() {
   // Skip /* ... */
   int depth = 1;
+  u32 startLine = m_line;
+
   while (!isAtEnd() && depth > 0) {
     if (peek() == '/' && peekNext() == '*') {
       advance();
@@ -313,37 +315,51 @@ void Lexer::skipBlockComment() {
       advance();
     }
   }
+
+  // Check if comment was properly closed
+  if (depth > 0) {
+    m_errors.emplace_back(
+      "Unclosed block comment starting at line " + std::to_string(startLine),
+      SourceLocation(startLine, 1)
+    );
+  }
 }
 
 Token Lexer::scanToken() {
-  skipWhitespace();
+  // Use iteration instead of recursion to avoid stack overflow with many comments
+  while (true) {
+    skipWhitespace();
 
-  m_start = m_current;
-  m_startColumn = m_column;
+    m_start = m_current;
+    m_startColumn = m_column;
 
-  if (isAtEnd()) {
-    return makeToken(TokenType::EndOfFile);
-  }
-
-  char c = advance();
-
-  // Handle newlines
-  if (c == '\n') {
-    return makeToken(TokenType::Newline);
-  }
-
-  // Handle comments
-  if (c == '/') {
-    if (match('/')) {
-      skipLineComment();
-      return scanToken(); // Recursively get next token
+    if (isAtEnd()) {
+      return makeToken(TokenType::EndOfFile);
     }
-    if (match('*')) {
-      skipBlockComment();
-      return scanToken();
+
+    char c = advance();
+
+    // Handle newlines
+    if (c == '\n') {
+      return makeToken(TokenType::Newline);
     }
-    return makeToken(TokenType::Slash);
-  }
+
+    // Handle comments
+    if (c == '/') {
+      if (match('/')) {
+        skipLineComment();
+        continue; // Continue to next token
+      }
+      if (match('*')) {
+        skipBlockComment();
+        // Check if we hit an unclosed comment error
+        if (!m_errors.empty()) {
+          return errorToken(m_errors.back().message);
+        }
+        continue; // Continue to next token
+      }
+      return makeToken(TokenType::Slash);
+    }
 
   // Handle numbers
   if (safeIsDigit(c)) {
@@ -444,7 +460,8 @@ Token Lexer::scanToken() {
     return makeToken(TokenType::Greater);
   }
 
-  return errorToken("Unexpected character");
+    return errorToken("Unexpected character");
+  } // end while (true)
 }
 
 Token Lexer::makeToken(TokenType type) {
