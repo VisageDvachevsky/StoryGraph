@@ -204,6 +204,58 @@ EditorPalette NMStyleManager::createDarkPalette() const {
   p.dragHighlight = QColor(0x3b, 0x9e, 0xff);
   p.dropZone = QColor(0x1a, 0x3a, 0x5c);
 
+  // Story Graph node type colors (Issue #389)
+  p.nodeScene = QColor(0x64, 0xdc, 0x96);
+  p.nodeDialogue = QColor(0x64, 0xb4, 0xff);
+  p.nodeChoice = QColor(0xff, 0xb4, 0x64);
+  p.nodeEvent = QColor(0xff, 0xdc, 0x64);
+  p.nodeCondition = QColor(0xc8, 0x64, 0xff);
+  p.nodeRandom = QColor(0x64, 0xff, 0xb4);
+  p.nodeStart = QColor(0x64, 0xff, 0x64);
+  p.nodeEnd = QColor(0xff, 0x64, 0x64);
+  p.nodeJump = QColor(0xb4, 0xb4, 0xff);
+  p.nodeVariable = QColor(0xff, 0xb4, 0xff);
+
+  // Story Graph status colors (Issue #389)
+  p.statusVoiceBound = QColor(0x64, 0xdc, 0x96);
+  p.statusVoiceMissing = QColor(0xdc, 0x64, 0x64);
+  p.statusVoiceAuto = QColor(0x64, 0xb4, 0xff);
+  p.statusVoiceUnbound = QColor(0xb4, 0xb4, 0xb4);
+  p.statusTranslated = QColor(0x64, 0xdc, 0x96);
+  p.statusUntranslated = QColor(0xff, 0xb4, 0x64);
+  p.statusNeedsReview = QColor(0xb4, 0xb4, 0xff);
+  p.statusMissing = QColor(0xff, 0x64, 0x64);
+
+  // Story Graph connection colors (Issue #389)
+  p.connectionTrue = QColor(0x64, 0xc8, 0x64);
+  p.connectionFalse = QColor(0xc8, 0x64, 0x64);
+  p.connectionChoice1 = QColor(0x64, 0xb4, 0xff);
+  p.connectionChoice2 = QColor(0xff, 0xb4, 0x64);
+  p.connectionChoice3 = QColor(0xb4, 0x64, 0xff);
+  p.connectionChoice4 = QColor(0xff, 0x64, 0xb4);
+  p.connectionChoice5 = QColor(0x64, 0xff, 0xb4);
+  p.connectionSceneTransition = QColor(0x64, 0xc8, 0x96);
+  p.connectionCrossScene = QColor(0xff, 0xc8, 0x64);
+
+  // Story Graph indicators (Issue #389)
+  p.indicatorBreakpoint = QColor(0xdc, 0x3c, 0x3c);
+  p.indicatorBreakpointDark = QColor(0xb4, 0x28, 0x28);
+  p.indicatorBreakpointHighlight = QColor(0xff, 0x64, 0x64);
+  p.indicatorExecuting = QColor(0x3c, 0xdc, 0x78);
+  p.indicatorExecutingDark = QColor(0x28, 0xb4, 0x5a);
+  p.indicatorEntry = QColor(0x50, 0xc8, 0x78);
+  p.indicatorVoice = QColor(0x96, 0xdc, 0xb4);
+  p.indicatorRecord = QColor(0xdc, 0x64, 0x64);
+  p.indicatorRecordLight = QColor(0xff, 0x8c, 0x8c);
+
+  // Story Graph backgrounds (Issue #389)
+  p.nodeHeaderScene = QColor(0x2d, 0x41, 0x37);
+  p.nodeBorderScene = QColor(0x64, 0xc8, 0x96);
+  p.sceneContainerFill = QColor(0x64, 0xc8, 0x96);
+  p.sceneContainerBorder = QColor(0x64, 0xc8, 0x96);
+  p.connectionLabelBg = QColor(0x28, 0x2c, 0x34);
+  p.sceneIconBg = QColor(0x1e, 0x22, 0x2a);
+
   return p;
 }
 
@@ -276,6 +328,58 @@ EditorPalette NMStyleManager::createLightPalette() const {
   p.scrollbarTrack = QColor(0xf5, 0xf5, 0xf5);
   p.dragHighlight = QColor(0x3b, 0x82, 0xf6);
   p.dropZone = QColor(0xdb, 0xea, 0xfe);
+
+  // Story Graph node type colors (Issue #389) - adjusted for light theme
+  p.nodeScene = QColor(0x22, 0xc5, 0x5e);        // Darker green for visibility
+  p.nodeDialogue = QColor(0x3b, 0x82, 0xf6);     // Standard blue
+  p.nodeChoice = QColor(0xea, 0xb3, 0x08);       // Orange-yellow
+  p.nodeEvent = QColor(0xd9, 0x77, 0x06);        // Darker yellow
+  p.nodeCondition = QColor(0xa8, 0x55, 0xf7);    // Purple
+  p.nodeRandom = QColor(0x14, 0xb8, 0xa6);       // Teal
+  p.nodeStart = QColor(0x22, 0xc5, 0x5e);        // Green
+  p.nodeEnd = QColor(0xef, 0x44, 0x44);          // Red
+  p.nodeJump = QColor(0x60, 0xa5, 0xfa);         // Light blue
+  p.nodeVariable = QColor(0xec, 0x48, 0x99);     // Pink
+
+  // Story Graph status colors (Issue #389) - adjusted for light theme
+  p.statusVoiceBound = QColor(0x22, 0xc5, 0x5e);
+  p.statusVoiceMissing = QColor(0xef, 0x44, 0x44);
+  p.statusVoiceAuto = QColor(0x3b, 0x82, 0xf6);
+  p.statusVoiceUnbound = QColor(0x96, 0x96, 0x96);
+  p.statusTranslated = QColor(0x22, 0xc5, 0x5e);
+  p.statusUntranslated = QColor(0xea, 0xb3, 0x08);
+  p.statusNeedsReview = QColor(0x60, 0xa5, 0xfa);
+  p.statusMissing = QColor(0xef, 0x44, 0x44);
+
+  // Story Graph connection colors (Issue #389) - adjusted for light theme
+  p.connectionTrue = QColor(0x22, 0xc5, 0x5e);
+  p.connectionFalse = QColor(0xef, 0x44, 0x44);
+  p.connectionChoice1 = QColor(0x3b, 0x82, 0xf6);
+  p.connectionChoice2 = QColor(0xea, 0xb3, 0x08);
+  p.connectionChoice3 = QColor(0xa8, 0x55, 0xf7);
+  p.connectionChoice4 = QColor(0xec, 0x48, 0x99);
+  p.connectionChoice5 = QColor(0x14, 0xb8, 0xa6);
+  p.connectionSceneTransition = QColor(0x22, 0xc5, 0x5e);
+  p.connectionCrossScene = QColor(0xea, 0xb3, 0x08);
+
+  // Story Graph indicators (Issue #389) - adjusted for light theme
+  p.indicatorBreakpoint = QColor(0xef, 0x44, 0x44);
+  p.indicatorBreakpointDark = QColor(0xdc, 0x26, 0x26);
+  p.indicatorBreakpointHighlight = QColor(0xf8, 0x71, 0x71);
+  p.indicatorExecuting = QColor(0x22, 0xc5, 0x5e);
+  p.indicatorExecutingDark = QColor(0x16, 0xa3, 0x4a);
+  p.indicatorEntry = QColor(0x22, 0xc5, 0x5e);
+  p.indicatorVoice = QColor(0x6e, 0xe7, 0xb7);
+  p.indicatorRecord = QColor(0xef, 0x44, 0x44);
+  p.indicatorRecordLight = QColor(0xf8, 0x71, 0x71);
+
+  // Story Graph backgrounds (Issue #389) - adjusted for light theme
+  p.nodeHeaderScene = QColor(0xd1, 0xfa, 0xe5);  // Very light green
+  p.nodeBorderScene = QColor(0x22, 0xc5, 0x5e);  // Green border
+  p.sceneContainerFill = QColor(0x22, 0xc5, 0x5e);
+  p.sceneContainerBorder = QColor(0x22, 0xc5, 0x5e);
+  p.connectionLabelBg = QColor(0xff, 0xff, 0xff);
+  p.sceneIconBg = QColor(0xf5, 0xf5, 0xf5);
 
   return p;
 }

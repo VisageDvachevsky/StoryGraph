@@ -230,7 +230,7 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
     gradient.setColorAt(0, bgColor);
     gradient.setColorAt(1, bgColor.darker(110));
     painter->setBrush(gradient);
-    painter->setPen(QPen(QColor(100, 200, 150), 2)); // Green border for scenes
+    painter->setPen(QPen(palette.nodeBorderScene, 2)); // Issue #389: Green border for scenes
   } else {
     painter->setBrush(bgColor);
     painter->setPen(QPen(palette.borderLight, 1));
@@ -239,7 +239,7 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
 
   // Header bar with icon
   QRectF headerRect(0, 0, NODE_WIDTH, 28);
-  painter->setBrush(isScene ? QColor(45, 65, 55) : palette.bgDark); // Greenish header for scenes
+  painter->setBrush(isScene ? palette.nodeHeaderScene : palette.bgDark); // Issue #389: Greenish header for scenes
   painter->setPen(Qt::NoPen);
   QPainterPath headerPath;
   headerPath.addRoundedRect(headerRect, CORNER_RADIUS, CORNER_RADIUS);
@@ -253,37 +253,37 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
   QString iconName = "node-dialogue"; // default
   QColor iconColor = palette.textSecondary;
 
-  // Map node types to icons and colors
+  // Issue #389: Map node types to icons and palette colors
   if (isScene) {
-    iconName = "panel-scene-view";     // Use scene view icon
-    iconColor = QColor(100, 220, 150); // Green
+    iconName = "panel-scene-view";
+    iconColor = palette.nodeScene;
   } else if (m_nodeType.contains("Dialogue", Qt::CaseInsensitive)) {
     iconName = "node-dialogue";
-    iconColor = QColor(100, 180, 255); // Blue
+    iconColor = palette.nodeDialogue;
   } else if (m_nodeType.contains("Choice", Qt::CaseInsensitive)) {
     iconName = "node-choice";
-    iconColor = QColor(255, 180, 100); // Orange
+    iconColor = palette.nodeChoice;
   } else if (m_nodeType.contains("Event", Qt::CaseInsensitive)) {
     iconName = "node-event";
-    iconColor = QColor(255, 220, 100); // Yellow
+    iconColor = palette.nodeEvent;
   } else if (m_nodeType.contains("Condition", Qt::CaseInsensitive)) {
     iconName = "node-condition";
-    iconColor = QColor(200, 100, 255); // Purple
+    iconColor = palette.nodeCondition;
   } else if (m_nodeType.contains("Random", Qt::CaseInsensitive)) {
     iconName = "node-random";
-    iconColor = QColor(100, 255, 180); // Green
+    iconColor = palette.nodeRandom;
   } else if (m_nodeType.contains("Start", Qt::CaseInsensitive)) {
     iconName = "node-start";
-    iconColor = QColor(100, 255, 100); // Bright Green
+    iconColor = palette.nodeStart;
   } else if (m_nodeType.contains("End", Qt::CaseInsensitive)) {
     iconName = "node-end";
-    iconColor = QColor(255, 100, 100); // Red
+    iconColor = palette.nodeEnd;
   } else if (m_nodeType.contains("Jump", Qt::CaseInsensitive)) {
     iconName = "node-jump";
-    iconColor = QColor(180, 180, 255); // Light Blue
+    iconColor = palette.nodeJump;
   } else if (m_nodeType.contains("Variable", Qt::CaseInsensitive)) {
     iconName = "node-variable";
-    iconColor = QColor(255, 180, 255); // Pink
+    iconColor = palette.nodeVariable;
   }
 
   // Draw icon (with null check to prevent segfault if icon fails to load)
@@ -293,7 +293,7 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
   }
 
   // Draw node type text
-  painter->setPen(isScene ? QColor(100, 220, 150) : palette.textSecondary);
+  painter->setPen(isScene ? palette.nodeScene : palette.textSecondary); // Issue #389
   painter->setFont(NMStyleManager::instance().defaultFont());
   painter->drawText(headerRect.adjusted(28, 0, -8, 0), Qt::AlignVCenter | Qt::AlignLeft,
                     m_nodeType);
@@ -302,7 +302,7 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
     QPolygonF marker;
     marker << QPointF(NODE_WIDTH - 18, 6) << QPointF(NODE_WIDTH - 6, 14)
            << QPointF(NODE_WIDTH - 18, 22);
-    painter->setBrush(QColor(80, 200, 120));
+    painter->setBrush(palette.indicatorEntry); // Issue #389
     painter->setPen(Qt::NoPen);
     painter->drawPolygon(marker);
   }
@@ -321,7 +321,7 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
     QFont smallFont = NMStyleManager::instance().defaultFont();
     smallFont.setPointSize(smallFont.pointSize() - 1);
     painter->setFont(smallFont);
-    painter->setPen(QColor(150, 200, 180));
+    painter->setPen(palette.nodeScene.lighter(120)); // Issue #389
     painter->drawText(QRectF(8, nodeHeight - 22, NODE_WIDTH - 16, 18),
                       Qt::AlignBottom | Qt::AlignLeft, countText);
   }
@@ -330,7 +330,7 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
   if (isScene && m_hasEmbeddedDialogue) {
     // Small graph icon in bottom-right corner
     QRectF indicatorRect(NODE_WIDTH - 24, nodeHeight - 22, 16, 16);
-    painter->setPen(QColor(100, 180, 255));
+    painter->setPen(palette.nodeDialogue); // Issue #389
     painter->setBrush(Qt::NoBrush);
     painter->drawRect(indicatorRect.adjusted(2, 2, -2, -2));
     // Draw mini node icons
@@ -353,11 +353,11 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
       if (displayExpr.length() > 25) {
         displayExpr = displayExpr.left(22) + "...";
       }
-      painter->setPen(QColor(220, 180, 255)); // Light purple for condition text
+      painter->setPen(palette.nodeCondition.lighter(110)); // Issue #389
       painter->drawText(QRectF(8, 36, NODE_WIDTH - 16, 18), Qt::AlignTop | Qt::AlignLeft,
                         displayExpr);
     } else {
-      painter->setPen(QColor(180, 140, 200)); // Dimmer purple for placeholder
+      painter->setPen(palette.nodeCondition.darker(110)); // Issue #389
       painter->drawText(QRectF(8, 36, NODE_WIDTH - 16, 18), Qt::AlignTop | Qt::AlignLeft,
                         QObject::tr("(no condition)"));
     }
@@ -366,7 +366,7 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
     const qreal bottomY = nodeHeight - 20;
     if (!m_conditionOutputs.isEmpty()) {
       // Draw branch indicator icon (small diamond/fork)
-      painter->setPen(QColor(200, 100, 255)); // Purple
+      painter->setPen(palette.nodeCondition); // Issue #389
       painter->setBrush(Qt::NoBrush);
 
       // Draw a small branching indicator
@@ -379,7 +379,7 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
       QFont tinyFont = NMStyleManager::instance().defaultFont();
       tinyFont.setPointSize(7);
       painter->setFont(tinyFont);
-      painter->setPen(QColor(180, 140, 220));
+      painter->setPen(palette.nodeCondition.darker(110)); // Issue #389
 
       QString branchText;
       if (m_conditionOutputs.size() == 2 && m_conditionOutputs[0].toLower() == "true" &&
@@ -395,7 +395,7 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
       QFont tinyFont = NMStyleManager::instance().defaultFont();
       tinyFont.setPointSize(7);
       painter->setFont(tinyFont);
-      painter->setPen(QColor(150, 120, 180));
+      painter->setPen(palette.nodeCondition.darker(120)); // Issue #389
       painter->drawText(QRectF(8, bottomY, NODE_WIDTH - 16, 14), Qt::AlignVCenter | Qt::AlignLeft,
                         "true/false");
     }
@@ -412,19 +412,19 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
       QRectF playButtonRect(NODE_WIDTH - 44, bottomY, iconSize, iconSize);
       QColor playColor;
 
-      // Color based on binding status
+      // Issue #389: Color based on binding status
       switch (m_voiceBindingStatus) {
-      case 1:                              // Bound
-        playColor = QColor(100, 220, 150); // Green
+      case 1:  // Bound
+        playColor = palette.statusVoiceBound;
         break;
-      case 2:                              // MissingFile
-        playColor = QColor(220, 100, 100); // Red
+      case 2:  // MissingFile
+        playColor = palette.statusVoiceMissing;
         break;
-      case 3:                              // AutoMapped
-        playColor = QColor(100, 180, 255); // Blue
+      case 3:  // AutoMapped
+        playColor = palette.statusVoiceAuto;
         break;
-      default:                             // Unbound/Pending
-        playColor = QColor(180, 180, 180); // Gray
+      default:  // Unbound/Pending
+        playColor = palette.statusVoiceUnbound;
         break;
       }
 
@@ -440,7 +440,7 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
 
     // Show record button (always visible for dialogue nodes)
     QRectF recordButtonRect(NODE_WIDTH - 22, bottomY, iconSize, iconSize);
-    QColor recordColor = hasVoiceClip() ? QColor(220, 100, 100) : QColor(255, 140, 140);
+    QColor recordColor = hasVoiceClip() ? palette.indicatorRecord : palette.indicatorRecordLight; // Issue #389
 
     // Draw record icon (circle)
     painter->setBrush(recordColor);
@@ -452,7 +452,7 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
       QFont tinyFont = NMStyleManager::instance().defaultFont();
       tinyFont.setPointSize(7);
       painter->setFont(tinyFont);
-      painter->setPen(QColor(150, 220, 180));
+      painter->setPen(palette.indicatorVoice); // Issue #389
       painter->drawText(QRectF(8, bottomY, 60, 16), Qt::AlignVCenter | Qt::AlignLeft, "Voice");
     }
 
@@ -465,28 +465,29 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
       QColor locColor;
       QString locTooltip;
 
+      // Issue #389: Localization status colors
       switch (m_translationStatus) {
       case 0: // NotLocalizable
         // No indicator for non-localizable content
         break;
-      case 1:                             // Untranslated
-        locColor = QColor(255, 180, 100); // Orange warning
+      case 1:  // Untranslated
+        locColor = palette.statusUntranslated;
         locTooltip = "Untranslated";
         break;
-      case 2:                             // Translated
-        locColor = QColor(100, 220, 150); // Green success
+      case 2:  // Translated
+        locColor = palette.statusTranslated;
         locTooltip = "Translated";
         break;
-      case 3:                             // NeedsReview
-        locColor = QColor(180, 180, 255); // Light blue
+      case 3:  // NeedsReview
+        locColor = palette.statusNeedsReview;
         locTooltip = "Needs Review";
         break;
-      case 4:                             // Missing
-        locColor = QColor(255, 100, 100); // Red error
+      case 4:  // Missing
+        locColor = palette.statusMissing;
         locTooltip = "Missing Translation";
         break;
       default:
-        locColor = QColor(180, 180, 180); // Gray
+        locColor = palette.statusVoiceUnbound;  // Gray
         break;
       }
 
@@ -533,22 +534,25 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
     const qreal radius = 8.0;
     const QPointF center(radius + 4, radius + 4);
 
-    painter->setBrush(QColor(220, 60, 60)); // Red
-    painter->setPen(QPen(QColor(180, 40, 40), 2));
+    painter->setBrush(palette.indicatorBreakpoint); // Issue #389
+    painter->setPen(QPen(palette.indicatorBreakpointDark, 2));
     painter->drawEllipse(center, radius, radius);
 
     // Inner highlight for 3D effect
-    painter->setBrush(QColor(255, 100, 100, 80));
+    QColor highlightColor = palette.indicatorBreakpointHighlight;
+    highlightColor.setAlpha(80);
+    painter->setBrush(highlightColor);
     painter->setPen(Qt::NoPen);
     painter->drawEllipse(center - QPointF(2, 2), radius * 0.4, radius * 0.4);
   }
 
   // Currently executing indicator (pulsing green border + glow)
   if (m_isCurrentlyExecuting) {
-    // Outer glow effect
+    // Issue #389: Outer glow effect
     for (int i = 3; i >= 0; --i) {
       int alpha = 40 - (i * 10);
-      QColor glowColor(60, 220, 120, alpha);
+      QColor glowColor = palette.indicatorExecuting;
+      glowColor.setAlpha(alpha);
       painter->setPen(QPen(glowColor, 3 + i * 2));
       painter->setBrush(Qt::NoBrush);
       painter->drawRoundedRect(boundingRect().adjusted(-i, -i, i, i), CORNER_RADIUS + i,
@@ -556,7 +560,7 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
     }
 
     // Solid green border
-    painter->setPen(QPen(QColor(60, 220, 120), 3));
+    painter->setPen(QPen(palette.indicatorExecuting, 3));
     painter->setBrush(Qt::NoBrush);
     painter->drawRoundedRect(boundingRect().adjusted(1, 1, -1, -1), CORNER_RADIUS, CORNER_RADIUS);
 
@@ -570,8 +574,8 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
     arrowPath.lineTo(arrowCenter + QPointF(-arrowSize / 2, arrowSize / 3));
     arrowPath.closeSubpath();
 
-    painter->setBrush(QColor(60, 220, 120));
-    painter->setPen(QPen(QColor(40, 180, 90), 2));
+    painter->setBrush(palette.indicatorExecuting);
+    painter->setPen(QPen(palette.indicatorExecutingDark, 2));
     painter->drawPath(arrowPath);
   }
 
@@ -582,8 +586,8 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
 
     // Draw background circle
     QColor validationBgColor = m_hasSceneValidationError
-                                   ? QColor(220, 60, 60)   // Red for errors
-                                   : QColor(255, 180, 60); // Orange for warnings
+                                   ? palette.error    // Issue #389: Red for errors
+                                   : palette.warning; // Issue #389: Orange for warnings
     painter->setBrush(validationBgColor);
     painter->setPen(QPen(validationBgColor.darker(130), 2));
     painter->drawEllipse(iconCenter, iconSize / 2, iconSize / 2);

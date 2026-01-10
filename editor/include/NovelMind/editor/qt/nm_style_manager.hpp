@@ -209,6 +209,68 @@ struct EditorPalette {
   QColor scrollbarTrack{0x14, 0x18, 0x1e};
   QColor dragHighlight{0x3b, 0x9e, 0xff};
   QColor dropZone{0x1a, 0x3a, 0x5c};
+
+  // =========================================================================
+  // STORY GRAPH NODE TYPE COLORS (Issue #389)
+  // =========================================================================
+  QColor nodeScene{0x64, 0xdc, 0x96};        // Green for scene nodes
+  QColor nodeDialogue{0x64, 0xb4, 0xff};     // Blue for dialogue nodes
+  QColor nodeChoice{0xff, 0xb4, 0x64};       // Orange for choice nodes
+  QColor nodeEvent{0xff, 0xdc, 0x64};        // Yellow for event nodes
+  QColor nodeCondition{0xc8, 0x64, 0xff};    // Purple for condition nodes
+  QColor nodeRandom{0x64, 0xff, 0xb4};       // Cyan-green for random nodes
+  QColor nodeStart{0x64, 0xff, 0x64};        // Bright green for start nodes
+  QColor nodeEnd{0xff, 0x64, 0x64};          // Red for end nodes
+  QColor nodeJump{0xb4, 0xb4, 0xff};         // Light blue for jump nodes
+  QColor nodeVariable{0xff, 0xb4, 0xff};     // Pink for variable nodes
+
+  // =========================================================================
+  // STORY GRAPH STATUS COLORS (Issue #389)
+  // =========================================================================
+  QColor statusVoiceBound{0x64, 0xdc, 0x96};     // Green - voice bound
+  QColor statusVoiceMissing{0xdc, 0x64, 0x64};   // Red - voice missing file
+  QColor statusVoiceAuto{0x64, 0xb4, 0xff};      // Blue - voice auto-mapped
+  QColor statusVoiceUnbound{0xb4, 0xb4, 0xb4};   // Gray - voice unbound
+  QColor statusTranslated{0x64, 0xdc, 0x96};     // Green - translated
+  QColor statusUntranslated{0xff, 0xb4, 0x64};   // Orange - untranslated
+  QColor statusNeedsReview{0xb4, 0xb4, 0xff};    // Light blue - needs review
+  QColor statusMissing{0xff, 0x64, 0x64};        // Red - missing translation
+
+  // =========================================================================
+  // STORY GRAPH CONNECTION COLORS (Issue #389)
+  // =========================================================================
+  QColor connectionTrue{0x64, 0xc8, 0x64};       // Green for true branch
+  QColor connectionFalse{0xc8, 0x64, 0x64};      // Red for false branch
+  QColor connectionChoice1{0x64, 0xb4, 0xff};    // Blue for choice 1
+  QColor connectionChoice2{0xff, 0xb4, 0x64};    // Orange for choice 2
+  QColor connectionChoice3{0xb4, 0x64, 0xff};    // Purple for choice 3
+  QColor connectionChoice4{0xff, 0x64, 0xb4};    // Pink for choice 4
+  QColor connectionChoice5{0x64, 0xff, 0xb4};    // Cyan for choice 5
+  QColor connectionSceneTransition{0x64, 0xc8, 0x96}; // Scene green
+  QColor connectionCrossScene{0xff, 0xc8, 0x64};      // Warm orange
+
+  // =========================================================================
+  // STORY GRAPH INDICATORS (Issue #389)
+  // =========================================================================
+  QColor indicatorBreakpoint{0xdc, 0x3c, 0x3c};   // Red for breakpoint
+  QColor indicatorBreakpointDark{0xb4, 0x28, 0x28}; // Darker red for border
+  QColor indicatorBreakpointHighlight{0xff, 0x64, 0x64}; // Light red for highlight
+  QColor indicatorExecuting{0x3c, 0xdc, 0x78};    // Green for execution
+  QColor indicatorExecutingDark{0x28, 0xb4, 0x5a}; // Darker green for border
+  QColor indicatorEntry{0x50, 0xc8, 0x78};        // Entry marker green
+  QColor indicatorVoice{0x96, 0xdc, 0xb4};        // Voice indicator
+  QColor indicatorRecord{0xdc, 0x64, 0x64};       // Record button red
+  QColor indicatorRecordLight{0xff, 0x8c, 0x8c};  // Light red for record
+
+  // =========================================================================
+  // STORY GRAPH BACKGROUNDS (Issue #389)
+  // =========================================================================
+  QColor nodeHeaderScene{0x2d, 0x41, 0x37};       // Greenish header for scenes
+  QColor nodeBorderScene{0x64, 0xc8, 0x96};       // Green border for scenes
+  QColor sceneContainerFill{0x64, 0xc8, 0x96};    // Scene container fill (use with alpha)
+  QColor sceneContainerBorder{0x64, 0xc8, 0x96};  // Scene container border
+  QColor connectionLabelBg{0x28, 0x2c, 0x34};     // Connection label background
+  QColor sceneIconBg{0x1e, 0x22, 0x2a};           // Scene transition icon bg
 };
 
 /**
