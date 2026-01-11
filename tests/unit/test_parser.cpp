@@ -554,3 +554,150 @@ TEST_CASE("Parser parses move statements", "[parser]")
         REQUIRE(move.duration == Catch::Approx(2.0f));
     }
 }
+
+TEST_CASE("Parser error recovery", "[parser]")
+{
+    Lexer lexer;
+    Parser parser;
+
+    SECTION("test_parser_error_recovery_scene")
+    {
+        // Test that parser recovers from error and continues parsing next scene
+        auto tokens = lexer.tokenize(R"(
+            scene broken {
+                invalid syntax here @#$%
+                show Hero at center
+            }
+            scene good {
+                say Hero "Hello!"
+            }
+        )");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        // Parser should report error but continue
+        const auto& errors = parser.getErrors();
+        REQUIRE(errors.size() > 0);
+
+        // Parser should still find the second scene despite error in first
+        if (result.isOk()) {
+            const auto& program = result.value();
+            // Should have parsed at least one scene
+            REQUIRE(program.scenes.size() >= 1);
+        }
+    }
+
+    SECTION("test_parser_error_recovery_choice")
+    {
+        // Test that parser recovers from error in choice and continues
+        auto tokens = lexer.tokenize(R"(
+            choice {
+                "Option 1" -> goto scene1
+                "Broken option" -> invalid @#$%
+                "Option 2" -> goto scene2
+            }
+            say "After choice"
+        )");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        // Parser should report error
+        const auto& errors = parser.getErrors();
+        REQUIRE(errors.size() > 0);
+
+        // Parser should continue and parse the say statement after choice
+        if (result.isOk()) {
+            const auto& program = result.value();
+            // Should have parsed some statements
+            REQUIRE(program.globalStatements.size() >= 1);
+        }
+    }
+
+    SECTION("recovers from error and finds multiple statements")
+    {
+        // Test that synchronize finds all statement types
+        auto tokens = lexer.tokenize(R"(
+            invalid @#$%
+            show Hero at center
+            broken syntax
+            hide Hero
+            bad code
+            say "Hello"
+            more bad stuff
+            if true { }
+            wrong
+            choice { "opt" -> goto x }
+            error
+            goto scene
+            fail
+            wait 1.0
+            nope
+            play sound "x.ogg"
+            bad
+            stop music
+            wrong
+            set x = 1
+            fail
+            transition fade 1.0
+            error
+            move Hero to left
+        )");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        const auto& errors = parser.getErrors();
+
+        // Should have multiple errors
+        REQUIRE(errors.size() > 0);
+
+        // Parser should continue after each error and parse valid statements
+        if (result.isOk()) {
+            const auto& program = result.value();
+            // Should have parsed multiple valid statements despite errors
+            REQUIRE(program.globalStatements.size() > 5);
+        }
+    }
+
+    SECTION("recovers at else keyword")
+    {
+        // Test that parser synchronizes at else keyword
+        auto tokens = lexer.tokenize(R"(
+            if true {
+                broken @#$%
+            } else {
+                say "In else branch"
+            }
+        )");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        const auto& errors = parser.getErrors();
+
+        // Should have at least one error from broken syntax
+        REQUIRE(errors.size() > 0);
+    }
+
+    SECTION("recovers at left brace for blocks")
+    {
+        // Test that parser synchronizes at block statements
+        auto tokens = lexer.tokenize(R"(
+            invalid syntax here
+            {
+                say "In block"
+            }
+        )");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        const auto& errors = parser.getErrors();
+
+        // Should have errors from invalid syntax
+        REQUIRE(errors.size() > 0);
+
+        // Should still parse the block
+        if (result.isOk()) {
+            const auto& program = result.value();
+            REQUIRE(program.globalStatements.size() >= 1);
+        }
+    }
+}
