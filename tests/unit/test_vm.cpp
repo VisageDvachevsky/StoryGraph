@@ -868,3 +868,178 @@ TEST_CASE("VM comparison type coercion - comprehensive", "[scripting][coercion]"
         REQUIRE(std::get<bool>(result) == true);  // 5 == 5.0
     }
 }
+
+// =========================================================================
+// Division by Zero Tests (Issue #457)
+// =========================================================================
+
+TEST_CASE("test_vm_divide_by_zero_integer", "[scripting][division]")
+{
+    VirtualMachine vm;
+
+    std::vector<Instruction> program = {
+        {OpCode::PUSH_INT, 10},
+        {OpCode::PUSH_INT, 0},  // Divisor is zero
+        {OpCode::DIV, 0},
+        {OpCode::STORE_VAR, 0},
+        {OpCode::HALT, 0}
+    };
+
+    vm.load(program, {"result"});
+    vm.run();
+
+    // VM should halt due to division by zero error
+    REQUIRE(vm.isHalted());
+
+    // The variable should not be set because the operation halted before STORE_VAR
+    REQUIRE_FALSE(vm.hasVariable("result"));
+}
+
+TEST_CASE("test_vm_divide_by_zero_float", "[scripting][division]")
+{
+    VirtualMachine vm;
+
+    SECTION("Float dividend, zero divisor") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_FLOAT, 0},  // 10.5f
+            {OpCode::PUSH_FLOAT, 1},  // 0.0f
+            {OpCode::DIV, 0},
+            {OpCode::STORE_VAR, 0},
+            {OpCode::HALT, 0}
+        };
+
+        // Encode 10.5f as operand
+        NovelMind::f32 val1 = 10.5f;
+        NovelMind::u32 operand1;
+        std::memcpy(&operand1, &val1, sizeof(NovelMind::f32));
+        program[0].operand = operand1;
+
+        // Encode 0.0f as operand
+        NovelMind::f32 val2 = 0.0f;
+        NovelMind::u32 operand2;
+        std::memcpy(&operand2, &val2, sizeof(NovelMind::f32));
+        program[1].operand = operand2;
+
+        vm.load(program, {"result"});
+        vm.run();
+
+        // VM should halt due to division by zero error
+        REQUIRE(vm.isHalted());
+
+        // The variable should not be set
+        REQUIRE_FALSE(vm.hasVariable("result"));
+    }
+
+    SECTION("Integer dividend divided by float zero") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_INT, 42},
+            {OpCode::PUSH_FLOAT, 0},  // 0.0f
+            {OpCode::DIV, 0},
+            {OpCode::STORE_VAR, 0},
+            {OpCode::HALT, 0}
+        };
+
+        // Encode 0.0f as operand
+        NovelMind::f32 val = 0.0f;
+        NovelMind::u32 operand;
+        std::memcpy(&operand, &val, sizeof(NovelMind::f32));
+        program[1].operand = operand;
+
+        vm.load(program, {"result"});
+        vm.run();
+
+        // VM should halt due to division by zero error
+        REQUIRE(vm.isHalted());
+
+        // The variable should not be set
+        REQUIRE_FALSE(vm.hasVariable("result"));
+    }
+}
+
+TEST_CASE("test_vm_modulo_by_zero", "[scripting][division]")
+{
+    VirtualMachine vm;
+
+    std::vector<Instruction> program = {
+        {OpCode::PUSH_INT, 10},
+        {OpCode::PUSH_INT, 0},  // Divisor is zero
+        {OpCode::MOD, 0},
+        {OpCode::STORE_VAR, 0},
+        {OpCode::HALT, 0}
+    };
+
+    vm.load(program, {"result"});
+    vm.run();
+
+    // VM should halt due to modulo by zero error
+    REQUIRE(vm.isHalted());
+
+    // The variable should not be set because the operation halted before STORE_VAR
+    REQUIRE_FALSE(vm.hasVariable("result"));
+}
+
+TEST_CASE("test_vm_division_normal_operations", "[scripting][division]")
+{
+    VirtualMachine vm;
+
+    SECTION("Integer division - normal case") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_INT, 10},
+            {OpCode::PUSH_INT, 2},
+            {OpCode::DIV, 0},
+            {OpCode::STORE_VAR, 0},
+            {OpCode::HALT, 0}
+        };
+
+        vm.load(program, {"result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::holds_alternative<NovelMind::i32>(result));
+        REQUIRE(std::get<NovelMind::i32>(result) == 5);
+    }
+
+    SECTION("Float division - normal case") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_FLOAT, 0},  // 10.0f
+            {OpCode::PUSH_FLOAT, 1},  // 2.0f
+            {OpCode::DIV, 0},
+            {OpCode::STORE_VAR, 0},
+            {OpCode::HALT, 0}
+        };
+
+        NovelMind::f32 val1 = 10.0f;
+        NovelMind::u32 operand1;
+        std::memcpy(&operand1, &val1, sizeof(NovelMind::f32));
+        program[0].operand = operand1;
+
+        NovelMind::f32 val2 = 2.0f;
+        NovelMind::u32 operand2;
+        std::memcpy(&operand2, &val2, sizeof(NovelMind::f32));
+        program[1].operand = operand2;
+
+        vm.load(program, {"result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::holds_alternative<NovelMind::f32>(result));
+        REQUIRE(std::get<NovelMind::f32>(result) == 5.0f);
+    }
+
+    SECTION("Modulo - normal case") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_INT, 10},
+            {OpCode::PUSH_INT, 3},
+            {OpCode::MOD, 0},
+            {OpCode::STORE_VAR, 0},
+            {OpCode::HALT, 0}
+        };
+
+        vm.load(program, {"result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::holds_alternative<NovelMind::i32>(result));
+        REQUIRE(std::get<NovelMind::i32>(result) == 1);
+    }
+}
