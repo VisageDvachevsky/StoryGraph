@@ -35,7 +35,7 @@ add_executable(unit_tests
     unit/test_runtime_config.cpp
     unit/test_division_safety.cpp
     unit/test_audio_recorder.cpp
-    # unit/test_scene_graph_deep.cpp  # TODO: Fix renderer mock API mismatch
+    unit/test_scene_graph_deep.cpp
     unit/test_vfs_pack_security.cpp
     unit/test_audio_playback.cpp
     unit/test_input_manager.cpp
