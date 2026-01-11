@@ -312,8 +312,16 @@ void NMTransformGizmo::updateHandleDrag(const QPointF &scenePos) {
     constexpr qreal kMinGizmoRadius = 40.0;
     constexpr qreal kMinScale = 0.1;
     constexpr qreal kMaxScale = 10.0;
+    constexpr qreal kEpsilon = 0.0001;
     const qreal currentDistance =
         std::max(kMinGizmoRadius, QLineF(center, scenePos).length());
+
+    // Safe division with epsilon check to prevent division by zero
+    if (m_dragStartDistance < kEpsilon) {
+      // Degenerate case: start distance too small, maintain current scale
+      return;
+    }
+
     const qreal rawFactor = currentDistance / m_dragStartDistance;
     const qreal scaleFactor = std::pow(rawFactor, 0.6);
     const qreal newScaleX =
