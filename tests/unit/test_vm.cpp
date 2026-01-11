@@ -621,6 +621,8 @@ TEST_CASE("VM multiple arguments order", "[scripting][vm]")
     // Third: duration
     REQUIRE(std::holds_alternative<NovelMind::i32>(capturedArgs[2]));
     REQUIRE(std::get<NovelMind::i32>(capturedArgs[2]) == 500);
+}
+
 // =========================================================================
 // Type Coercion Tests for Comparison Operators (Issue #475)
 // =========================================================================
