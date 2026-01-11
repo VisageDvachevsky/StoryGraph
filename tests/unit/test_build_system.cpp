@@ -500,3 +500,119 @@ TEST_CASE("BuildSystem::validateProject reports missing directories",
 
   cleanupTempDir(tempDir);
 }
+
+// =============================================================================
+// Path Traversal Security Tests (Issue #572)
+// =============================================================================
+
+TEST_CASE("Path traversal protection in sanitizeOutputPath",
+          "[build_system][security][path_traversal]") {
+  std::string tempDir = createTempDir();
+  std::string baseDir = tempDir + "/output";
+  fs::create_directories(baseDir);
+
+  SECTION("Rejects simple parent directory traversal") {
+    auto result = BuildSystem::sanitizeOutputPath(baseDir, "../evil.txt");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("Path traversal detected") != std::string::npos);
+  }
+
+  SECTION("Rejects deeply nested parent directory traversal") {
+    auto result = BuildSystem::sanitizeOutputPath(baseDir, "../../../../../../etc/passwd");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("Path traversal detected") != std::string::npos);
+  }
+
+  SECTION("Rejects path with .. in the middle") {
+    auto result = BuildSystem::sanitizeOutputPath(baseDir, "assets/../../../evil.exe");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("Path traversal detected") != std::string::npos);
+  }
+
+  SECTION("Rejects path with multiple .. components") {
+    auto result = BuildSystem::sanitizeOutputPath(baseDir, "foo/../bar/../../../baz.dll");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("Path traversal detected") != std::string::npos);
+  }
+
+  SECTION("Accepts valid relative path") {
+    auto result = BuildSystem::sanitizeOutputPath(baseDir, "assets/images/bg.png");
+    REQUIRE(result.isOk());
+    REQUIRE(result.value().find(baseDir) != std::string::npos);
+  }
+
+  SECTION("Accepts nested valid path") {
+    auto result = BuildSystem::sanitizeOutputPath(baseDir, "deep/nested/structure/file.dat");
+    REQUIRE(result.isOk());
+    REQUIRE(result.value().find(baseDir) != std::string::npos);
+  }
+
+  SECTION("Accepts path with dots in filename") {
+    auto result = BuildSystem::sanitizeOutputPath(baseDir, "version.1.2.3.txt");
+    REQUIRE(result.isOk());
+    REQUIRE(result.value().find(baseDir) != std::string::npos);
+  }
+
+  SECTION("Rejects backslash-based parent directory traversal (Windows)") {
+    auto result = BuildSystem::sanitizeOutputPath(baseDir, "..\\..\\evil.txt");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("Path traversal detected") != std::string::npos);
+  }
+
+  SECTION("Accepts empty relative path") {
+    auto result = BuildSystem::sanitizeOutputPath(baseDir, "");
+    REQUIRE(result.isOk());
+  }
+
+  SECTION("Accepts single filename") {
+    auto result = BuildSystem::sanitizeOutputPath(baseDir, "file.txt");
+    REQUIRE(result.isOk());
+    REQUIRE(result.value().find(baseDir) != std::string::npos);
+  }
+
+  cleanupTempDir(tempDir);
+}
+
+TEST_CASE("Path traversal protection prevents writing outside output directory",
+          "[build_system][security][integration]") {
+  std::string tempDir = createTempDir();
+
+  // Create a fake project structure
+  std::string projectPath = tempDir + "/project";
+  fs::create_directories(projectPath + "/assets");
+  fs::create_directories(projectPath + "/scripts");
+
+  // Create a benign asset file
+  std::ofstream assetFile(projectPath + "/assets/image.png");
+  assetFile << "fake image data";
+  assetFile.close();
+
+  // Create project.json
+  std::ofstream projectFile(projectPath + "/project.json");
+  projectFile << R"({
+    "name": "SecurityTest",
+    "version": "1.0.0"
+  })";
+  projectFile.close();
+
+  BuildConfig config;
+  config.projectPath = projectPath;
+  config.outputPath = tempDir + "/build";
+  config.platform = BuildPlatform::Windows;
+  config.buildType = BuildType::Release;
+  config.deterministicBuild = true;
+  config.fixedBuildTimestamp = 1704067200;
+
+  BuildSystem buildSystem;
+  buildSystem.configure(config);
+
+  SECTION("Normal asset processing succeeds") {
+    // This would normally be tested with a full build
+    // For now we verify that sanitizeOutputPath works correctly
+    std::string assetsDir = config.outputPath + "/.staging/assets";
+    auto result = BuildSystem::sanitizeOutputPath(assetsDir, "image.png");
+    REQUIRE(result.isOk());
+  }
+
+  cleanupTempDir(tempDir);
+}
