@@ -26,6 +26,7 @@ option(NOVELMIND_ENABLE_ASAN "Enable AddressSanitizer" OFF)
 option(NOVELMIND_ENABLE_TSAN "Enable ThreadSanitizer" OFF)
 option(NOVELMIND_ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" OFF)
 option(NOVELMIND_ENABLE_LSAN "Enable LeakSanitizer" OFF)
+option(NOVELMIND_ENABLE_VALGRIND "Build with Valgrind-friendly flags (no frame pointer omission)" OFF)
 
 # Output directories
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -118,6 +119,15 @@ if(NOVELMIND_ENABLE_LSAN)
     target_link_options(novelmind_compiler_options INTERFACE
         $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:
             -fsanitize=leak
+        >
+    )
+endif()
+
+if(NOVELMIND_ENABLE_VALGRIND)
+    target_compile_options(novelmind_compiler_options INTERFACE
+        $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:
+            -fno-omit-frame-pointer
+            -g
         >
     )
 endif()
