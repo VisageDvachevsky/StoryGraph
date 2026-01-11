@@ -26,15 +26,7 @@ namespace NovelMind::editor {
 /**
  * @brief Asset category for analysis
  */
-enum class AssetCategory : u8 {
-  Images,
-  Audio,
-  Scripts,
-  Fonts,
-  Video,
-  Data,
-  Other
-};
+enum class AssetCategory : u8 { Images, Audio, Scripts, Fonts, Video, Data, Other };
 
 /**
  * @brief Compression type
@@ -190,9 +182,8 @@ public:
   virtual ~IBuildSizeListener() = default;
 
   virtual void onAnalysisStarted() = 0;
-  virtual void onAnalysisProgress(const std::string &currentTask,
-                                  f32 progress) = 0;
-  virtual void onAnalysisCompleted(const BuildSizeAnalysis &analysis) = 0;
+  virtual void onAnalysisProgress(const std::string& currentTask, f32 progress) = 0;
+  virtual void onAnalysisCompleted(const BuildSizeAnalysis& analysis) = 0;
 };
 
 /**
@@ -213,12 +204,12 @@ public:
   /**
    * @brief Set project path
    */
-  void setProjectPath(const std::string &projectPath);
+  void setProjectPath(const std::string& projectPath);
 
   /**
    * @brief Set configuration
    */
-  void setConfig(const BuildSizeAnalysisConfig &config);
+  void setConfig(const BuildSizeAnalysisConfig& config);
 
   /**
    * @brief Run full analysis
@@ -228,26 +219,24 @@ public:
   /**
    * @brief Get last analysis result
    */
-  [[nodiscard]] const BuildSizeAnalysis &getAnalysis() const {
-    return m_analysis;
-  }
+  [[nodiscard]] const BuildSizeAnalysis& getAnalysis() const { return m_analysis; }
 
   /**
    * @brief Add listener
    */
-  void addListener(IBuildSizeListener *listener);
+  void addListener(IBuildSizeListener* listener);
 
   /**
    * @brief Remove listener
    */
-  void removeListener(IBuildSizeListener *listener);
+  void removeListener(IBuildSizeListener* listener);
 
   // Optimization actions
 
   /**
    * @brief Apply an optimization suggestion
    */
-  Result<void> applyOptimization(const OptimizationSuggestion &suggestion);
+  Result<void> applyOptimization(const OptimizationSuggestion& suggestion);
 
   /**
    * @brief Apply all auto-fixable optimizations
@@ -274,27 +263,27 @@ public:
   /**
    * @brief Export analysis as HTML report
    */
-  Result<void> exportAsHtml(const std::string &outputPath) const;
+  Result<void> exportAsHtml(const std::string& outputPath) const;
 
   /**
    * @brief Export analysis as CSV
    */
-  Result<void> exportAsCsv(const std::string &outputPath) const;
+  Result<void> exportAsCsv(const std::string& outputPath) const;
 
 private:
   void scanAssets();
-  void analyzeAsset(AssetSizeInfo &info);
+  void analyzeAsset(AssetSizeInfo& info);
   void detectDuplicates();
   void detectUnused();
   void generateSuggestions();
   void calculateSummaries();
 
-  void reportProgress(const std::string &task, f32 progress);
+  void reportProgress(const std::string& task, f32 progress);
 
-  std::string computeFileHash(const std::string &path);
-  CompressionType detectCompression(const std::string &path);
-  AssetCategory categorizeAsset(const std::string &path);
-  void parseFileForAssetReferences(const std::string &filePath);
+  std::string computeFileHash(const std::string& path);
+  CompressionType detectCompression(const std::string& path);
+  AssetCategory categorizeAsset(const std::string& path);
+  void parseFileForAssetReferences(const std::string& filePath);
 
   std::string m_projectPath;
   BuildSizeAnalysisConfig m_config;
@@ -304,7 +293,7 @@ private:
   std::unordered_map<std::string, std::vector<std::string>>
       m_hashToFiles; // For duplicate detection
 
-  std::vector<IBuildSizeListener *> m_listeners;
+  std::vector<IBuildSizeListener*> m_listeners;
 };
 
 /**
@@ -319,30 +308,23 @@ public:
   void render();
   void onResize(i32 width, i32 height);
 
-  void setAnalyzer(BuildSizeAnalyzer *analyzer);
+  void setAnalyzer(BuildSizeAnalyzer* analyzer);
 
   // Actions
   void refreshAnalysis();
-  void exportReport(const std::string &path);
+  void exportReport(const std::string& path);
 
   // View modes
-  enum class ViewMode : u8 {
-    Overview,
-    ByCategory,
-    BySize,
-    Duplicates,
-    Unused,
-    Suggestions
-  };
+  enum class ViewMode : u8 { Overview, ByCategory, BySize, Duplicates, Unused, Suggestions };
   void setViewMode(ViewMode mode) { m_viewMode = mode; }
   [[nodiscard]] ViewMode getViewMode() const { return m_viewMode; }
 
   // Filtering
-  void setFilter(const std::string &filter);
+  void setFilter(const std::string& filter);
   void setCategoryFilter(AssetCategory category);
 
   // Callbacks
-  void setOnAssetSelected(std::function<void(const std::string &)> callback);
+  void setOnAssetSelected(std::function<void(const std::string&)> callback);
   void setOnOptimizationApplied(std::function<void()> callback);
 
 private:
@@ -358,7 +340,7 @@ private:
 
   std::string formatSize(u64 bytes) const;
 
-  BuildSizeAnalyzer *m_analyzer = nullptr;
+  BuildSizeAnalyzer* m_analyzer = nullptr;
 
   ViewMode m_viewMode = ViewMode::Overview;
 
@@ -379,7 +361,7 @@ private:
   bool m_showDetails = true;
 
   // Callbacks
-  std::function<void(const std::string &)> m_onAssetSelected;
+  std::function<void(const std::string&)> m_onAssetSelected;
   std::function<void()> m_onOptimizationApplied;
 };
 
@@ -418,8 +400,8 @@ struct TreemapNode {
   f32 x, y, width, height; // Calculated layout
 };
 
-TreemapNode buildTreemap(const BuildSizeAnalysis &analysis);
-void layoutTreemap(TreemapNode &root, f32 x, f32 y, f32 width, f32 height);
+TreemapNode buildTreemap(const BuildSizeAnalysis& analysis);
+void layoutTreemap(TreemapNode& root, f32 x, f32 y, f32 width, f32 height);
 } // namespace SizeVisualization
 
 } // namespace NovelMind::editor

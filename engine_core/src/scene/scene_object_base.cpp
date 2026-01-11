@@ -13,7 +13,7 @@ namespace NovelMind::scene {
 // SceneObjectBase Implementation
 // ============================================================================
 
-SceneObjectBase::SceneObjectBase(const std::string &id, SceneObjectType type)
+SceneObjectBase::SceneObjectBase(const std::string& id, SceneObjectType type)
     : m_id(id), m_type(type) {
   m_transform.x = 0.0f;
   m_transform.y = 0.0f;
@@ -22,7 +22,7 @@ SceneObjectBase::SceneObjectBase(const std::string &id, SceneObjectType type)
   m_transform.rotation = 0.0f;
 }
 
-const char *SceneObjectBase::getTypeName() const {
+const char* SceneObjectBase::getTypeName() const {
   switch (m_type) {
   case SceneObjectType::Base:
     return "Base";
@@ -66,7 +66,9 @@ void SceneObjectBase::setScale(f32 scaleX, f32 scaleY) {
   notifyPropertyChanged("scaleY", oldScaleY, std::to_string(scaleY));
 }
 
-void SceneObjectBase::setUniformScale(f32 scale) { setScale(scale, scale); }
+void SceneObjectBase::setUniformScale(f32 scale) {
+  setScale(scale, scale);
+}
 
 void SceneObjectBase::setRotation(f32 angle) {
   std::string oldValue = std::to_string(m_transform.rotation);
@@ -97,7 +99,9 @@ void SceneObjectBase::setZOrder(i32 zOrder) {
   notifyPropertyChanged("zOrder", oldValue, std::to_string(zOrder));
 }
 
-void SceneObjectBase::setParent(SceneObjectBase *parent) { m_parent = parent; }
+void SceneObjectBase::setParent(SceneObjectBase* parent) {
+  m_parent = parent;
+}
 
 void SceneObjectBase::addChild(std::unique_ptr<SceneObjectBase> child) {
   if (child) {
@@ -106,11 +110,9 @@ void SceneObjectBase::addChild(std::unique_ptr<SceneObjectBase> child) {
   }
 }
 
-std::unique_ptr<SceneObjectBase>
-SceneObjectBase::removeChild(const std::string &id) {
-  auto it =
-      std::find_if(m_children.begin(), m_children.end(),
-                   [&id](const auto &child) { return child->getId() == id; });
+std::unique_ptr<SceneObjectBase> SceneObjectBase::removeChild(const std::string& id) {
+  auto it = std::find_if(m_children.begin(), m_children.end(),
+                         [&id](const auto& child) { return child->getId() == id; });
 
   if (it != m_children.end()) {
     auto child = std::move(*it);
@@ -121,12 +123,11 @@ SceneObjectBase::removeChild(const std::string &id) {
   return nullptr;
 }
 
-SceneObjectBase *SceneObjectBase::findChild(const std::string &id) {
+SceneObjectBase* SceneObjectBase::findChild(const std::string& id) {
   return findChildRecursive(id, 0);
 }
 
-SceneObjectBase *SceneObjectBase::findChildRecursive(const std::string &id,
-                                                     int depth) {
+SceneObjectBase* SceneObjectBase::findChildRecursive(const std::string& id, int depth) {
   // Prevent infinite recursion with depth limit
   if (depth >= MAX_SCENE_DEPTH) {
     // Log is not available here without adding header dependency,
@@ -134,44 +135,42 @@ SceneObjectBase *SceneObjectBase::findChildRecursive(const std::string &id,
     return nullptr;
   }
 
-  for (auto &child : m_children) {
+  for (auto& child : m_children) {
     if (child->getId() == id) {
       return child.get();
     }
-    if (auto *found = child->findChildRecursive(id, depth + 1)) {
+    if (auto* found = child->findChildRecursive(id, depth + 1)) {
       return found;
     }
   }
   return nullptr;
 }
 
-void SceneObjectBase::addTag(const std::string &tag) {
+void SceneObjectBase::addTag(const std::string& tag) {
   if (std::find(m_tags.begin(), m_tags.end(), tag) == m_tags.end()) {
     m_tags.push_back(tag);
   }
 }
 
-void SceneObjectBase::removeTag(const std::string &tag) {
+void SceneObjectBase::removeTag(const std::string& tag) {
   auto it = std::find(m_tags.begin(), m_tags.end(), tag);
   if (it != m_tags.end()) {
     m_tags.erase(it);
   }
 }
 
-bool SceneObjectBase::hasTag(const std::string &tag) const {
+bool SceneObjectBase::hasTag(const std::string& tag) const {
   return std::find(m_tags.begin(), m_tags.end(), tag) != m_tags.end();
 }
 
-void SceneObjectBase::setProperty(const std::string &name,
-                                  const std::string &value) {
+void SceneObjectBase::setProperty(const std::string& name, const std::string& value) {
   auto it = m_properties.find(name);
   std::string oldValue = (it != m_properties.end()) ? it->second : "";
   m_properties[name] = value;
   notifyPropertyChanged(name, oldValue, value);
 }
 
-std::optional<std::string>
-SceneObjectBase::getProperty(const std::string &name) const {
+std::optional<std::string> SceneObjectBase::getProperty(const std::string& name) const {
   auto it = m_properties.find(name);
   if (it != m_properties.end()) {
     return it->second;
@@ -190,7 +189,7 @@ void SceneObjectBase::update(f64 deltaTime) {
   }
 
   // Update children
-  for (auto &child : m_children) {
+  for (auto& child : m_children) {
     child->update(deltaTime);
   }
 }
@@ -211,7 +210,7 @@ SceneObjectState SceneObjectBase::saveState() const {
   return state;
 }
 
-void SceneObjectBase::loadState(const SceneObjectState &state) {
+void SceneObjectBase::loadState(const SceneObjectState& state) {
   m_transform.x = state.x;
   m_transform.y = state.y;
   m_transform.scaleX = state.scaleX;
@@ -223,37 +222,33 @@ void SceneObjectBase::loadState(const SceneObjectState &state) {
   m_properties = state.properties;
 }
 
-void SceneObjectBase::animatePosition(f32 toX, f32 toY, f32 duration,
-                                      EaseType easing) {
-  auto tween = std::make_unique<PositionTween>(&m_transform.x, &m_transform.y,
-                                               m_transform.x, m_transform.y,
-                                               toX, toY, duration, easing);
+void SceneObjectBase::animatePosition(f32 toX, f32 toY, f32 duration, EaseType easing) {
+  auto tween = std::make_unique<PositionTween>(&m_transform.x, &m_transform.y, m_transform.x,
+                                               m_transform.y, toX, toY, duration, easing);
   tween->start();
   m_animations.push_back(std::move(tween));
 }
 
 void SceneObjectBase::animateAlpha(f32 toAlpha, f32 duration, EaseType easing) {
-  auto tween = std::make_unique<FloatTween>(&m_alpha, m_alpha, toAlpha,
-                                            duration, easing);
+  auto tween = std::make_unique<FloatTween>(&m_alpha, m_alpha, toAlpha, duration, easing);
   tween->start();
   m_animations.push_back(std::move(tween));
 }
 
-void SceneObjectBase::animateScale(f32 toScaleX, f32 toScaleY, f32 duration,
-                                   EaseType easing) {
-  auto tweenX = std::make_unique<FloatTween>(
-      &m_transform.scaleX, m_transform.scaleX, toScaleX, duration, easing);
-  auto tweenY = std::make_unique<FloatTween>(
-      &m_transform.scaleY, m_transform.scaleY, toScaleY, duration, easing);
+void SceneObjectBase::animateScale(f32 toScaleX, f32 toScaleY, f32 duration, EaseType easing) {
+  auto tweenX = std::make_unique<FloatTween>(&m_transform.scaleX, m_transform.scaleX, toScaleX,
+                                             duration, easing);
+  auto tweenY = std::make_unique<FloatTween>(&m_transform.scaleY, m_transform.scaleY, toScaleY,
+                                             duration, easing);
   tweenX->start();
   tweenY->start();
   m_animations.push_back(std::move(tweenX));
   m_animations.push_back(std::move(tweenY));
 }
 
-void SceneObjectBase::notifyPropertyChanged(const std::string &property,
-                                            const std::string &oldValue,
-                                            const std::string &newValue) {
+void SceneObjectBase::notifyPropertyChanged(const std::string& property,
+                                            const std::string& oldValue,
+                                            const std::string& newValue) {
   if (m_observer) {
     PropertyChange change;
     change.objectId = m_id;

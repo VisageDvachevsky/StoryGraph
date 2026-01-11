@@ -41,7 +41,7 @@ std::string KeyBinding::toString() const {
   return result;
 }
 
-KeyBinding KeyBinding::fromString(const std::string &str) {
+KeyBinding KeyBinding::fromString(const std::string& str) {
   KeyBinding binding;
 
   std::string s = str;
@@ -85,9 +85,11 @@ KeyBinding KeyBinding::fromString(const std::string &str) {
 
 LayoutManager::LayoutManager() {}
 
-void LayoutManager::initialize(EditorApp *editor) { m_editor = editor; }
+void LayoutManager::initialize(EditorApp* editor) {
+  m_editor = editor;
+}
 
-Result<void> LayoutManager::saveLayout(const std::string &name) {
+Result<void> LayoutManager::saveLayout(const std::string& name) {
   if (!m_editor) {
     return Result<void>::error("Editor not initialized");
   }
@@ -114,7 +116,7 @@ Result<void> LayoutManager::saveLayout(const std::string &name) {
       file << "height=" << layout.mainWindowHeight << "\n";
       file << "maximized=" << (layout.maximized ? "true" : "false") << "\n";
 
-      for (const auto &panel : layout.panels) {
+      for (const auto& panel : layout.panels) {
         file << "\n[Panel:" << panel.name << "]\n";
         file << "visible=" << (panel.visible ? "true" : "false") << "\n";
         file << "x=" << panel.x << "\n";
@@ -123,16 +125,15 @@ Result<void> LayoutManager::saveLayout(const std::string &name) {
         file << "height=" << panel.height << "\n";
         file << "dock=" << panel.dockRegion << "\n";
       }
-    } catch (const std::exception &e) {
-      return Result<void>::error(std::string("Failed to save layout: ") +
-                                 e.what());
+    } catch (const std::exception& e) {
+      return Result<void>::error(std::string("Failed to save layout: ") + e.what());
     }
   }
 
   return Result<void>::ok();
 }
 
-Result<void> LayoutManager::loadLayout(const std::string &name) {
+Result<void> LayoutManager::loadLayout(const std::string& name) {
   auto it = m_savedLayouts.find(name);
   if (it != m_savedLayouts.end()) {
     applyLayout(it->second);
@@ -163,20 +164,20 @@ void LayoutManager::applyPreset(LayoutPreset preset) {
 
 EditorLayout LayoutManager::getCurrentLayout() const {
   if (m_editor) {
-    return const_cast<LayoutManager *>(this)->captureCurrentLayout();
+    return const_cast<LayoutManager*>(this)->captureCurrentLayout();
   }
   return EditorLayout();
 }
 
 std::vector<std::string> LayoutManager::getSavedLayouts() const {
   std::vector<std::string> names;
-  for (const auto &[name, layout] : m_savedLayouts) {
+  for (const auto& [name, layout] : m_savedLayouts) {
     names.push_back(name);
   }
   return names;
 }
 
-void LayoutManager::deleteLayout(const std::string &name) {
+void LayoutManager::deleteLayout(const std::string& name) {
   m_savedLayouts.erase(name);
 
   if (!m_layoutsPath.empty()) {
@@ -185,7 +186,7 @@ void LayoutManager::deleteLayout(const std::string &name) {
   }
 }
 
-Result<void> LayoutManager::exportLayout(const std::string &path) {
+Result<void> LayoutManager::exportLayout(const std::string& path) {
   EditorLayout layout = captureCurrentLayout();
 
   try {
@@ -200,12 +201,12 @@ Result<void> LayoutManager::exportLayout(const std::string &path) {
     // Write rest of layout data
 
     return Result<void>::ok();
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     return Result<void>::error(std::string("Export failed: ") + e.what());
   }
 }
 
-Result<void> LayoutManager::importLayout(const std::string &path) {
+Result<void> LayoutManager::importLayout(const std::string& path) {
   if (!fs::exists(path)) {
     return Result<void>::error("File not found: " + path);
   }
@@ -219,7 +220,7 @@ Result<void> LayoutManager::importLayout(const std::string &path) {
   return Result<void>::ok();
 }
 
-void LayoutManager::setLayoutsPath(const std::string &path) {
+void LayoutManager::setLayoutsPath(const std::string& path) {
   m_layoutsPath = path;
 }
 
@@ -230,22 +231,20 @@ EditorLayout LayoutManager::createPresetLayout(LayoutPreset preset) {
   case LayoutPreset::Default:
     layout.name = "Default";
     layout.description = "Standard layout with all panels";
-    layout.panels = {
-        {"Project", true, true, 0, 0, 250, 400, "left", 0},
-        {"Scene", true, true, 250, 0, 800, 600, "center", 0},
-        {"Story", true, true, 250, 0, 800, 600, "center", 1},
-        {"Inspector", true, true, 1050, 0, 300, 400, "right", 0},
-        {"Assets", true, true, 0, 400, 600, 200, "bottom", 0},
-        {"Diagnostics", true, true, 0, 400, 600, 200, "bottom", 1}};
+    layout.panels = {{"Project", true, true, 0, 0, 250, 400, "left", 0},
+                     {"Scene", true, true, 250, 0, 800, 600, "center", 0},
+                     {"Story", true, true, 250, 0, 800, 600, "center", 1},
+                     {"Inspector", true, true, 1050, 0, 300, 400, "right", 0},
+                     {"Assets", true, true, 0, 400, 600, 200, "bottom", 0},
+                     {"Diagnostics", true, true, 0, 400, 600, 200, "bottom", 1}};
     break;
 
   case LayoutPreset::StoryFocused:
     layout.name = "Story Focused";
     layout.description = "Story graph prominently displayed";
-    layout.panels = {
-        {"Story", true, true, 0, 0, 1200, 700, "center", 0},
-        {"Inspector", true, true, 1200, 0, 300, 400, "right", 0},
-        {"Diagnostics", true, true, 0, 700, 600, 150, "bottom", 0}};
+    layout.panels = {{"Story", true, true, 0, 0, 1200, 700, "center", 0},
+                     {"Inspector", true, true, 1200, 0, 300, 400, "right", 0},
+                     {"Diagnostics", true, true, 0, 700, 600, 150, "bottom", 0}};
     break;
 
   case LayoutPreset::SceneFocused:
@@ -259,10 +258,9 @@ EditorLayout LayoutManager::createPresetLayout(LayoutPreset preset) {
   case LayoutPreset::ScriptFocused:
     layout.name = "Script Focused";
     layout.description = "Script editor prominently displayed";
-    layout.panels = {
-        {"Script", true, true, 0, 0, 1000, 700, "center", 0},
-        {"Diagnostics", true, true, 1000, 0, 400, 350, "right", 0},
-        {"Variables", true, true, 1000, 350, 400, 350, "right", 1}};
+    layout.panels = {{"Script", true, true, 0, 0, 1000, 700, "center", 0},
+                     {"Diagnostics", true, true, 1000, 0, 400, 350, "right", 0},
+                     {"Variables", true, true, 1000, 350, 400, 350, "right", 1}};
     break;
 
   case LayoutPreset::DebugLayout:
@@ -291,13 +289,13 @@ EditorLayout LayoutManager::createPresetLayout(LayoutPreset preset) {
   return layout;
 }
 
-void LayoutManager::applyLayout(const EditorLayout &layout) {
+void LayoutManager::applyLayout(const EditorLayout& layout) {
   if (!m_editor) {
     return;
   }
 
   // Apply panel states
-  for (const auto &panelState : layout.panels) {
+  for (const auto& panelState : layout.panels) {
     // Would update actual panels here
     (void)panelState;
   }
@@ -321,26 +319,24 @@ EditorLayout LayoutManager::captureCurrentLayout() {
 
 HotkeyManager::HotkeyManager() {}
 
-void HotkeyManager::registerAction(const HotkeyAction &action,
-                                   HotkeyCallback callback) {
+void HotkeyManager::registerAction(const HotkeyAction& action, HotkeyCallback callback) {
   m_actions[action.id] = action;
   m_callbacks[action.id] = std::move(callback);
 }
 
-void HotkeyManager::unregisterAction(const std::string &actionId) {
+void HotkeyManager::unregisterAction(const std::string& actionId) {
   m_actions.erase(actionId);
   m_callbacks.erase(actionId);
 }
 
-void HotkeyManager::setBinding(const std::string &actionId,
-                               const KeyBinding &binding) {
+void HotkeyManager::setBinding(const std::string& actionId, const KeyBinding& binding) {
   auto it = m_actions.find(actionId);
   if (it != m_actions.end()) {
     it->second.currentBinding = binding;
   }
 }
 
-void HotkeyManager::resetToDefault(const std::string &actionId) {
+void HotkeyManager::resetToDefault(const std::string& actionId) {
   auto it = m_actions.find(actionId);
   if (it != m_actions.end()) {
     it->second.currentBinding = it->second.defaultBinding;
@@ -348,13 +344,12 @@ void HotkeyManager::resetToDefault(const std::string &actionId) {
 }
 
 void HotkeyManager::resetAllToDefaults() {
-  for (auto &[id, action] : m_actions) {
+  for (auto& [id, action] : m_actions) {
     action.currentBinding = action.defaultBinding;
   }
 }
 
-std::optional<HotkeyAction>
-HotkeyManager::getAction(const std::string &actionId) const {
+std::optional<HotkeyAction> HotkeyManager::getAction(const std::string& actionId) const {
   auto it = m_actions.find(actionId);
   if (it != m_actions.end()) {
     return it->second;
@@ -362,10 +357,9 @@ HotkeyManager::getAction(const std::string &actionId) const {
   return std::nullopt;
 }
 
-std::vector<HotkeyAction>
-HotkeyManager::getActionsByCategory(ActionCategory category) const {
+std::vector<HotkeyAction> HotkeyManager::getActionsByCategory(ActionCategory category) const {
   std::vector<HotkeyAction> result;
-  for (const auto &[id, action] : m_actions) {
+  for (const auto& [id, action] : m_actions) {
     if (action.category == category) {
       result.push_back(action);
     }
@@ -373,8 +367,7 @@ HotkeyManager::getActionsByCategory(ActionCategory category) const {
   return result;
 }
 
-const std::unordered_map<std::string, HotkeyAction> &
-HotkeyManager::getAllActions() const {
+const std::unordered_map<std::string, HotkeyAction>& HotkeyManager::getAllActions() const {
   return m_actions;
 }
 
@@ -383,7 +376,7 @@ bool HotkeyManager::handleKeyPress(i32 keyCode, KeyModifier modifiers) {
   pressed.keyCode = keyCode;
   pressed.modifiers = modifiers;
 
-  for (const auto &[id, action] : m_actions) {
+  for (const auto& [id, action] : m_actions) {
     if (action.enabled && action.currentBinding == pressed) {
       auto callbackIt = m_callbacks.find(id);
       if (callbackIt != m_callbacks.end() && callbackIt->second) {
@@ -396,10 +389,9 @@ bool HotkeyManager::handleKeyPress(i32 keyCode, KeyModifier modifiers) {
   return false;
 }
 
-std::vector<std::string>
-HotkeyManager::getConflicts(const KeyBinding &binding) const {
+std::vector<std::string> HotkeyManager::getConflicts(const KeyBinding& binding) const {
   std::vector<std::string> conflicts;
-  for (const auto &[id, action] : m_actions) {
+  for (const auto& [id, action] : m_actions) {
     if (action.currentBinding == binding) {
       conflicts.push_back(id);
     }
@@ -407,7 +399,7 @@ HotkeyManager::getConflicts(const KeyBinding &binding) const {
   return conflicts;
 }
 
-Result<void> HotkeyManager::save(const std::string &path) {
+Result<void> HotkeyManager::save(const std::string& path) {
   try {
     std::ofstream file(path);
     if (!file) {
@@ -415,18 +407,17 @@ Result<void> HotkeyManager::save(const std::string &path) {
     }
 
     file << "[Hotkeys]\n";
-    for (const auto &[id, action] : m_actions) {
+    for (const auto& [id, action] : m_actions) {
       file << id << "=" << action.currentBinding.toString() << "\n";
     }
 
     return Result<void>::ok();
-  } catch (const std::exception &e) {
-    return Result<void>::error(std::string("Failed to save hotkeys: ") +
-                               e.what());
+  } catch (const std::exception& e) {
+    return Result<void>::error(std::string("Failed to save hotkeys: ") + e.what());
   }
 }
 
-Result<void> HotkeyManager::load(const std::string &path) {
+Result<void> HotkeyManager::load(const std::string& path) {
   if (!fs::exists(path)) {
     return Result<void>::error("File not found");
   }
@@ -456,39 +447,36 @@ Result<void> HotkeyManager::load(const std::string &path) {
     }
 
     return Result<void>::ok();
-  } catch (const std::exception &e) {
-    return Result<void>::error(std::string("Failed to load hotkeys: ") +
-                               e.what());
+  } catch (const std::exception& e) {
+    return Result<void>::error(std::string("Failed to load hotkeys: ") + e.what());
   }
 }
 
-void HotkeyManager::registerDefaultHotkeys(EditorApp *editor) {
+void HotkeyManager::registerDefaultHotkeys(EditorApp* editor) {
   if (!editor) {
     return;
   }
 
   // File actions
-  registerAction(
-      {"file.new_project",
-       "New Project",
-       "Create a new project",
-       ActionCategory::File,
-       {static_cast<i32>('N'), KeyModifier::Ctrl | KeyModifier::Shift},
-       {static_cast<i32>('N'), KeyModifier::Ctrl | KeyModifier::Shift}},
-      [editor]() { /* editor->newProject(); */
-                   (void)editor;
-      });
+  registerAction({"file.new_project",
+                  "New Project",
+                  "Create a new project",
+                  ActionCategory::File,
+                  {static_cast<i32>('N'), KeyModifier::Ctrl | KeyModifier::Shift},
+                  {static_cast<i32>('N'), KeyModifier::Ctrl | KeyModifier::Shift}},
+                 [editor]() { /* editor->newProject(); */
+                              (void)editor;
+                 });
 
-  registerAction(
-      {"file.open_project",
-       "Open Project",
-       "Open an existing project",
-       ActionCategory::File,
-       {static_cast<i32>('O'), KeyModifier::Ctrl | KeyModifier::Shift},
-       {static_cast<i32>('O'), KeyModifier::Ctrl | KeyModifier::Shift}},
-      [editor]() { /* editor->openProject(); */
-                   (void)editor;
-      });
+  registerAction({"file.open_project",
+                  "Open Project",
+                  "Open an existing project",
+                  ActionCategory::File,
+                  {static_cast<i32>('O'), KeyModifier::Ctrl | KeyModifier::Shift},
+                  {static_cast<i32>('O'), KeyModifier::Ctrl | KeyModifier::Shift}},
+                 [editor]() { /* editor->openProject(); */
+                              (void)editor;
+                 });
 
   registerAction({"file.save",
                   "Save",
@@ -500,16 +488,15 @@ void HotkeyManager::registerDefaultHotkeys(EditorApp *editor) {
                               (void)editor;
                  });
 
-  registerAction(
-      {"file.save_all",
-       "Save All",
-       "Save all open files",
-       ActionCategory::File,
-       {static_cast<i32>('S'), KeyModifier::Ctrl | KeyModifier::Shift},
-       {static_cast<i32>('S'), KeyModifier::Ctrl | KeyModifier::Shift}},
-      [editor]() { /* editor->saveProject(); */
-                   (void)editor;
-      });
+  registerAction({"file.save_all",
+                  "Save All",
+                  "Save all open files",
+                  ActionCategory::File,
+                  {static_cast<i32>('S'), KeyModifier::Ctrl | KeyModifier::Shift},
+                  {static_cast<i32>('S'), KeyModifier::Ctrl | KeyModifier::Shift}},
+                 [editor]() { /* editor->saveProject(); */
+                              (void)editor;
+                 });
 
   // Edit actions
   registerAction({"edit.undo",
@@ -593,16 +580,15 @@ void HotkeyManager::registerDefaultHotkeys(EditorApp *editor) {
                               (void)editor;
                  });
 
-  registerAction(
-      {"play.stop",
-       "Stop",
-       "Stop preview",
-       ActionCategory::Play,
-       {static_cast<i32>('P'), KeyModifier::Ctrl | KeyModifier::Shift},
-       {static_cast<i32>('P'), KeyModifier::Ctrl | KeyModifier::Shift}},
-      [editor]() { /* editor->stopPreview(); */
-                   (void)editor;
-      });
+  registerAction({"play.stop",
+                  "Stop",
+                  "Stop preview",
+                  ActionCategory::Play,
+                  {static_cast<i32>('P'), KeyModifier::Ctrl | KeyModifier::Shift},
+                  {static_cast<i32>('P'), KeyModifier::Ctrl | KeyModifier::Shift}},
+                 [editor]() { /* editor->stopPreview(); */
+                              (void)editor;
+                 });
 
   // Build actions
   registerAction({"build.build",
@@ -624,25 +610,24 @@ void HotkeyManager::registerDefaultHotkeys(EditorApp *editor) {
                   {static_cast<i32>('E'), KeyModifier::Ctrl}},
                  []() { /* Navigate to next error */ });
 
-  registerAction(
-      {"nav.prev_error",
-       "Previous Error",
-       "Go to previous error",
-       ActionCategory::Navigation,
-       {static_cast<i32>('E'), KeyModifier::Ctrl | KeyModifier::Shift},
-       {static_cast<i32>('E'), KeyModifier::Ctrl | KeyModifier::Shift}},
-      []() { /* Navigate to previous error */ });
+  registerAction({"nav.prev_error",
+                  "Previous Error",
+                  "Go to previous error",
+                  ActionCategory::Navigation,
+                  {static_cast<i32>('E'), KeyModifier::Ctrl | KeyModifier::Shift},
+                  {static_cast<i32>('E'), KeyModifier::Ctrl | KeyModifier::Shift}},
+                 []() { /* Navigate to previous error */ });
 }
 
 // ============================================================================
 // Theme
 // ============================================================================
 
-const renderer::Color &Theme::getColor(ThemeColor color) const {
+const renderer::Color& Theme::getColor(ThemeColor color) const {
   return colors[static_cast<size_t>(color)];
 }
 
-void Theme::setColor(ThemeColor color, const renderer::Color &value) {
+void Theme::setColor(ThemeColor color, const renderer::Color& value) {
   colors[static_cast<size_t>(color)] = value;
 }
 
@@ -655,7 +640,7 @@ ThemeManager::ThemeManager() {
   applyTheme("dark");
 }
 
-void ThemeManager::applyTheme(const std::string &themeName) {
+void ThemeManager::applyTheme(const std::string& themeName) {
   auto it = m_themes.find(themeName);
   if (it != m_themes.end()) {
     m_currentTheme = it->second;
@@ -663,9 +648,11 @@ void ThemeManager::applyTheme(const std::string &themeName) {
   }
 }
 
-const Theme &ThemeManager::getCurrentTheme() const { return m_currentTheme; }
+const Theme& ThemeManager::getCurrentTheme() const {
+  return m_currentTheme;
+}
 
-std::optional<Theme> ThemeManager::getTheme(const std::string &name) const {
+std::optional<Theme> ThemeManager::getTheme(const std::string& name) const {
   auto it = m_themes.find(name);
   if (it != m_themes.end()) {
     return it->second;
@@ -675,25 +662,24 @@ std::optional<Theme> ThemeManager::getTheme(const std::string &name) const {
 
 std::vector<std::string> ThemeManager::getAvailableThemes() const {
   std::vector<std::string> names;
-  for (const auto &[name, theme] : m_themes) {
+  for (const auto& [name, theme] : m_themes) {
     names.push_back(name);
   }
   return names;
 }
 
-void ThemeManager::registerTheme(const Theme &theme) {
+void ThemeManager::registerTheme(const Theme& theme) {
   m_themes[theme.name] = theme;
 }
 
-void ThemeManager::unregisterTheme(const std::string &name) {
+void ThemeManager::unregisterTheme(const std::string& name) {
   if (name != "light" && name != "dark") // Don't allow removing builtins
   {
     m_themes.erase(name);
   }
 }
 
-Result<void> ThemeManager::exportTheme(const std::string &themeName,
-                                       const std::string &path) {
+Result<void> ThemeManager::exportTheme(const std::string& themeName, const std::string& path) {
   auto it = m_themes.find(themeName);
   if (it == m_themes.end()) {
     return Result<void>::error("Theme not found: " + themeName);
@@ -705,7 +691,7 @@ Result<void> ThemeManager::exportTheme(const std::string &themeName,
       return Result<void>::error("Failed to open file for writing");
     }
 
-    const Theme &theme = it->second;
+    const Theme& theme = it->second;
     file << "[Theme]\n";
     file << "name=" << theme.name << "\n";
     file << "author=" << theme.author << "\n";
@@ -714,19 +700,18 @@ Result<void> ThemeManager::exportTheme(const std::string &themeName,
     // Write colors
     file << "\n[Colors]\n";
     for (size_t i = 0; i < theme.colors.size(); ++i) {
-      const auto &c = theme.colors[i];
-      file << i << "=" << static_cast<int>(c.r) << "," << static_cast<int>(c.g)
-           << "," << static_cast<int>(c.b) << "," << static_cast<int>(c.a)
-           << "\n";
+      const auto& c = theme.colors[i];
+      file << i << "=" << static_cast<int>(c.r) << "," << static_cast<int>(c.g) << ","
+           << static_cast<int>(c.b) << "," << static_cast<int>(c.a) << "\n";
     }
 
     return Result<void>::ok();
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     return Result<void>::error(std::string("Export failed: ") + e.what());
   }
 }
 
-Result<void> ThemeManager::importTheme(const std::string &path) {
+Result<void> ThemeManager::importTheme(const std::string& path) {
   if (!fs::exists(path)) {
     return Result<void>::error("File not found");
   }
@@ -739,15 +724,15 @@ Result<void> ThemeManager::importTheme(const std::string &path) {
   return Result<void>::ok();
 }
 
-const renderer::Color &ThemeManager::getColor(ThemeColor color) const {
+const renderer::Color& ThemeManager::getColor(ThemeColor color) const {
   return m_currentTheme.getColor(color);
 }
 
-const ThemeFonts &ThemeManager::getFonts() const {
+const ThemeFonts& ThemeManager::getFonts() const {
   return m_currentTheme.fonts;
 }
 
-const ThemeMetrics &ThemeManager::getMetrics() const {
+const ThemeMetrics& ThemeManager::getMetrics() const {
   return m_currentTheme.metrics;
 }
 
@@ -900,7 +885,7 @@ void ThemeManager::registerBuiltinThemes() {
 
 PreferencesManager::PreferencesManager() {}
 
-Result<void> PreferencesManager::load(const std::string &path) {
+Result<void> PreferencesManager::load(const std::string& path) {
   m_prefsPath = path;
 
   if (!fs::exists(path)) {
@@ -918,13 +903,12 @@ Result<void> PreferencesManager::load(const std::string &path) {
     // For now, just return success
 
     return Result<void>::ok();
-  } catch (const std::exception &e) {
-    return Result<void>::error(std::string("Failed to load preferences: ") +
-                               e.what());
+  } catch (const std::exception& e) {
+    return Result<void>::error(std::string("Failed to load preferences: ") + e.what());
   }
 }
 
-Result<void> PreferencesManager::save(const std::string &path) {
+Result<void> PreferencesManager::save(const std::string& path) {
   try {
     std::ofstream file(path);
     if (!file) {
@@ -938,12 +922,10 @@ Result<void> PreferencesManager::save(const std::string &path) {
     file << "autoSaveInterval=" << m_prefs.autoSaveIntervalSeconds << "\n";
 
     file << "\n[Editor]\n";
-    file << "showLineNumbers=" << (m_prefs.showLineNumbers ? "true" : "false")
-         << "\n";
+    file << "showLineNumbers=" << (m_prefs.showLineNumbers ? "true" : "false") << "\n";
     file << "wordWrap=" << (m_prefs.wordWrap ? "true" : "false") << "\n";
     file << "tabSize=" << m_prefs.tabSize << "\n";
-    file << "insertSpaces=" << (m_prefs.insertSpaces ? "true" : "false")
-         << "\n";
+    file << "insertSpaces=" << (m_prefs.insertSpaces ? "true" : "false") << "\n";
 
     file << "\n[RecentProjects]\n";
     for (size_t i = 0; i < m_prefs.recentProjects.size(); ++i) {
@@ -951,22 +933,26 @@ Result<void> PreferencesManager::save(const std::string &path) {
     }
 
     return Result<void>::ok();
-  } catch (const std::exception &e) {
-    return Result<void>::error(std::string("Failed to save preferences: ") +
-                               e.what());
+  } catch (const std::exception& e) {
+    return Result<void>::error(std::string("Failed to save preferences: ") + e.what());
   }
 }
 
-EditorPreferences &PreferencesManager::get() { return m_prefs; }
+EditorPreferences& PreferencesManager::get() {
+  return m_prefs;
+}
 
-const EditorPreferences &PreferencesManager::get() const { return m_prefs; }
+const EditorPreferences& PreferencesManager::get() const {
+  return m_prefs;
+}
 
-void PreferencesManager::resetToDefaults() { m_prefs = EditorPreferences(); }
+void PreferencesManager::resetToDefaults() {
+  m_prefs = EditorPreferences();
+}
 
-void PreferencesManager::addRecentProject(const std::string &path) {
+void PreferencesManager::addRecentProject(const std::string& path) {
   // Remove if already exists
-  auto it = std::find(m_prefs.recentProjects.begin(),
-                      m_prefs.recentProjects.end(), path);
+  auto it = std::find(m_prefs.recentProjects.begin(), m_prefs.recentProjects.end(), path);
   if (it != m_prefs.recentProjects.end()) {
     m_prefs.recentProjects.erase(it);
   }
@@ -975,13 +961,12 @@ void PreferencesManager::addRecentProject(const std::string &path) {
   m_prefs.recentProjects.insert(m_prefs.recentProjects.begin(), path);
 
   // Trim to max size
-  while (static_cast<i32>(m_prefs.recentProjects.size()) >
-         m_prefs.maxRecentProjects) {
+  while (static_cast<i32>(m_prefs.recentProjects.size()) > m_prefs.maxRecentProjects) {
     m_prefs.recentProjects.pop_back();
   }
 }
 
-const std::vector<std::string> &PreferencesManager::getRecentProjects() const {
+const std::vector<std::string>& PreferencesManager::getRecentProjects() const {
   return m_prefs.recentProjects;
 }
 

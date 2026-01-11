@@ -8,24 +8,22 @@
 
 namespace NovelMind::scene {
 
-SceneObjectHandle::SceneObjectHandle(SceneGraph *sceneGraph,
-                                     const std::string &objectId)
+SceneObjectHandle::SceneObjectHandle(SceneGraph* sceneGraph, const std::string& objectId)
     : m_sceneGraph(sceneGraph), m_objectId(objectId) {}
 
 bool SceneObjectHandle::isValid() const {
   return m_sceneGraph != nullptr && get() != nullptr;
 }
 
-SceneObjectBase *SceneObjectHandle::get() const {
+SceneObjectBase* SceneObjectHandle::get() const {
   if (!m_sceneGraph || m_objectId.empty()) {
     return nullptr;
   }
   return m_sceneGraph->findObject(m_objectId);
 }
 
-bool SceneObjectHandle::withObject(
-    std::function<void(SceneObjectBase *)> fn) const {
-  if (auto *obj = get()) {
+bool SceneObjectHandle::withObject(std::function<void(SceneObjectBase*)> fn) const {
+  if (auto* obj = get()) {
     fn(obj);
     return true;
   }

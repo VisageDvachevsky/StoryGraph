@@ -7,7 +7,8 @@ namespace NovelMind::scripting {
 Compiler::Compiler() = default;
 Compiler::~Compiler() = default;
 
-Result<CompiledScript> Compiler::compile(const Program &program, const std::string &sourceFilePath) {
+Result<CompiledScript> Compiler::compile(const Program& program,
+                                         const std::string& sourceFilePath) {
   reset();
   m_sourceFilePath = sourceFilePath;
 
@@ -20,12 +21,12 @@ Result<CompiledScript> Compiler::compile(const Program &program, const std::stri
   }
 
   // Resolve pending jumps
-  for (const auto &pending : m_pendingJumps) {
+  for (const auto& pending : m_pendingJumps) {
     // Bounds check to prevent buffer overflow (security vulnerability)
     if (pending.instructionIndex >= m_output.instructions.size()) {
       error("Internal compiler error: Invalid pending jump index " +
-            std::to_string(pending.instructionIndex) + " (program size: " +
-            std::to_string(m_output.instructions.size()) + ")");
+            std::to_string(pending.instructionIndex) +
+            " (program size: " + std::to_string(m_output.instructions.size()) + ")");
       continue;
     }
 
@@ -44,7 +45,7 @@ Result<CompiledScript> Compiler::compile(const Program &program, const std::stri
   return Result<CompiledScript>::ok(std::move(m_output));
 }
 
-const std::vector<CompileError> &Compiler::getErrors() const {
+const std::vector<CompileError>& Compiler::getErrors() const {
   return m_errors;
 }
 
@@ -61,7 +62,7 @@ void Compiler::emitOp(OpCode op, u32 operand) {
   m_output.instructions.emplace_back(op, operand);
 }
 
-void Compiler::emitOp(OpCode op, u32 operand, const SourceLocation &loc) {
+void Compiler::emitOp(OpCode op, u32 operand, const SourceLocation& loc) {
   u32 ip = static_cast<u32>(m_output.instructions.size());
   m_output.instructions.emplace_back(op, operand);
   recordSourceMapping(ip, loc);
@@ -73,13 +74,13 @@ u32 Compiler::emitJump(OpCode op) {
   return index;
 }
 
-u32 Compiler::emitJump(OpCode op, const SourceLocation &loc) {
+u32 Compiler::emitJump(OpCode op, const SourceLocation& loc) {
   u32 index = static_cast<u32>(m_output.instructions.size());
   emitOp(op, 0, loc); // Placeholder, will be patched
   return index;
 }
 
-void Compiler::recordSourceMapping(u32 ip, const SourceLocation &loc) {
+void Compiler::recordSourceMapping(u32 ip, const SourceLocation& loc) {
   if (loc.line > 0) { // Only record valid source locations
     DebugSourceLocation debugLoc;
     debugLoc.filePath = m_sourceFilePath;
@@ -93,9 +94,8 @@ void Compiler::recordSourceMapping(u32 ip, const SourceLocation &loc) {
 bool Compiler::patchJump(u32 jumpIndex) {
   // Bounds check to prevent buffer overflow (security vulnerability)
   if (jumpIndex >= m_output.instructions.size()) {
-    error("Internal compiler error: Invalid jump index " +
-          std::to_string(jumpIndex) + " (program size: " +
-          std::to_string(m_output.instructions.size()) + ")");
+    error("Internal compiler error: Invalid jump index " + std::to_string(jumpIndex) +
+          " (program size: " + std::to_string(m_output.instructions.size()) + ")");
     return false;
   }
 
@@ -104,7 +104,7 @@ bool Compiler::patchJump(u32 jumpIndex) {
   return true;
 }
 
-u32 Compiler::addString(const std::string &str) {
+u32 Compiler::addString(const std::string& str) {
   // Check if string already exists
   for (u32 i = 0; i < m_output.stringTable.size(); ++i) {
     if (m_output.stringTable[i] == str) {
@@ -117,23 +117,23 @@ u32 Compiler::addString(const std::string &str) {
   return index;
 }
 
-void Compiler::error(const std::string &message, SourceLocation loc) {
+void Compiler::error(const std::string& message, SourceLocation loc) {
   m_errors.emplace_back(message, loc);
 }
 
-void Compiler::compileProgram(const Program &program) {
+void Compiler::compileProgram(const Program& program) {
   // First pass: register all characters
-  for (const auto &character : program.characters) {
+  for (const auto& character : program.characters) {
     compileCharacter(character);
   }
 
   // Second pass: compile all scenes
-  for (const auto &scene : program.scenes) {
+  for (const auto& scene : program.scenes) {
     compileScene(scene);
   }
 
   // Global statements (if any)
-  for (const auto &stmt : program.globalStatements) {
+  for (const auto& stmt : program.globalStatements) {
     if (stmt) {
       compileStatement(*stmt);
     }
@@ -143,11 +143,11 @@ void Compiler::compileProgram(const Program &program) {
   emitOp(OpCode::HALT);
 }
 
-void Compiler::compileCharacter(const CharacterDecl &decl) {
+void Compiler::compileCharacter(const CharacterDecl& decl) {
   m_output.characters[decl.id] = decl;
 }
 
-void Compiler::compileScene(const SceneDecl &decl) {
+void Compiler::compileScene(const SceneDecl& decl) {
   // Record entry point
   u32 entryPoint = static_cast<u32>(m_output.instructions.size());
   m_output.sceneEntryPoints[decl.name] = entryPoint;
@@ -156,7 +156,7 @@ void Compiler::compileScene(const SceneDecl &decl) {
   m_currentScene = decl.name;
 
   // Compile scene body
-  for (const auto &stmt : decl.body) {
+  for (const auto& stmt : decl.body) {
     if (stmt) {
       compileStatement(*stmt);
     }
@@ -165,9 +165,9 @@ void Compiler::compileScene(const SceneDecl &decl) {
   m_currentScene.clear();
 }
 
-void Compiler::compileStatement(const Statement &stmt) {
+void Compiler::compileStatement(const Statement& stmt) {
   std::visit(
-      [this, &stmt](const auto &s) {
+      [this, &stmt](const auto& s) {
         using T = std::decay_t<decltype(s)>;
 
         if constexpr (std::is_same_v<T, ShowStmt>) {
@@ -207,9 +207,9 @@ void Compiler::compileStatement(const Statement &stmt) {
       stmt.data);
 }
 
-void Compiler::compileExpression(const Expression &expr) {
+void Compiler::compileExpression(const Expression& expr) {
   std::visit(
-      [this](const auto &e) {
+      [this](const auto& e) {
         using T = std::decay_t<decltype(e)>;
 
         if constexpr (std::is_same_v<T, LiteralExpr>) {
@@ -231,7 +231,7 @@ void Compiler::compileExpression(const Expression &expr) {
 
 // Statement compilers
 
-void Compiler::compileShowStmt(const ShowStmt &stmt, const SourceLocation &loc) {
+void Compiler::compileShowStmt(const ShowStmt& stmt, const SourceLocation& loc) {
   switch (stmt.target) {
   case ShowStmt::Target::Background: {
     u32 resIndex = addString(stmt.resource.value_or(""));
@@ -283,7 +283,7 @@ void Compiler::compileShowStmt(const ShowStmt &stmt, const SourceLocation &loc) 
   }
 }
 
-void Compiler::compileHideStmt(const HideStmt &stmt, const SourceLocation &loc) {
+void Compiler::compileHideStmt(const HideStmt& stmt, const SourceLocation& loc) {
   u32 idIndex = addString(stmt.identifier);
   emitOp(OpCode::HIDE_CHARACTER, idIndex, loc);
 
@@ -300,7 +300,7 @@ void Compiler::compileHideStmt(const HideStmt &stmt, const SourceLocation &loc) 
   }
 }
 
-void Compiler::compileSayStmt(const SayStmt &stmt, const SourceLocation &loc) {
+void Compiler::compileSayStmt(const SayStmt& stmt, const SourceLocation& loc) {
   u32 textIndex = addString(stmt.text);
 
   if (stmt.speaker.has_value()) {
@@ -313,12 +313,12 @@ void Compiler::compileSayStmt(const SayStmt &stmt, const SourceLocation &loc) {
   emitOp(OpCode::SAY, textIndex, loc);
 }
 
-void Compiler::compileChoiceStmt(const ChoiceStmt &stmt, const SourceLocation &loc) {
+void Compiler::compileChoiceStmt(const ChoiceStmt& stmt, const SourceLocation& loc) {
   // Emit choice count
   emitOp(OpCode::PUSH_INT, static_cast<u32>(stmt.options.size()));
 
   // Emit each choice text
-  for (const auto &option : stmt.options) {
+  for (const auto& option : stmt.options) {
     u32 textIndex = addString(option.text);
     emitOp(OpCode::PUSH_STRING, textIndex);
   }
@@ -331,7 +331,7 @@ void Compiler::compileChoiceStmt(const ChoiceStmt &stmt, const SourceLocation &l
   std::vector<u32> endJumps;
 
   for (size_t i = 0; i < stmt.options.size(); ++i) {
-    const auto &option = stmt.options[i];
+    const auto& option = stmt.options[i];
 
     // Compare choice result with index
     emitOp(OpCode::DUP);
@@ -356,7 +356,7 @@ void Compiler::compileChoiceStmt(const ChoiceStmt &stmt, const SourceLocation &l
         emitOp(OpCode::JUMP, 0);
         m_pendingJumps.push_back({jumpIndex, option.gotoTarget.value()});
       } else {
-        for (const auto &bodyStmt : option.body) {
+        for (const auto& bodyStmt : option.body) {
           if (bodyStmt) {
             compileStatement(*bodyStmt);
           }
@@ -371,7 +371,7 @@ void Compiler::compileChoiceStmt(const ChoiceStmt &stmt, const SourceLocation &l
         emitOp(OpCode::JUMP, 0);
         m_pendingJumps.push_back({jumpIndex, option.gotoTarget.value()});
       } else {
-        for (const auto &bodyStmt : option.body) {
+        for (const auto& bodyStmt : option.body) {
           if (bodyStmt) {
             compileStatement(*bodyStmt);
           }
@@ -395,7 +395,7 @@ void Compiler::compileChoiceStmt(const ChoiceStmt &stmt, const SourceLocation &l
   }
 }
 
-void Compiler::compileIfStmt(const IfStmt &stmt, [[maybe_unused]] const SourceLocation &loc) {
+void Compiler::compileIfStmt(const IfStmt& stmt, [[maybe_unused]] const SourceLocation& loc) {
   // Compile condition
   compileExpression(*stmt.condition);
 
@@ -403,7 +403,7 @@ void Compiler::compileIfStmt(const IfStmt &stmt, [[maybe_unused]] const SourceLo
   u32 elseJump = emitJump(OpCode::JUMP_IF_NOT);
 
   // Then branch
-  for (const auto &thenStmt : stmt.thenBranch) {
+  for (const auto& thenStmt : stmt.thenBranch) {
     if (thenStmt) {
       compileStatement(*thenStmt);
     }
@@ -415,7 +415,7 @@ void Compiler::compileIfStmt(const IfStmt &stmt, [[maybe_unused]] const SourceLo
   // Else branch
   patchJump(elseJump);
 
-  for (const auto &elseStmt : stmt.elseBranch) {
+  for (const auto& elseStmt : stmt.elseBranch) {
     if (elseStmt) {
       compileStatement(*elseStmt);
     }
@@ -424,20 +424,20 @@ void Compiler::compileIfStmt(const IfStmt &stmt, [[maybe_unused]] const SourceLo
   patchJump(endJump);
 }
 
-void Compiler::compileGotoStmt(const GotoStmt &stmt, const SourceLocation &loc) {
+void Compiler::compileGotoStmt(const GotoStmt& stmt, const SourceLocation& loc) {
   u32 jumpIndex = static_cast<u32>(m_output.instructions.size());
   emitOp(OpCode::GOTO_SCENE, 0, loc);
   m_pendingJumps.push_back({jumpIndex, stmt.target});
 }
 
-void Compiler::compileWaitStmt(const WaitStmt &stmt, const SourceLocation &loc) {
+void Compiler::compileWaitStmt(const WaitStmt& stmt, const SourceLocation& loc) {
   // Convert float duration to int representation
   u32 durInt = 0;
   std::memcpy(&durInt, &stmt.duration, sizeof(f32));
   emitOp(OpCode::WAIT, durInt, loc);
 }
 
-void Compiler::compilePlayStmt(const PlayStmt &stmt, const SourceLocation &loc) {
+void Compiler::compilePlayStmt(const PlayStmt& stmt, const SourceLocation& loc) {
   u32 resIndex = addString(stmt.resource);
 
   if (stmt.type == PlayStmt::MediaType::Sound) {
@@ -447,7 +447,7 @@ void Compiler::compilePlayStmt(const PlayStmt &stmt, const SourceLocation &loc) 
   }
 }
 
-void Compiler::compileStopStmt(const StopStmt &stmt, const SourceLocation &loc) {
+void Compiler::compileStopStmt(const StopStmt& stmt, const SourceLocation& loc) {
   if (stmt.fadeOut.has_value()) {
     u32 durInt = 0;
     f32 dur = stmt.fadeOut.value();
@@ -458,7 +458,7 @@ void Compiler::compileStopStmt(const StopStmt &stmt, const SourceLocation &loc) 
   emitOp(OpCode::STOP_MUSIC, 0, loc);
 }
 
-void Compiler::compileSetStmt(const SetStmt &stmt, const SourceLocation &loc) {
+void Compiler::compileSetStmt(const SetStmt& stmt, const SourceLocation& loc) {
   // Compile value expression
   compileExpression(*stmt.value);
 
@@ -474,7 +474,8 @@ void Compiler::compileSetStmt(const SetStmt &stmt, const SourceLocation &loc) {
   }
 }
 
-void Compiler::compileTransitionStmt(const TransitionStmt &stmt, [[maybe_unused]] const SourceLocation &loc) {
+void Compiler::compileTransitionStmt(const TransitionStmt& stmt,
+                                     [[maybe_unused]] const SourceLocation& loc) {
   u32 typeIndex = addString(stmt.type);
   u32 durInt = 0;
   std::memcpy(&durInt, &stmt.duration, sizeof(f32));
@@ -482,7 +483,7 @@ void Compiler::compileTransitionStmt(const TransitionStmt &stmt, [[maybe_unused]
   emitOp(OpCode::TRANSITION, typeIndex);
 }
 
-void Compiler::compileMoveStmt(const MoveStmt &stmt, [[maybe_unused]] const SourceLocation &loc) {
+void Compiler::compileMoveStmt(const MoveStmt& stmt, [[maybe_unused]] const SourceLocation& loc) {
   // Push character ID string
   u32 charIndex = addString(stmt.characterId);
   emitOp(OpCode::PUSH_STRING, charIndex);
@@ -526,15 +527,16 @@ void Compiler::compileMoveStmt(const MoveStmt &stmt, [[maybe_unused]] const Sour
   emitOp(OpCode::MOVE_CHARACTER, charIndex);
 }
 
-void Compiler::compileBlockStmt(const BlockStmt &stmt, [[maybe_unused]] const SourceLocation &loc) {
-  for (const auto &s : stmt.statements) {
+void Compiler::compileBlockStmt(const BlockStmt& stmt, [[maybe_unused]] const SourceLocation& loc) {
+  for (const auto& s : stmt.statements) {
     if (s) {
       compileStatement(*s);
     }
   }
 }
 
-void Compiler::compileExpressionStmt(const ExpressionStmt &stmt, [[maybe_unused]] const SourceLocation &loc) {
+void Compiler::compileExpressionStmt(const ExpressionStmt& stmt,
+                                     [[maybe_unused]] const SourceLocation& loc) {
   if (stmt.expression) {
     compileExpression(*stmt.expression);
     emitOp(OpCode::POP); // Discard result
@@ -543,9 +545,9 @@ void Compiler::compileExpressionStmt(const ExpressionStmt &stmt, [[maybe_unused]
 
 // Expression compilers
 
-void Compiler::compileLiteral(const LiteralExpr &expr) {
+void Compiler::compileLiteral(const LiteralExpr& expr) {
   std::visit(
-      [this](const auto &val) {
+      [this](const auto& val) {
         using T = std::decay_t<decltype(val)>;
 
         if constexpr (std::is_same_v<T, std::monostate>) {
@@ -566,12 +568,12 @@ void Compiler::compileLiteral(const LiteralExpr &expr) {
       expr.value);
 }
 
-void Compiler::compileIdentifier(const IdentifierExpr &expr) {
+void Compiler::compileIdentifier(const IdentifierExpr& expr) {
   u32 nameIndex = addString(expr.name);
   emitOp(OpCode::LOAD_GLOBAL, nameIndex);
 }
 
-void Compiler::compileBinary(const BinaryExpr &expr) {
+void Compiler::compileBinary(const BinaryExpr& expr) {
   // Compile left operand
   if (expr.left) {
     compileExpression(*expr.left);
@@ -651,7 +653,7 @@ void Compiler::compileBinary(const BinaryExpr &expr) {
   }
 }
 
-void Compiler::compileUnary(const UnaryExpr &expr) {
+void Compiler::compileUnary(const UnaryExpr& expr) {
   if (expr.operand) {
     compileExpression(*expr.operand);
   }
@@ -669,9 +671,9 @@ void Compiler::compileUnary(const UnaryExpr &expr) {
   }
 }
 
-void Compiler::compileCall(const CallExpr &expr) {
+void Compiler::compileCall(const CallExpr& expr) {
   // Compile arguments
-  for (const auto &arg : expr.arguments) {
+  for (const auto& arg : expr.arguments) {
     if (arg) {
       compileExpression(*arg);
     }
@@ -683,7 +685,7 @@ void Compiler::compileCall(const CallExpr &expr) {
   emitOp(OpCode::CALL, funcIndex);
 }
 
-void Compiler::compileProperty(const PropertyExpr &expr) {
+void Compiler::compileProperty(const PropertyExpr& expr) {
   // Compile object
   if (expr.object) {
     compileExpression(*expr.object);

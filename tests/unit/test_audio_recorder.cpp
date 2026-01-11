@@ -259,7 +259,8 @@ TEST_CASE("RecordingResult flags", "[audio][recorder][result]") {
 // Thread Safety Tests (Issue #461)
 // ============================================================================
 
-TEST_CASE("AudioRecorder thread safety - concurrent stop and cancel", "[audio][recorder][threading]") {
+TEST_CASE("AudioRecorder thread safety - concurrent stop and cancel",
+          "[audio][recorder][threading]") {
   // This test verifies that concurrent calls to stopRecording() and cancelRecording()
   // don't cause race conditions or crashes (Issue #461)
 
@@ -376,7 +377,8 @@ TEST_CASE("AudioRecorder thread safety - callback thread safety", "[audio][recor
   }
 }
 
-TEST_CASE("AudioRecorder thread safety - concurrent access patterns", "[audio][recorder][threading]") {
+TEST_CASE("AudioRecorder thread safety - concurrent access patterns",
+          "[audio][recorder][threading]") {
   // Test various concurrent access patterns that could trigger race conditions
 
   AudioRecorder recorder;
@@ -446,7 +448,8 @@ TEST_CASE("AudioRecorder thread safety - concurrent access patterns", "[audio][r
   }
 }
 
-TEST_CASE("AudioRecorder thread safety - destructor with active operations", "[audio][recorder][threading]") {
+TEST_CASE("AudioRecorder thread safety - destructor with active operations",
+          "[audio][recorder][threading]") {
   // Verify that the destructor properly handles active operations
 
   SECTION("Destructor while in Idle state") {
@@ -471,7 +474,8 @@ TEST_CASE("AudioRecorder thread safety - destructor with active operations", "[a
   }
 }
 
-TEST_CASE("AudioRecorder thread safety - getCurrentLevel thread safety", "[audio][recorder][threading]") {
+TEST_CASE("AudioRecorder thread safety - getCurrentLevel thread safety",
+          "[audio][recorder][threading]") {
   // Verify that getCurrentLevel() can be safely called from multiple threads
 
   AudioRecorder recorder;

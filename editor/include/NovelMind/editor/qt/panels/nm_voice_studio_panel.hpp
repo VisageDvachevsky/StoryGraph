@@ -113,9 +113,9 @@ struct VoiceClipEdit {
 
   // Check if any edits have been made
   [[nodiscard]] bool hasEdits() const {
-    return trimStartSamples != 0 || trimEndSamples != 0 || fadeInMs > 0 ||
-           fadeOutMs > 0 || preGainDb != 0.0f || normalizeEnabled ||
-           highPassEnabled || lowPassEnabled || eqEnabled || noiseGateEnabled;
+    return trimStartSamples != 0 || trimEndSamples != 0 || fadeInMs > 0 || fadeOutMs > 0 ||
+           preGainDb != 0.0f || normalizeEnabled || highPassEnabled || lowPassEnabled ||
+           eqEnabled || noiseGateEnabled;
   }
 };
 
@@ -143,10 +143,8 @@ struct VoiceClip {
     if (format.sampleRate == 0)
       return 0.0;
     int64_t totalSamples = static_cast<int64_t>(samples.size());
-    int64_t trimmedSamples =
-        totalSamples - edit.trimStartSamples - edit.trimEndSamples;
-    return static_cast<double>(std::max<int64_t>(0, trimmedSamples)) /
-           format.sampleRate;
+    int64_t trimmedSamples = totalSamples - edit.trimStartSamples - edit.trimEndSamples;
+    return static_cast<double>(std::max<int64_t>(0, trimmedSamples)) / format.sampleRate;
   }
 };
 
@@ -168,10 +166,10 @@ class WaveformWidget : public QWidget {
   Q_OBJECT
 
 public:
-  explicit WaveformWidget(QWidget *parent = nullptr);
+  explicit WaveformWidget(QWidget* parent = nullptr);
 
   // Set the clip to display
-  void setClip(const VoiceClip *clip);
+  void setClip(const VoiceClip* clip);
 
   // Selection (for trimming)
   void setSelection(double startSec, double endSec);
@@ -198,19 +196,19 @@ signals:
   void zoomChanged(double samplesPerPixel);
 
 protected:
-  void paintEvent(QPaintEvent *event) override;
-  void mousePressEvent(QMouseEvent *event) override;
-  void mouseMoveEvent(QMouseEvent *event) override;
-  void mouseReleaseEvent(QMouseEvent *event) override;
-  void wheelEvent(QWheelEvent *event) override;
-  void resizeEvent(QResizeEvent *event) override;
+  void paintEvent(QPaintEvent* event) override;
+  void mousePressEvent(QMouseEvent* event) override;
+  void mouseMoveEvent(QMouseEvent* event) override;
+  void mouseReleaseEvent(QMouseEvent* event) override;
+  void wheelEvent(QWheelEvent* event) override;
+  void resizeEvent(QResizeEvent* event) override;
 
 private:
   double timeToX(double seconds) const;
   double xToTime(double x) const;
   void updatePeakCache();
 
-  const VoiceClip *m_clip = nullptr;
+  const VoiceClip* m_clip = nullptr;
   std::vector<float> m_displayPeaks;
 
   double m_selectionStart = 0.0;
@@ -235,13 +233,13 @@ class StudioVUMeterWidget : public QWidget {
   Q_OBJECT
 
 public:
-  explicit StudioVUMeterWidget(QWidget *parent = nullptr);
+  explicit StudioVUMeterWidget(QWidget* parent = nullptr);
 
   void setLevel(float rmsDb, float peakDb, bool clipping);
   void reset();
 
 protected:
-  void paintEvent(QPaintEvent *event) override;
+  void paintEvent(QPaintEvent* event) override;
 
 private:
   float m_rmsDb = -60.0f;
@@ -268,67 +266,62 @@ public:
    * @param format Audio format
    * @return Processed samples
    */
-  static std::vector<float> process(const std::vector<float> &source,
-                                    const VoiceClipEdit &edit,
-                                    const AudioFormat &format);
+  static std::vector<float> process(const std::vector<float>& source, const VoiceClipEdit& edit,
+                                    const AudioFormat& format);
 
   /**
    * @brief Apply trim only
    */
-  static std::vector<float> applyTrim(const std::vector<float> &samples,
-                                      int64_t trimStart, int64_t trimEnd);
+  static std::vector<float> applyTrim(const std::vector<float>& samples, int64_t trimStart,
+                                      int64_t trimEnd);
 
   /**
    * @brief Apply fade in/out
    */
-  static void applyFades(std::vector<float> &samples, float fadeInMs,
-                         float fadeOutMs, uint32_t sampleRate);
+  static void applyFades(std::vector<float>& samples, float fadeInMs, float fadeOutMs,
+                         uint32_t sampleRate);
 
   /**
    * @brief Apply pre-gain
    */
-  static void applyGain(std::vector<float> &samples, float gainDb);
+  static void applyGain(std::vector<float>& samples, float gainDb);
 
   /**
    * @brief Apply normalization
    */
-  static void applyNormalize(std::vector<float> &samples, float targetDbFS);
+  static void applyNormalize(std::vector<float>& samples, float targetDbFS);
 
   /**
    * @brief Apply high-pass filter
    */
-  static void applyHighPass(std::vector<float> &samples, float cutoffHz,
-                            uint32_t sampleRate);
+  static void applyHighPass(std::vector<float>& samples, float cutoffHz, uint32_t sampleRate);
 
   /**
    * @brief Apply low-pass filter
    */
-  static void applyLowPass(std::vector<float> &samples, float cutoffHz,
-                           uint32_t sampleRate);
+  static void applyLowPass(std::vector<float>& samples, float cutoffHz, uint32_t sampleRate);
 
   /**
    * @brief Apply 3-band EQ
    */
-  static void applyEQ(std::vector<float> &samples, float lowGainDb,
-                      float midGainDb, float highGainDb, float lowFreq,
-                      float highFreq, uint32_t sampleRate);
+  static void applyEQ(std::vector<float>& samples, float lowGainDb, float midGainDb,
+                      float highGainDb, float lowFreq, float highFreq, uint32_t sampleRate);
 
   /**
    * @brief Apply noise gate
    */
-  static void applyNoiseGate(std::vector<float> &samples, float thresholdDb,
-                             float reductionDb, float attackMs, float releaseMs,
-                             uint32_t sampleRate);
+  static void applyNoiseGate(std::vector<float>& samples, float thresholdDb, float reductionDb,
+                             float attackMs, float releaseMs, uint32_t sampleRate);
 
   /**
    * @brief Calculate peak level in dB
    */
-  static float calculatePeakDb(const std::vector<float> &samples);
+  static float calculatePeakDb(const std::vector<float>& samples);
 
   /**
    * @brief Calculate RMS level in dB
    */
-  static float calculateRmsDb(const std::vector<float> &samples);
+  static float calculateRmsDb(const std::vector<float>& samples);
 };
 
 // ============================================================================
@@ -342,7 +335,7 @@ class NMVoiceStudioPanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMVoiceStudioPanel(QWidget *parent = nullptr);
+  explicit NMVoiceStudioPanel(QWidget* parent = nullptr);
   ~NMVoiceStudioPanel() override;
 
   void onInitialize() override;
@@ -352,22 +345,22 @@ public:
   /**
    * @brief Set the voice manifest for integration
    */
-  void setManifest(audio::VoiceManifest *manifest);
+  void setManifest(audio::VoiceManifest* manifest);
 
   /**
    * @brief Load a voice file for editing
    */
-  bool loadFile(const QString &filePath);
+  bool loadFile(const QString& filePath);
 
   /**
    * @brief Load from a voice line ID
    */
-  bool loadFromLineId(const QString &lineId, const QString &locale = "en");
+  bool loadFromLineId(const QString& lineId, const QString& locale = "en");
 
   /**
    * @brief Get current clip being edited
    */
-  [[nodiscard]] const VoiceClip *getCurrentClip() const { return m_clip.get(); }
+  [[nodiscard]] const VoiceClip* getCurrentClip() const { return m_clip.get(); }
 
   /**
    * @brief Check if there are unsaved changes
@@ -378,22 +371,22 @@ signals:
   /**
    * @brief Emitted when a file is saved
    */
-  void fileSaved(const QString &filePath);
+  void fileSaved(const QString& filePath);
 
   /**
    * @brief Emitted when editing is complete and asset is updated
    */
-  void assetUpdated(const QString &lineId, const QString &filePath);
+  void assetUpdated(const QString& lineId, const QString& filePath);
 
   /**
    * @brief Emitted when recording completes
    */
-  void recordingCompleted(const QString &filePath);
+  void recordingCompleted(const QString& filePath);
 
   /**
    * @brief Emitted on playback error
    */
-  void playbackError(const QString &message);
+  void playbackError(const QString& message);
 
 private slots:
   // Device/Recording slots
@@ -452,10 +445,10 @@ private slots:
   void onPlaybackMediaStatusChanged();
 
   // Recording callbacks
-  void onLevelUpdate(const audio::LevelMeter &level);
+  void onLevelUpdate(const audio::LevelMeter& level);
   void onRecordingStateChanged(int state);
-  void onRecordingComplete(const audio::RecordingResult &result);
-  void onRecordingError(const QString &error);
+  void onRecordingComplete(const audio::RecordingResult& result);
+  void onRecordingError(const QString& error);
 
   // Timer slots
   void onUpdateTimer();
@@ -479,79 +472,79 @@ private:
   void updatePlaybackState();
   void updateStatusBar();
 
-  bool loadWavFile(const QString &filePath);
-  bool saveWavFile(const QString &filePath);
+  bool loadWavFile(const QString& filePath);
+  bool saveWavFile(const QString& filePath);
   std::vector<float> renderProcessedAudio();
 
-  void applyPreset(const QString &presetName);
-  void pushUndoCommand(const QString &description);
+  void applyPreset(const QString& presetName);
+  void pushUndoCommand(const QString& description);
 
   QString formatTime(double seconds) const;
   QString formatTimeMs(double seconds) const;
 
   // UI Elements
-  QWidget *m_contentWidget = nullptr;
-  QToolBar *m_toolbar = nullptr;
-  QSplitter *m_mainSplitter = nullptr;
+  QWidget* m_contentWidget = nullptr;
+  QToolBar* m_toolbar = nullptr;
+  QSplitter* m_mainSplitter = nullptr;
 
   // Device section
-  QGroupBox *m_deviceGroup = nullptr;
-  QComboBox *m_inputDeviceCombo = nullptr;
-  QSlider *m_inputGainSlider = nullptr;
-  QLabel *m_inputGainLabel = nullptr;
-  StudioVUMeterWidget *m_vuMeter = nullptr;
-  QLabel *m_levelLabel = nullptr;
+  QGroupBox* m_deviceGroup = nullptr;
+  QComboBox* m_inputDeviceCombo = nullptr;
+  QSlider* m_inputGainSlider = nullptr;
+  QLabel* m_inputGainLabel = nullptr;
+  StudioVUMeterWidget* m_vuMeter = nullptr;
+  QLabel* m_levelLabel = nullptr;
 
   // Recording controls
-  QPushButton *m_recordBtn = nullptr;
-  QPushButton *m_stopRecordBtn = nullptr;
-  QPushButton *m_cancelRecordBtn = nullptr;
-  QLabel *m_recordingTimeLabel = nullptr;
+  QPushButton* m_recordBtn = nullptr;
+  QPushButton* m_stopRecordBtn = nullptr;
+  QPushButton* m_cancelRecordBtn = nullptr;
+  QLabel* m_recordingTimeLabel = nullptr;
 
   // Transport section
-  QGroupBox *m_transportGroup = nullptr;
-  QPushButton *m_playBtn = nullptr;
-  QPushButton *m_stopBtn = nullptr;
-  QPushButton *m_loopBtn = nullptr;
-  QLabel *m_positionLabel = nullptr;
-  QLabel *m_durationLabel = nullptr;
+  QGroupBox* m_transportGroup = nullptr;
+  QPushButton* m_playBtn = nullptr;
+  QPushButton* m_stopBtn = nullptr;
+  QPushButton* m_loopBtn = nullptr;
+  QLabel* m_positionLabel = nullptr;
+  QLabel* m_durationLabel = nullptr;
 
   // Waveform section
-  WaveformWidget *m_waveformWidget = nullptr;
-  QScrollArea *m_waveformScroll = nullptr;
-  QSlider *m_zoomSlider = nullptr;
+  WaveformWidget* m_waveformWidget = nullptr;
+  QScrollArea* m_waveformScroll = nullptr;
+  QSlider* m_zoomSlider = nullptr;
 
   // Edit section
-  QGroupBox *m_editGroup = nullptr;
-  QPushButton *m_trimToSelectionBtn = nullptr;
-  QPushButton *m_resetTrimBtn = nullptr;
-  QDoubleSpinBox *m_fadeInSpin = nullptr;
-  QDoubleSpinBox *m_fadeOutSpin = nullptr;
-  QDoubleSpinBox *m_preGainSpin = nullptr;
-  QCheckBox *m_normalizeCheck = nullptr;
-  QDoubleSpinBox *m_normalizeTargetSpin = nullptr;
+  QGroupBox* m_editGroup = nullptr;
+  QPushButton* m_trimToSelectionBtn = nullptr;
+  QPushButton* m_resetTrimBtn = nullptr;
+  QDoubleSpinBox* m_fadeInSpin = nullptr;
+  QDoubleSpinBox* m_fadeOutSpin = nullptr;
+  QDoubleSpinBox* m_preGainSpin = nullptr;
+  QCheckBox* m_normalizeCheck = nullptr;
+  QDoubleSpinBox* m_normalizeTargetSpin = nullptr;
 
   // Filter section
-  QGroupBox *m_filterGroup = nullptr;
-  QCheckBox *m_highPassCheck = nullptr;
-  QDoubleSpinBox *m_highPassFreqSpin = nullptr;
-  QCheckBox *m_lowPassCheck = nullptr;
-  QDoubleSpinBox *m_lowPassFreqSpin = nullptr;
-  QCheckBox *m_eqCheck = nullptr;
-  QDoubleSpinBox *m_eqLowSpin = nullptr;
-  QDoubleSpinBox *m_eqMidSpin = nullptr;
-  QDoubleSpinBox *m_eqHighSpin = nullptr;
-  QCheckBox *m_noiseGateCheck = nullptr;
-  QDoubleSpinBox *m_noiseGateThresholdSpin = nullptr;
+  QGroupBox* m_filterGroup = nullptr;
+  QCheckBox* m_highPassCheck = nullptr;
+  QDoubleSpinBox* m_highPassFreqSpin = nullptr;
+  QCheckBox* m_lowPassCheck = nullptr;
+  QDoubleSpinBox* m_lowPassFreqSpin = nullptr;
+  QCheckBox* m_eqCheck = nullptr;
+  QDoubleSpinBox* m_eqLowSpin = nullptr;
+  QDoubleSpinBox* m_eqMidSpin = nullptr;
+  QDoubleSpinBox* m_eqHighSpin = nullptr;
+  QCheckBox* m_noiseGateCheck = nullptr;
+  QDoubleSpinBox* m_noiseGateThresholdSpin = nullptr;
 
   // Preset section
-  QComboBox *m_presetCombo = nullptr;
-  QPushButton *m_savePresetBtn = nullptr;
+  QComboBox* m_presetCombo = nullptr;
+  QPushButton* m_savePresetBtn = nullptr;
 
   // Status bar
-  QLabel *m_statusLabel = nullptr;
-  QLabel *m_fileInfoLabel = nullptr;
-  QProgressBar *m_progressBar = nullptr;
+  QLabel* m_statusLabel = nullptr;
+  QLabel* m_fileInfoLabel = nullptr;
+  QProgressBar* m_progressBar = nullptr;
 
   // Playback
   QPointer<QMediaPlayer> m_mediaPlayer;
@@ -570,7 +563,7 @@ private:
   // Data
   std::unique_ptr<VoiceClip> m_clip;
   QString m_currentFilePath;
-  audio::VoiceManifest *m_manifest = nullptr;
+  audio::VoiceManifest* m_manifest = nullptr;
   QString m_currentLineId;
   QString m_currentLocale = "en";
 

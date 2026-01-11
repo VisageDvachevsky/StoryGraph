@@ -406,20 +406,20 @@ std::string BuildSystem::normalizeVfsPath(const std::string& path) {
 
 // Path security validation to prevent path traversal attacks
 Result<std::string> BuildSystem::sanitizeOutputPath(const std::string& basePath,
-                                                     const std::string& relativePath) {
+                                                    const std::string& relativePath) {
   // Reject paths containing ".." components before filesystem resolution
   // This provides an early defense against path traversal attempts
   if (relativePath.find("..") != std::string::npos) {
-    return Result<std::string>::error(
-        "Path traversal detected: path contains '..' component: " + relativePath);
+    return Result<std::string>::error("Path traversal detected: path contains '..' component: " +
+                                      relativePath);
   }
 
   // Normalize the base path to ensure we have a canonical reference
   std::error_code ec;
   fs::path canonicalBase = fs::weakly_canonical(basePath, ec);
   if (ec) {
-    return Result<std::string>::error("Failed to canonicalize base path: " + basePath +
-                                      " - " + ec.message());
+    return Result<std::string>::error("Failed to canonicalize base path: " + basePath + " - " +
+                                      ec.message());
   }
 
   // Construct the full output path
@@ -429,19 +429,19 @@ Result<std::string> BuildSystem::sanitizeOutputPath(const std::string& basePath,
   // weakly_canonical resolves ".." and "." components and follows symlinks
   fs::path canonicalPath = fs::weakly_canonical(fullPath, ec);
   if (ec) {
-    return Result<std::string>::error("Failed to canonicalize output path: " +
-                                      fullPath.string() + " - " + ec.message());
+    return Result<std::string>::error("Failed to canonicalize output path: " + fullPath.string() +
+                                      " - " + ec.message());
   }
 
   // Security check: Verify the resolved path is within the base directory
   // This prevents writing to arbitrary locations on the filesystem
   auto [rootEnd, nothing] = std::mismatch(canonicalBase.begin(), canonicalBase.end(),
-                                           canonicalPath.begin(), canonicalPath.end());
+                                          canonicalPath.begin(), canonicalPath.end());
 
   if (rootEnd != canonicalBase.end()) {
-    return Result<std::string>::error(
-        "Path traversal detected: resolved path '" + canonicalPath.string() +
-        "' escapes base directory '" + canonicalBase.string() + "'");
+    return Result<std::string>::error("Path traversal detected: resolved path '" +
+                                      canonicalPath.string() + "' escapes base directory '" +
+                                      canonicalBase.string() + "'");
   }
 
   return Result<std::string>::ok(fullPath.string());
@@ -1756,15 +1756,15 @@ Result<void> BuildSystem::signAndFinalize() {
     // Determine the executable path based on platform
     std::string executablePath;
     if (m_config.platform == BuildPlatform::Windows) {
-      executablePath =
-          (stagingDir / (m_config.executableName + BuildUtils::getExecutableExtension(BuildPlatform::Windows)))
-              .string();
+      executablePath = (stagingDir / (m_config.executableName +
+                                      BuildUtils::getExecutableExtension(BuildPlatform::Windows)))
+                           .string();
     } else if (m_config.platform == BuildPlatform::MacOS) {
       executablePath = (stagingDir / (m_config.executableName + ".app")).string();
     } else if (m_config.platform == BuildPlatform::Linux) {
-      executablePath =
-          (stagingDir / (m_config.executableName + BuildUtils::getExecutableExtension(BuildPlatform::Linux)))
-              .string();
+      executablePath = (stagingDir / (m_config.executableName +
+                                      BuildUtils::getExecutableExtension(BuildPlatform::Linux)))
+                           .string();
     }
 
     if (!executablePath.empty()) {
@@ -3925,9 +3925,9 @@ Result<void> BuildSystem::validateSigningToolPath(const std::string& toolPath,
   const std::string dangerousChars = "|&;<>$`\\\"'(){}[]!*?~";
   for (char c : toolPath) {
     if (dangerousChars.find(c) != std::string::npos) {
-      return Result<void>::error(
-          "Signing tool path contains invalid character: '" + std::string(1, c) +
-          "'. Paths with shell metacharacters are not allowed.");
+      return Result<void>::error("Signing tool path contains invalid character: '" +
+                                 std::string(1, c) +
+                                 "'. Paths with shell metacharacters are not allowed.");
     }
   }
 
@@ -4251,8 +4251,8 @@ Result<void> BuildSystem::signWindowsExecutable(const std::string& executablePat
 
   i32 exitCode = result.value();
   if (exitCode != 0) {
-    return Result<void>::error("Signing failed with exit code " + std::to_string(exitCode) +
-                               ": " + output);
+    return Result<void>::error("Signing failed with exit code " + std::to_string(exitCode) + ": " +
+                               output);
   }
 
   logMessage("Successfully signed Windows executable", false);
@@ -4300,8 +4300,7 @@ Result<void> BuildSystem::signMacOSBundle(const std::string& bundlePath) {
   // Add entitlements if provided
   if (!m_config.signingEntitlements.empty()) {
     if (!fs::exists(m_config.signingEntitlements)) {
-      return Result<void>::error("Entitlements file not found: " +
-                                 m_config.signingEntitlements);
+      return Result<void>::error("Entitlements file not found: " + m_config.signingEntitlements);
     }
     cmd << " --entitlements \"" << m_config.signingEntitlements << "\"";
   }
@@ -4330,8 +4329,8 @@ Result<void> BuildSystem::signMacOSBundle(const std::string& bundlePath) {
 
   i32 exitCode = result.value();
   if (exitCode != 0) {
-    return Result<void>::error("Signing failed with exit code " + std::to_string(exitCode) +
-                               ": " + output);
+    return Result<void>::error("Signing failed with exit code " + std::to_string(exitCode) + ": " +
+                               output);
   }
 
   logMessage("Successfully signed macOS bundle", false);

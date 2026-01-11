@@ -59,21 +59,20 @@ namespace NovelMind::editor::qt {
 // NMScriptEditorPanel
 // ============================================================================
 
-NMScriptEditorPanel::NMScriptEditorPanel(QWidget *parent)
+NMScriptEditorPanel::NMScriptEditorPanel(QWidget* parent)
     : NMDockPanel(tr("Script Editor"), parent) {
   setPanelId("ScriptEditor");
   setWindowIcon(NMIconManager::instance().getIcon("panel-console", 16));
   m_diagnosticsTimer.setSingleShot(true);
   m_diagnosticsTimer.setInterval(600);
-  connect(&m_diagnosticsTimer, &QTimer::timeout, this,
-          &NMScriptEditorPanel::runDiagnostics);
+  connect(&m_diagnosticsTimer, &QTimer::timeout, this, &NMScriptEditorPanel::runDiagnostics);
   m_scriptWatcher = new QFileSystemWatcher(this);
   connect(m_scriptWatcher, &QFileSystemWatcher::directoryChanged, this,
           &NMScriptEditorPanel::onDirectoryChanged);
   connect(m_scriptWatcher, &QFileSystemWatcher::fileChanged, this,
           &NMScriptEditorPanel::onFileChanged);
   connect(m_scriptWatcher, &QFileSystemWatcher::fileChanged, this,
-          [this](const QString &) { refreshSymbolIndex(); });
+          [this](const QString&) { refreshSymbolIndex(); });
 
   // Initialize project context for asset validation
   m_projectContext = new ScriptProjectContext(QString());
@@ -88,8 +87,7 @@ NMScriptEditorPanel::~NMScriptEditorPanel() {
 
 void NMScriptEditorPanel::onInitialize() {
   // Set project path for asset validation
-  const std::string projectPath =
-      ProjectManager::instance().getProjectPath();
+  const std::string projectPath = ProjectManager::instance().getProjectPath();
   if (!projectPath.empty() && m_projectContext) {
     m_projectContext->setProjectPath(QString::fromStdString(projectPath));
   }
@@ -97,8 +95,7 @@ void NMScriptEditorPanel::onInitialize() {
 
   // Show welcome dialog on first launch
   QSettings settings("NovelMind", "Editor");
-  bool showScriptWelcome =
-      settings.value("scriptEditor/showWelcome", true).toBool();
+  bool showScriptWelcome = settings.value("scriptEditor/showWelcome", true).toBool();
 
   if (showScriptWelcome) {
     // Use QTimer to show dialog after the panel is fully initialized
@@ -107,7 +104,7 @@ void NMScriptEditorPanel::onInitialize() {
 
       // Connect signals
       connect(&welcomeDialog, &NMScriptWelcomeDialog::openSampleRequested, this,
-              [this](const QString &sampleId) { loadSampleScript(sampleId); });
+              [this](const QString& sampleId) { loadSampleScript(sampleId); });
 
       if (welcomeDialog.exec() == QDialog::Accepted) {
         if (welcomeDialog.shouldSkipInFuture()) {
@@ -123,15 +120,15 @@ void NMScriptEditorPanel::onInitialize() {
 
 void NMScriptEditorPanel::onUpdate(double /*deltaTime*/) {}
 
-void NMScriptEditorPanel::openScript(const QString &path) {
+void NMScriptEditorPanel::openScript(const QString& path) {
   if (path.isEmpty()) {
     return;
   }
 
   QString resolvedPath = path;
   if (QFileInfo(path).isRelative()) {
-    resolvedPath = QString::fromStdString(
-        ProjectManager::instance().toAbsolutePath(path.toStdString()));
+    resolvedPath =
+        QString::fromStdString(ProjectManager::instance().toAbsolutePath(path.toStdString()));
   }
 
   if (!ensureScriptFile(resolvedPath)) {
@@ -155,7 +152,8 @@ void NMScriptEditorPanel::refreshFileList() {
   m_fileTree->clear();
 
   const QString rootPath = scriptsRootPath();
-  core::Logger::instance().info("applyProjectToPanels: Scripts root path: " + rootPath.toStdString());
+  core::Logger::instance().info("applyProjectToPanels: Scripts root path: " +
+                                rootPath.toStdString());
   if (rootPath.isEmpty()) {
     if (m_issuesPanel) {
       m_issuesPanel->setIssues({});
@@ -164,15 +162,17 @@ void NMScriptEditorPanel::refreshFileList() {
     return;
   }
 
-  QTreeWidgetItem *rootItem = new QTreeWidgetItem(m_fileTree);
+  QTreeWidgetItem* rootItem = new QTreeWidgetItem(m_fileTree);
   rootItem->setText(0, QFileInfo(rootPath).fileName());
   rootItem->setData(0, Qt::UserRole, rootPath);
 
   namespace fs = std::filesystem;
   fs::path base(rootPath.toStdString());
   if (!fs::exists(base)) {
-    core::Logger::instance().warning("applyProjectToPanels: Scripts path does not exist: " + base.string());
-    core::Logger::instance().info("applyProjectToPanels: refreshFileList completed (path not exists)");
+    core::Logger::instance().warning("applyProjectToPanels: Scripts path does not exist: " +
+                                     base.string());
+    core::Logger::instance().info(
+        "applyProjectToPanels: refreshFileList completed (path not exists)");
     return;
   }
 
@@ -181,7 +181,7 @@ void NMScriptEditorPanel::refreshFileList() {
   try {
     // Use skip_permission_denied to avoid hanging on problematic directories
     auto options = fs::directory_options::skip_permission_denied;
-    for (const auto &entry : fs::recursive_directory_iterator(base, options)) {
+    for (const auto& entry : fs::recursive_directory_iterator(base, options)) {
       if (!entry.is_regular_file()) {
         continue;
       }
@@ -191,11 +191,11 @@ void NMScriptEditorPanel::refreshFileList() {
 
       fileCount++;
       const fs::path rel = fs::relative(entry.path(), base);
-      QTreeWidgetItem *parentItem = rootItem;
+      QTreeWidgetItem* parentItem = rootItem;
 
-      for (const auto &part : rel.parent_path()) {
+      for (const auto& part : rel.parent_path()) {
         const QString partName = QString::fromStdString(part.string());
-        QTreeWidgetItem *child = nullptr;
+        QTreeWidgetItem* child = nullptr;
         for (int i = 0; i < parentItem->childCount(); ++i) {
           if (parentItem->child(i)->text(0) == partName) {
             child = parentItem->child(i);
@@ -210,16 +210,14 @@ void NMScriptEditorPanel::refreshFileList() {
         parentItem = child;
       }
 
-      QTreeWidgetItem *fileItem = new QTreeWidgetItem(parentItem);
-      fileItem->setText(
-          0, QString::fromStdString(entry.path().filename().string()));
-      fileItem->setData(0, Qt::UserRole,
-                        QString::fromStdString(entry.path().string()));
+      QTreeWidgetItem* fileItem = new QTreeWidgetItem(parentItem);
+      fileItem->setText(0, QString::fromStdString(entry.path().filename().string()));
+      fileItem->setData(0, Qt::UserRole, QString::fromStdString(entry.path().string()));
     }
-    core::Logger::instance().info("applyProjectToPanels: Directory iteration completed, found " + std::to_string(fileCount) + " script files");
-  } catch (const std::exception &e) {
-    core::Logger::instance().warning(
-        std::string("Failed to scan scripts folder: ") + e.what());
+    core::Logger::instance().info("applyProjectToPanels: Directory iteration completed, found " +
+                                  std::to_string(fileCount) + " script files");
+  } catch (const std::exception& e) {
+    core::Logger::instance().warning(std::string("Failed to scan scripts folder: ") + e.what());
   }
 
   core::Logger::instance().info("applyProjectToPanels: Expanding file tree");
@@ -232,7 +230,7 @@ void NMScriptEditorPanel::refreshFileList() {
   core::Logger::instance().info("applyProjectToPanels: refreshFileList completed");
 }
 
-void NMScriptEditorPanel::onFileActivated(QTreeWidgetItem *item, int column) {
+void NMScriptEditorPanel::onFileActivated(QTreeWidgetItem* item, int column) {
   Q_UNUSED(column);
   if (!item) {
     return;
@@ -248,7 +246,7 @@ void NMScriptEditorPanel::onSaveRequested() {
   if (!m_tabs) {
     return;
   }
-  if (auto *editor = qobject_cast<QPlainTextEdit *>(m_tabs->currentWidget())) {
+  if (auto* editor = qobject_cast<QPlainTextEdit*>(m_tabs->currentWidget())) {
     saveEditor(editor);
   }
   refreshSymbolIndex();
@@ -257,7 +255,7 @@ void NMScriptEditorPanel::onSaveRequested() {
 
 void NMScriptEditorPanel::onSaveAllRequested() {
   for (int i = 0; i < m_tabs->count(); ++i) {
-    if (auto *editor = qobject_cast<QPlainTextEdit *>(m_tabs->widget(i))) {
+    if (auto* editor = qobject_cast<QPlainTextEdit*>(m_tabs->widget(i))) {
       saveEditor(editor);
     }
   }
@@ -269,7 +267,7 @@ void NMScriptEditorPanel::onFormatRequested() {
   if (!m_tabs) {
     return;
   }
-  auto *editor = qobject_cast<NMScriptEditor *>(m_tabs->currentWidget());
+  auto* editor = qobject_cast<NMScriptEditor*>(m_tabs->currentWidget());
   if (!editor) {
     return;
   }
@@ -281,12 +279,11 @@ void NMScriptEditorPanel::onFormatRequested() {
   int indentLevel = 0;
   const int indentSize = editor->indentSize();
 
-  for (const auto &line : lines) {
+  for (const auto& line : lines) {
     const QString trimmed = line.trimmed();
 
     int leadingClosers = 0;
-    while (leadingClosers < trimmed.size() &&
-           trimmed.at(leadingClosers) == '}') {
+    while (leadingClosers < trimmed.size() && trimmed.at(leadingClosers) == '}') {
       ++leadingClosers;
     }
     indentLevel = std::max(0, indentLevel - leadingClosers);
@@ -298,16 +295,14 @@ void NMScriptEditorPanel::onFormatRequested() {
       formatted.append(indent + trimmed);
     }
 
-    const int netBraces =
-        static_cast<int>(trimmed.count('{') - trimmed.count('}'));
+    const int netBraces = static_cast<int>(trimmed.count('{') - trimmed.count('}'));
     indentLevel = std::max(0, indentLevel + netBraces);
   }
 
   const int originalPos = editor->textCursor().position();
   editor->setPlainText(formatted.join("\n"));
   QTextCursor cursor = editor->textCursor();
-  cursor.setPosition(
-      std::min(originalPos, editor->document()->characterCount() - 1));
+  cursor.setPosition(std::min(originalPos, editor->document()->characterCount() - 1));
   editor->setTextCursor(cursor);
 }
 
@@ -319,7 +314,7 @@ void NMScriptEditorPanel::onCurrentTabChanged(int index) {
 
 void NMScriptEditorPanel::setupContent() {
   m_contentWidget = new QWidget(this);
-  auto *layout = new QVBoxLayout(m_contentWidget);
+  auto* layout = new QVBoxLayout(m_contentWidget);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
 
@@ -327,15 +322,14 @@ void NMScriptEditorPanel::setupContent() {
   layout->addWidget(m_toolBar);
 
   // Breadcrumb bar (shows current scope: scene > choice > if)
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
   m_breadcrumbBar = new QWidget(m_contentWidget);
-  auto *breadcrumbLayout = new QHBoxLayout(m_breadcrumbBar);
+  auto* breadcrumbLayout = new QHBoxLayout(m_breadcrumbBar);
   breadcrumbLayout->setContentsMargins(8, 2, 8, 2);
   breadcrumbLayout->setSpacing(0);
-  m_breadcrumbBar->setStyleSheet(
-      QString("background-color: %1; border-bottom: 1px solid %2;")
-          .arg(palette.bgMedium.name())
-          .arg(palette.borderLight.name()));
+  m_breadcrumbBar->setStyleSheet(QString("background-color: %1; border-bottom: 1px solid %2;")
+                                     .arg(palette.bgMedium.name())
+                                     .arg(palette.borderLight.name()));
   m_breadcrumbBar->setFixedHeight(24);
   layout->addWidget(m_breadcrumbBar);
 
@@ -349,22 +343,19 @@ void NMScriptEditorPanel::setupContent() {
   m_fileTree->setMinimumWidth(180);
   m_fileTree->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
-  connect(m_fileTree, &QTreeWidget::itemDoubleClicked, this,
-          &NMScriptEditorPanel::onFileActivated);
-  connect(m_fileTree, &QTreeWidget::itemActivated, this,
-          &NMScriptEditorPanel::onFileActivated);
+  connect(m_fileTree, &QTreeWidget::itemDoubleClicked, this, &NMScriptEditorPanel::onFileActivated);
+  connect(m_fileTree, &QTreeWidget::itemActivated, this, &NMScriptEditorPanel::onFileActivated);
 
   // Symbol list for quick navigation
-  auto *symbolGroup = new QGroupBox(tr("Symbols"), m_leftSplitter);
-  auto *symbolLayout = new QVBoxLayout(symbolGroup);
+  auto* symbolGroup = new QGroupBox(tr("Symbols"), m_leftSplitter);
+  auto* symbolLayout = new QVBoxLayout(symbolGroup);
   symbolLayout->setContentsMargins(4, 4, 4, 4);
   symbolLayout->setSpacing(4);
 
-  auto *symbolFilter = new QLineEdit(symbolGroup);
+  auto* symbolFilter = new QLineEdit(symbolGroup);
   symbolFilter->setPlaceholderText(tr("Filter symbols..."));
   symbolFilter->setClearButtonEnabled(true);
-  connect(symbolFilter, &QLineEdit::textChanged, this,
-          &NMScriptEditorPanel::filterSymbolList);
+  connect(symbolFilter, &QLineEdit::textChanged, this, &NMScriptEditorPanel::filterSymbolList);
   symbolLayout->addWidget(symbolFilter);
 
   m_symbolList = new QListWidget(symbolGroup);
@@ -388,10 +379,9 @@ void NMScriptEditorPanel::setupContent() {
 
   m_tabs = new QTabWidget(m_mainSplitter);
   m_tabs->setTabsClosable(true);
-  connect(m_tabs, &QTabWidget::currentChanged, this,
-          &NMScriptEditorPanel::onCurrentTabChanged);
+  connect(m_tabs, &QTabWidget::currentChanged, this, &NMScriptEditorPanel::onCurrentTabChanged);
   connect(m_tabs, &QTabWidget::tabCloseRequested, this, [this](int index) {
-    QWidget *widget = m_tabs->widget(index);
+    QWidget* widget = m_tabs->widget(index);
     m_tabPaths.remove(widget);
     m_editorSaveTimes.remove(widget); // Clean up save time tracking (issue #246)
     m_tabs->removeTab(index);
@@ -401,8 +391,7 @@ void NMScriptEditorPanel::setupContent() {
   // Scene Preview Widget (issue #240)
   m_scenePreview = new NMScenePreviewWidget(m_mainSplitter);
   QSettings settings;
-  m_scenePreviewEnabled =
-      settings.value("scriptEditor/previewEnabled", false).toBool();
+  m_scenePreviewEnabled = settings.value("scriptEditor/previewEnabled", false).toBool();
   m_scenePreview->setVisible(m_scenePreviewEnabled);
   m_scenePreview->setPreviewEnabled(m_scenePreviewEnabled);
 
@@ -430,29 +419,26 @@ void NMScriptEditorPanel::setupContent() {
 
   // Status bar with syntax hints and cursor position
   m_statusBar = new QWidget(m_contentWidget);
-  auto *statusLayout = new QHBoxLayout(m_statusBar);
+  auto* statusLayout = new QHBoxLayout(m_statusBar);
   statusLayout->setContentsMargins(8, 2, 8, 2);
   statusLayout->setSpacing(16);
-  m_statusBar->setStyleSheet(
-      QString("background-color: %1; border-top: 1px solid %2;")
-          .arg(palette.bgMedium.name())
-          .arg(palette.borderLight.name()));
+  m_statusBar->setStyleSheet(QString("background-color: %1; border-top: 1px solid %2;")
+                                 .arg(palette.bgMedium.name())
+                                 .arg(palette.borderLight.name()));
   m_statusBar->setFixedHeight(22);
 
   // Syntax hint label
   m_syntaxHintLabel = new QLabel(m_statusBar);
-  m_syntaxHintLabel->setStyleSheet(
-      QString("color: %1; font-family: %2;")
-          .arg(palette.textSecondary.name())
-          .arg(NMStyleManager::instance().monospaceFont().family()));
+  m_syntaxHintLabel->setStyleSheet(QString("color: %1; font-family: %2;")
+                                       .arg(palette.textSecondary.name())
+                                       .arg(NMStyleManager::instance().monospaceFont().family()));
   statusLayout->addWidget(m_syntaxHintLabel);
 
   statusLayout->addStretch();
 
   // Cursor position label
   m_cursorPosLabel = new QLabel(tr("Ln 1, Col 1"), m_statusBar);
-  m_cursorPosLabel->setStyleSheet(
-      QString("color: %1;").arg(palette.textSecondary.name()));
+  m_cursorPosLabel->setStyleSheet(QString("color: %1;").arg(palette.textSecondary.name()));
   statusLayout->addWidget(m_cursorPosLabel);
 
   layout->addWidget(m_statusBar);
@@ -467,44 +453,39 @@ void NMScriptEditorPanel::setupToolBar() {
   m_toolBar = new QToolBar(m_contentWidget);
   m_toolBar->setIconSize(QSize(16, 16));
 
-  auto &iconMgr = NMIconManager::instance();
+  auto& iconMgr = NMIconManager::instance();
 
   // File operations group
-  QAction *actionSave = m_toolBar->addAction(tr("Save"));
+  QAction* actionSave = m_toolBar->addAction(tr("Save"));
   actionSave->setIcon(iconMgr.getIcon("file-save", 16));
   actionSave->setToolTip(tr("Save (Ctrl+S)"));
-  connect(actionSave, &QAction::triggered, this,
-          &NMScriptEditorPanel::onSaveRequested);
+  connect(actionSave, &QAction::triggered, this, &NMScriptEditorPanel::onSaveRequested);
 
-  QAction *actionSaveAll = m_toolBar->addAction(tr("Save All"));
+  QAction* actionSaveAll = m_toolBar->addAction(tr("Save All"));
   actionSaveAll->setIcon(iconMgr.getIcon("file-save", 16));
   actionSaveAll->setToolTip(tr("Save all open scripts"));
-  connect(actionSaveAll, &QAction::triggered, this,
-          &NMScriptEditorPanel::onSaveAllRequested);
+  connect(actionSaveAll, &QAction::triggered, this, &NMScriptEditorPanel::onSaveAllRequested);
 
   m_toolBar->addSeparator();
 
   // Edit operations group
-  QAction *actionFormat = m_toolBar->addAction(tr("Format"));
+  QAction* actionFormat = m_toolBar->addAction(tr("Format"));
   actionFormat->setIcon(iconMgr.getIcon("transform-scale", 16));
   actionFormat->setToolTip(tr("Auto-format script (Ctrl+Shift+F)"));
   actionFormat->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_F));
   actionFormat->setShortcutContext(Qt::WidgetWithChildrenShortcut);
   addAction(actionFormat);
-  connect(actionFormat, &QAction::triggered, this,
-          &NMScriptEditorPanel::onFormatRequested);
+  connect(actionFormat, &QAction::triggered, this, &NMScriptEditorPanel::onFormatRequested);
 
   m_toolBar->addSeparator();
 
   // Toggle Preview action (issue #240)
   m_togglePreviewAction = m_toolBar->addAction(tr("👁️ Preview"));
   m_togglePreviewAction->setIcon(iconMgr.getIcon("visible", 16));
-  m_togglePreviewAction->setToolTip(
-      tr("Toggle live scene preview (Ctrl+Shift+V)"));
+  m_togglePreviewAction->setToolTip(tr("Toggle live scene preview (Ctrl+Shift+V)"));
   m_togglePreviewAction->setCheckable(true);
   m_togglePreviewAction->setChecked(m_scenePreviewEnabled);
-  m_togglePreviewAction->setShortcut(
-      QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_V));
+  m_togglePreviewAction->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_V));
   m_togglePreviewAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
   addAction(m_togglePreviewAction);
   connect(m_togglePreviewAction, &QAction::triggered, this,
@@ -513,16 +494,15 @@ void NMScriptEditorPanel::setupToolBar() {
   m_toolBar->addSeparator();
 
   // Code operations group
-  QAction *actionSnippet = m_toolBar->addAction(tr("Insert"));
+  QAction* actionSnippet = m_toolBar->addAction(tr("Insert"));
   actionSnippet->setIcon(iconMgr.getIcon("add", 16));
   actionSnippet->setToolTip(tr("Insert code snippet (Ctrl+J)"));
   actionSnippet->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_J));
   actionSnippet->setShortcutContext(Qt::WidgetWithChildrenShortcut);
   addAction(actionSnippet);
-  connect(actionSnippet, &QAction::triggered, this,
-          &NMScriptEditorPanel::onInsertSnippetRequested);
+  connect(actionSnippet, &QAction::triggered, this, &NMScriptEditorPanel::onInsertSnippetRequested);
 
-  QAction *actionSymbols = m_toolBar->addAction(tr("Symbols"));
+  QAction* actionSymbols = m_toolBar->addAction(tr("Symbols"));
   actionSymbols->setIcon(iconMgr.getIcon("search", 16));
   actionSymbols->setToolTip(tr("Open symbol navigator (Ctrl+Shift+O)"));
   actionSymbols->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_O));
@@ -534,34 +514,31 @@ void NMScriptEditorPanel::setupToolBar() {
   m_toolBar->addSeparator();
 
   // View dropdown menu
-  QToolButton *viewBtn = new QToolButton(m_toolBar);
+  QToolButton* viewBtn = new QToolButton(m_toolBar);
   viewBtn->setText(tr("View"));
   viewBtn->setIcon(iconMgr.getIcon("visible", 16));
   viewBtn->setToolTip(tr("View options"));
   viewBtn->setPopupMode(QToolButton::InstantPopup);
   viewBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
-  QMenu *viewMenu = new QMenu(viewBtn);
-  QAction *actionToggleMinimap = viewMenu->addAction(tr("Toggle Minimap"));
+  QMenu* viewMenu = new QMenu(viewBtn);
+  QAction* actionToggleMinimap = viewMenu->addAction(tr("Toggle Minimap"));
   actionToggleMinimap->setIcon(iconMgr.getIcon("layout-grid", 16));
-  connect(actionToggleMinimap, &QAction::triggered, this,
-          &NMScriptEditorPanel::onToggleMinimap);
+  connect(actionToggleMinimap, &QAction::triggered, this, &NMScriptEditorPanel::onToggleMinimap);
 
-  QAction *actionFoldAll = viewMenu->addAction(tr("Fold All"));
+  QAction* actionFoldAll = viewMenu->addAction(tr("Fold All"));
   actionFoldAll->setIcon(iconMgr.getIcon("chevron-up", 16));
-  connect(actionFoldAll, &QAction::triggered, this,
-          &NMScriptEditorPanel::onFoldAll);
+  connect(actionFoldAll, &QAction::triggered, this, &NMScriptEditorPanel::onFoldAll);
 
-  QAction *actionUnfoldAll = viewMenu->addAction(tr("Unfold All"));
+  QAction* actionUnfoldAll = viewMenu->addAction(tr("Unfold All"));
   actionUnfoldAll->setIcon(iconMgr.getIcon("chevron-down", 16));
-  connect(actionUnfoldAll, &QAction::triggered, this,
-          &NMScriptEditorPanel::onUnfoldAll);
+  connect(actionUnfoldAll, &QAction::triggered, this, &NMScriptEditorPanel::onUnfoldAll);
 
   viewBtn->setMenu(viewMenu);
   m_toolBar->addWidget(viewBtn);
 }
 
-void NMScriptEditorPanel::addEditorTab(const QString &path) {
+void NMScriptEditorPanel::addEditorTab(const QString& path) {
   QFile file(path);
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
     return;
@@ -569,24 +546,20 @@ void NMScriptEditorPanel::addEditorTab(const QString &path) {
 
   const QString content = QString::fromUtf8(file.readAll());
 
-  auto *editor = new NMScriptEditor(m_tabs);
+  auto* editor = new NMScriptEditor(m_tabs);
   editor->setPlainText(content);
   editor->setHoverDocs(detail::buildHoverDocs());
   editor->setDocHtml(detail::buildDocHtml());
   editor->setSymbolLocations(buildSymbolLocations());
 
-  connect(editor, &NMScriptEditor::requestSave, this,
-          &NMScriptEditorPanel::onSaveRequested);
+  connect(editor, &NMScriptEditor::requestSave, this, &NMScriptEditorPanel::onSaveRequested);
   connect(editor, &NMScriptEditor::hoverDocChanged, this,
-          [this](const QString &, const QString &html) {
-            emit docHtmlChanged(html);
-          });
-  connect(editor, &QPlainTextEdit::textChanged, this,
-          [this]() {
-            m_diagnosticsTimer.start();
-            // Trigger preview update on text change (issue #240)
-            onScriptTextChanged();
-          });
+          [this](const QString&, const QString& html) { emit docHtmlChanged(html); });
+  connect(editor, &QPlainTextEdit::textChanged, this, [this]() {
+    m_diagnosticsTimer.start();
+    // Trigger preview update on text change (issue #240)
+    onScriptTextChanged();
+  });
 
   // IDE feature connections
   connect(editor, &NMScriptEditor::goToDefinitionRequested, this,
@@ -597,8 +570,7 @@ void NMScriptEditorPanel::addEditorTab(const QString &path) {
           &NMScriptEditorPanel::onNavigateToGraphNode);
 
   // VSCode-like feature connections
-  connect(editor, &NMScriptEditor::showFindRequested, this,
-          &NMScriptEditorPanel::showFindDialog);
+  connect(editor, &NMScriptEditor::showFindRequested, this, &NMScriptEditorPanel::showFindDialog);
   connect(editor, &NMScriptEditor::showReplaceRequested, this,
           &NMScriptEditorPanel::showReplaceDialog);
   connect(editor, &NMScriptEditor::showCommandPaletteRequested, this,
@@ -613,62 +585,58 @@ void NMScriptEditorPanel::addEditorTab(const QString &path) {
           &NMScriptEditorPanel::showQuickFixMenu);
 
   // Breakpoint connection - wire to NMPlayModeController
-  connect(editor, &NMScriptEditor::breakpointToggled, this,
-          [this, path](int line) {
-            auto &controller = NMPlayModeController::instance();
-            controller.toggleSourceBreakpoint(path, line);
-          });
+  connect(editor, &NMScriptEditor::breakpointToggled, this, [this, path](int line) {
+    auto& controller = NMPlayModeController::instance();
+    controller.toggleSourceBreakpoint(path, line);
+  });
 
   // Sync breakpoints from controller to editor
-  auto &controller = NMPlayModeController::instance();
+  auto& controller = NMPlayModeController::instance();
   editor->setBreakpoints(controller.sourceBreakpointsForFile(path));
 
   // Listen for external breakpoint changes
-  connect(&controller, &NMPlayModeController::sourceBreakpointsChanged, editor,
-          [path, editor]() {
-            auto &ctrl = NMPlayModeController::instance();
-            editor->setBreakpoints(ctrl.sourceBreakpointsForFile(path));
-          });
+  connect(&controller, &NMPlayModeController::sourceBreakpointsChanged, editor, [path, editor]() {
+    auto& ctrl = NMPlayModeController::instance();
+    editor->setBreakpoints(ctrl.sourceBreakpointsForFile(path));
+  });
 
   // Listen for source-level breakpoint hits to show execution line
   connect(&controller, &NMPlayModeController::sourceBreakpointHit, editor,
-          [path, editor](const QString &filePath, int line) {
+          [path, editor](const QString& filePath, int line) {
             if (filePath == path) {
               editor->setCurrentExecutionLine(line);
             }
           });
 
   // Clear execution line when play mode changes
-  connect(&controller, &NMPlayModeController::playModeChanged, editor,
-          [editor](int mode) {
-            if (mode == NMPlayModeController::Stopped) {
-              editor->setCurrentExecutionLine(0);
-            }
-          });
+  connect(&controller, &NMPlayModeController::playModeChanged, editor, [editor](int mode) {
+    if (mode == NMPlayModeController::Stopped) {
+      editor->setCurrentExecutionLine(0);
+    }
+  });
 
   // Update cursor position in status bar
-  connect(editor, &QPlainTextEdit::cursorPositionChanged, this,
-          [this, editor]() {
-            const QTextCursor cursor = editor->textCursor();
-            const int line = cursor.blockNumber() + 1;
-            const int col = cursor.positionInBlock() + 1;
-            if (m_cursorPosLabel) {
-              m_cursorPosLabel->setText(tr("Ln %1, Col %2").arg(line).arg(col));
-            }
+  connect(editor, &QPlainTextEdit::cursorPositionChanged, this, [this, editor]() {
+    const QTextCursor cursor = editor->textCursor();
+    const int line = cursor.blockNumber() + 1;
+    const int col = cursor.positionInBlock() + 1;
+    if (m_cursorPosLabel) {
+      m_cursorPosLabel->setText(tr("Ln %1, Col %2").arg(line).arg(col));
+    }
 
-            // Trigger preview update on cursor position change (issue #240)
-            onCursorPositionChanged();
+    // Trigger preview update on cursor position change (issue #240)
+    onCursorPositionChanged();
 
-            // Update syntax hint
-            const QString hint = editor->getSyntaxHint();
-            if (m_syntaxHintLabel && hint != m_syntaxHintLabel->text()) {
-              m_syntaxHintLabel->setText(hint);
-            }
+    // Update syntax hint
+    const QString hint = editor->getSyntaxHint();
+    if (m_syntaxHintLabel && hint != m_syntaxHintLabel->text()) {
+      m_syntaxHintLabel->setText(hint);
+    }
 
-            // Update breadcrumbs
-            const QStringList breadcrumbs = editor->getBreadcrumbs();
-            onBreadcrumbsChanged(breadcrumbs);
-          });
+    // Update breadcrumbs
+    const QStringList breadcrumbs = editor->getBreadcrumbs();
+    onBreadcrumbsChanged(breadcrumbs);
+  });
 
   connect(editor, &QPlainTextEdit::textChanged, this, [this, editor]() {
     const int index = m_tabs->indexOf(editor);
@@ -695,7 +663,7 @@ void NMScriptEditorPanel::addEditorTab(const QString &path) {
   pushCompletionsToEditors();
 }
 
-bool NMScriptEditorPanel::saveEditor(QPlainTextEdit *editor) {
+bool NMScriptEditorPanel::saveEditor(QPlainTextEdit* editor) {
   if (!editor) {
     return false;
   }
@@ -727,7 +695,7 @@ bool NMScriptEditorPanel::saveEditor(QPlainTextEdit *editor) {
   return true;
 }
 
-bool NMScriptEditorPanel::ensureScriptFile(const QString &path) {
+bool NMScriptEditorPanel::ensureScriptFile(const QString& path) {
   if (path.isEmpty()) {
     return false;
   }
@@ -749,8 +717,7 @@ bool NMScriptEditorPanel::ensureScriptFile(const QString &path) {
     return false;
   }
 
-  const QString sceneName =
-      info.completeBaseName().isEmpty() ? "scene" : info.completeBaseName();
+  const QString sceneName = info.completeBaseName().isEmpty() ? "scene" : info.completeBaseName();
   QTextStream out(&file);
   out << "// " << sceneName << "\n";
   out << "scene " << sceneName << " {\n";
@@ -761,8 +728,7 @@ bool NMScriptEditorPanel::ensureScriptFile(const QString &path) {
 }
 
 QString NMScriptEditorPanel::scriptsRootPath() const {
-  const auto path =
-      ProjectManager::instance().getFolderPath(ProjectFolder::Scripts);
+  const auto path = ProjectManager::instance().getFolderPath(ProjectFolder::Scripts);
   return QString::fromStdString(path);
 }
 
@@ -784,7 +750,8 @@ void NMScriptEditorPanel::rebuildWatchList() {
   }
 
   if (root.isEmpty() || !QFileInfo::exists(root)) {
-    core::Logger::instance().info("applyProjectToPanels: rebuildWatchList completed (root invalid)");
+    core::Logger::instance().info(
+        "applyProjectToPanels: rebuildWatchList completed (root invalid)");
     return;
   }
 
@@ -794,22 +761,22 @@ void NMScriptEditorPanel::rebuildWatchList() {
 
   namespace fs = std::filesystem;
   fs::path base(root.toStdString());
-  core::Logger::instance().info("applyProjectToPanels: Starting directory iteration for watch list");
+  core::Logger::instance().info(
+      "applyProjectToPanels: Starting directory iteration for watch list");
   try {
     // Use skip_permission_denied to avoid hanging on problematic directories
     auto options = fs::directory_options::skip_permission_denied;
-    for (const auto &entry : fs::recursive_directory_iterator(base, options)) {
+    for (const auto& entry : fs::recursive_directory_iterator(base, options)) {
       if (entry.is_directory()) {
         directories.append(QString::fromStdString(entry.path().string()));
-      } else if (entry.is_regular_file() &&
-                 entry.path().extension() == ".nms") {
+      } else if (entry.is_regular_file() && entry.path().extension() == ".nms") {
         files.append(QString::fromStdString(entry.path().string()));
       }
     }
-    core::Logger::instance().info("applyProjectToPanels: Directory iteration for watch list completed");
-  } catch (const std::exception &e) {
-    core::Logger::instance().warning(
-        std::string("Failed to rebuild script watcher: ") + e.what());
+    core::Logger::instance().info(
+        "applyProjectToPanels: Directory iteration for watch list completed");
+  } catch (const std::exception& e) {
+    core::Logger::instance().warning(std::string("Failed to rebuild script watcher: ") + e.what());
   }
 
   if (!directories.isEmpty()) {
@@ -832,7 +799,8 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
     if (m_issuesPanel) {
       m_issuesPanel->setIssues({});
     }
-    core::Logger::instance().info("applyProjectToPanels: refreshSymbolIndex completed (empty root)");
+    core::Logger::instance().info(
+        "applyProjectToPanels: refreshSymbolIndex completed (empty root)");
     return;
   }
 
@@ -841,7 +809,8 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
   if (!fs::exists(base)) {
     pushCompletionsToEditors();
     refreshSymbolList();
-    core::Logger::instance().info("applyProjectToPanels: refreshSymbolIndex completed (root not exists)");
+    core::Logger::instance().info(
+        "applyProjectToPanels: refreshSymbolIndex completed (root not exists)");
     return;
   }
 
@@ -853,8 +822,8 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
   QSet<QString> seenVoices;
   QSet<QString> seenMusic;
 
-  auto insertMap = [](QHash<QString, QString> &map, QSet<QString> &seen,
-                      const QString &value, const QString &filePath) {
+  auto insertMap = [](QHash<QString, QString>& map, QSet<QString>& seen, const QString& value,
+                      const QString& filePath) {
     const QString key = value.toLower();
     if (value.isEmpty() || seen.contains(key)) {
       return;
@@ -863,8 +832,7 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
     map.insert(value, filePath);
   };
 
-  auto insertList = [](QStringList &list, QSet<QString> &seen,
-                       const QString &value) {
+  auto insertList = [](QStringList& list, QSet<QString>& seen, const QString& value) {
     const QString key = value.toLower();
     if (value.isEmpty() || seen.contains(key)) {
       return;
@@ -874,25 +842,23 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
   };
 
   const QRegularExpression reScene("\\bscene\\s+([A-Za-z_][A-Za-z0-9_]*)");
-  const QRegularExpression reCharacter(
-      "\\bcharacter\\s+([A-Za-z_][A-Za-z0-9_]*)");
-  const QRegularExpression reSetFlag(
-      "\\bset\\s+flag\\s+([A-Za-z_][A-Za-z0-9_]*)");
+  const QRegularExpression reCharacter("\\bcharacter\\s+([A-Za-z_][A-Za-z0-9_]*)");
+  const QRegularExpression reSetFlag("\\bset\\s+flag\\s+([A-Za-z_][A-Za-z0-9_]*)");
   const QRegularExpression reFlag("\\bflag\\s+([A-Za-z_][A-Za-z0-9_]*)");
-  const QRegularExpression reSetVar(
-      "\\bset\\s+(?!flag\\s)([A-Za-z_][A-Za-z0-9_]*)");
+  const QRegularExpression reSetVar("\\bset\\s+(?!flag\\s)([A-Za-z_][A-Za-z0-9_]*)");
   const QRegularExpression reBackground("show\\s+background\\s+\"([^\"]+)\"");
   const QRegularExpression reVoice("play\\s+voice\\s+\"([^\"]+)\"");
   const QRegularExpression reMusic("play\\s+music\\s+\"([^\"]+)\"");
 
   QList<NMScriptIssue> issues;
 
-  core::Logger::instance().info("applyProjectToPanels: Starting directory iteration for symbol index");
+  core::Logger::instance().info(
+      "applyProjectToPanels: Starting directory iteration for symbol index");
   int filesProcessed = 0;
   try {
     // Use skip_permission_denied to avoid hanging on problematic directories
     auto options = fs::directory_options::skip_permission_denied;
-    for (const auto &entry : fs::recursive_directory_iterator(base, options)) {
+    for (const auto& entry : fs::recursive_directory_iterator(base, options)) {
       if (!entry.is_regular_file() || entry.path().extension() != ".nms") {
         continue;
       }
@@ -909,7 +875,7 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
       // Collect symbols with line numbers
       const QStringList lines = content.split('\n');
       for (int lineNum = 0; lineNum < lines.size(); ++lineNum) {
-        const QString &line = lines[lineNum];
+        const QString& line = lines[lineNum];
 
         // Scenes with line numbers
         QRegularExpressionMatch sceneMatch = reScene.match(line);
@@ -934,7 +900,7 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
         }
       }
 
-      auto collect = [&](const QRegularExpression &regex, auto &&callback) {
+      auto collect = [&](const QRegularExpression& regex, auto&& callback) {
         QRegularExpressionMatchIterator it = regex.globalMatch(content);
         while (it.hasNext()) {
           const QRegularExpressionMatch match = it.next();
@@ -942,29 +908,28 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
         }
       };
 
-      collect(reSetFlag, [&](const QString &value) {
+      collect(reSetFlag, [&](const QString& value) {
         insertMap(m_symbolIndex.flags, seenFlags, value, path);
       });
-      collect(reFlag, [&](const QString &value) {
+      collect(reFlag, [&](const QString& value) {
         insertMap(m_symbolIndex.flags, seenFlags, value, path);
       });
-      collect(reSetVar, [&](const QString &value) {
+      collect(reSetVar, [&](const QString& value) {
         insertMap(m_symbolIndex.variables, seenVariables, value, path);
       });
-      collect(reBackground, [&](const QString &value) {
+      collect(reBackground, [&](const QString& value) {
         insertList(m_symbolIndex.backgrounds, seenBackgrounds, value);
       });
-      collect(reVoice, [&](const QString &value) {
-        insertList(m_symbolIndex.voices, seenVoices, value);
-      });
-      collect(reMusic, [&](const QString &value) {
-        insertList(m_symbolIndex.music, seenMusic, value);
-      });
+      collect(reVoice,
+              [&](const QString& value) { insertList(m_symbolIndex.voices, seenVoices, value); });
+      collect(reMusic,
+              [&](const QString& value) { insertList(m_symbolIndex.music, seenMusic, value); });
     }
-    core::Logger::instance().info("applyProjectToPanels: Directory iteration for symbol index completed, processed " + std::to_string(filesProcessed) + " files");
-  } catch (const std::exception &e) {
-    core::Logger::instance().warning(
-        std::string("Failed to build script symbols: ") + e.what());
+    core::Logger::instance().info(
+        "applyProjectToPanels: Directory iteration for symbol index completed, processed " +
+        std::to_string(filesProcessed) + " files");
+  } catch (const std::exception& e) {
+    core::Logger::instance().warning(std::string("Failed to build script symbols: ") + e.what());
   }
 
   core::Logger::instance().info("applyProjectToPanels: Adding project context assets");
@@ -972,29 +937,26 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
   if (m_projectContext) {
     // Add available backgrounds
     auto backgrounds = m_projectContext->getAvailableBackgrounds();
-    for (const auto &bg : backgrounds) {
-      insertList(m_symbolIndex.backgrounds, seenBackgrounds,
-                 QString::fromStdString(bg));
+    for (const auto& bg : backgrounds) {
+      insertList(m_symbolIndex.backgrounds, seenBackgrounds, QString::fromStdString(bg));
     }
 
     // Add available music
     auto music = m_projectContext->getAvailableAudio("music");
-    for (const auto &track : music) {
-      insertList(m_symbolIndex.music, seenMusic,
-                 QString::fromStdString(track));
+    for (const auto& track : music) {
+      insertList(m_symbolIndex.music, seenMusic, QString::fromStdString(track));
     }
 
     // Add available sound effects
     auto sounds = m_projectContext->getAvailableAudio("sound");
-    for (const auto &sfx : sounds) {
+    for (const auto& sfx : sounds) {
       insertList(m_symbolIndex.music, seenMusic, QString::fromStdString(sfx));
     }
 
     // Add available voices
     auto voices = m_projectContext->getAvailableAudio("voice");
-    for (const auto &voice : voices) {
-      insertList(m_symbolIndex.voices, seenVoices,
-                 QString::fromStdString(voice));
+    for (const auto& voice : voices) {
+      insertList(m_symbolIndex.voices, seenVoices, QString::fromStdString(voice));
     }
   }
 
@@ -1008,9 +970,8 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
   core::Logger::instance().info("applyProjectToPanels: refreshSymbolIndex completed");
 }
 
-QList<NMScriptIssue>
-NMScriptEditorPanel::validateSource(const QString &path,
-                                    const QString &source) const {
+QList<NMScriptIssue> NMScriptEditorPanel::validateSource(const QString& path,
+                                                         const QString& source) const {
   QList<NMScriptIssue> out;
   using namespace scripting;
 
@@ -1018,9 +979,9 @@ NMScriptEditorPanel::validateSource(const QString &path,
 
   Lexer lexer;
   auto lexResult = lexer.tokenize(src);
-  for (const auto &err : lexer.getErrors()) {
-    out.push_back({path, static_cast<int>(err.location.line),
-                   QString::fromStdString(err.message), "error"});
+  for (const auto& err : lexer.getErrors()) {
+    out.push_back(
+        {path, static_cast<int>(err.location.line), QString::fromStdString(err.message), "error"});
   }
   if (!lexResult.isOk()) {
     return out;
@@ -1028,9 +989,9 @@ NMScriptEditorPanel::validateSource(const QString &path,
 
   Parser parser;
   auto parseResult = parser.parse(lexResult.value());
-  for (const auto &err : parser.getErrors()) {
-    out.push_back({path, static_cast<int>(err.location.line),
-                   QString::fromStdString(err.message), "error"});
+  for (const auto& err : parser.getErrors()) {
+    out.push_back(
+        {path, static_cast<int>(err.location.line), QString::fromStdString(err.message), "error"});
   }
   if (!parseResult.isOk()) {
     return out;
@@ -1043,22 +1004,22 @@ NMScriptEditorPanel::validateSource(const QString &path,
     validator.setValidateAssets(true);
   }
   auto validation = validator.validate(parseResult.value());
-  for (const auto &err : validation.errors.all()) {
+  for (const auto& err : validation.errors.all()) {
     QString severity = "info";
     if (err.severity == Severity::Warning) {
       severity = "warning";
     } else if (err.severity == Severity::Error) {
       severity = "error";
     }
-    out.push_back({path, static_cast<int>(err.span.start.line),
-                   QString::fromStdString(err.message), severity});
+    out.push_back({path, static_cast<int>(err.span.start.line), QString::fromStdString(err.message),
+                   severity});
   }
 
   return out;
 }
 
 void NMScriptEditorPanel::runDiagnostics() {
-  auto *editor = qobject_cast<NMScriptEditor *>(m_tabs->currentWidget());
+  auto* editor = qobject_cast<NMScriptEditor*>(m_tabs->currentWidget());
   if (!editor) {
     return;
   }
@@ -1077,25 +1038,23 @@ void NMScriptEditorPanel::runDiagnostics() {
   }
 }
 
-void NMScriptEditorPanel::goToLocation(const QString &path, int line) {
+void NMScriptEditorPanel::goToLocation(const QString& path, int line) {
   openScript(path);
-  auto *editor = qobject_cast<NMScriptEditor *>(m_tabs->currentWidget());
+  auto* editor = qobject_cast<NMScriptEditor*>(m_tabs->currentWidget());
   if (!editor) {
     return;
   }
-  QTextCursor cursor(
-      editor->document()->findBlockByLineNumber(std::max(0, line - 1)));
+  QTextCursor cursor(editor->document()->findBlockByLineNumber(std::max(0, line - 1)));
   editor->setTextCursor(cursor);
   editor->setFocus();
 }
 
-QList<NMScriptEditor::CompletionEntry>
-NMScriptEditorPanel::buildProjectCompletionEntries() const {
+QList<NMScriptEditor::CompletionEntry> NMScriptEditorPanel::buildProjectCompletionEntries() const {
   QMutexLocker locker(&m_symbolIndexMutex);
   QList<NMScriptEditor::CompletionEntry> entries;
 
-  auto addEntries = [&entries](const QStringList &list, const QString &detail) {
-    for (const auto &item : list) {
+  auto addEntries = [&entries](const QStringList& list, const QString& detail) {
+    for (const auto& item : list) {
       entries.push_back({item, detail});
     }
   };
@@ -1114,23 +1073,20 @@ NMScriptEditorPanel::buildProjectCompletionEntries() const {
 QHash<QString, QString> NMScriptEditorPanel::buildProjectHoverDocs() const {
   QMutexLocker locker(&m_symbolIndexMutex);
   QHash<QString, QString> docs;
-  auto relPath = [](const QString &path) {
+  auto relPath = [](const QString& path) {
     if (path.isEmpty()) {
       return QString();
     }
-    return QString::fromStdString(
-        ProjectManager::instance().toRelativePath(path.toStdString()));
+    return QString::fromStdString(ProjectManager::instance().toRelativePath(path.toStdString()));
   };
 
-  auto addDocs = [&](const QHash<QString, QString> &map, const QString &label) {
+  auto addDocs = [&](const QHash<QString, QString>& map, const QString& label) {
     for (auto it = map.constBegin(); it != map.constEnd(); ++it) {
       const QString key = it.key();
       const QString path = relPath(it.value());
-      docs.insert(
-          key.toLower(),
-          QString("%1 \"%2\"%3")
-              .arg(label, key,
-                   path.isEmpty() ? QString() : QString(" (%1)").arg(path)));
+      docs.insert(key.toLower(),
+                  QString("%1 \"%2\"%3")
+                      .arg(label, key, path.isEmpty() ? QString() : QString(" (%1)").arg(path)));
     }
   };
 
@@ -1139,13 +1095,13 @@ QHash<QString, QString> NMScriptEditorPanel::buildProjectHoverDocs() const {
   addDocs(m_symbolIndex.flags, tr("Flag"));
   addDocs(m_symbolIndex.variables, tr("Variable"));
 
-  for (const auto &bg : m_symbolIndex.backgrounds) {
+  for (const auto& bg : m_symbolIndex.backgrounds) {
     docs.insert(bg.toLower(), tr("Background asset \"%1\"").arg(bg));
   }
-  for (const auto &m : m_symbolIndex.music) {
+  for (const auto& m : m_symbolIndex.music) {
     docs.insert(m.toLower(), tr("Music track \"%1\"").arg(m));
   }
-  for (const auto &v : m_symbolIndex.voices) {
+  for (const auto& v : m_symbolIndex.voices) {
     docs.insert(v.toLower(), tr("Voice asset \"%1\"").arg(v));
   }
 
@@ -1156,15 +1112,14 @@ QHash<QString, QString> NMScriptEditorPanel::buildProjectDocHtml() const {
   QMutexLocker locker(&m_symbolIndexMutex);
   QHash<QString, QString> docs;
 
-  auto relPath = [](const QString &path) {
+  auto relPath = [](const QString& path) {
     if (path.isEmpty()) {
       return QString();
     }
-    return QString::fromStdString(
-        ProjectManager::instance().toRelativePath(path.toStdString()));
+    return QString::fromStdString(ProjectManager::instance().toRelativePath(path.toStdString()));
   };
 
-  auto addDocs = [&](const QHash<QString, QString> &map, const QString &label) {
+  auto addDocs = [&](const QHash<QString, QString>& map, const QString& label) {
     for (auto it = map.constBegin(); it != map.constEnd(); ++it) {
       const QString name = it.key();
       const QString file = relPath(it.value());
@@ -1172,8 +1127,7 @@ QHash<QString, QString> NMScriptEditorPanel::buildProjectDocHtml() const {
       html += QString("<p>%1 definition%2</p>")
                   .arg(label.toHtmlEscaped(),
                        file.isEmpty() ? QString()
-                                      : QString(" in <code>%1</code>")
-                                            .arg(file.toHtmlEscaped()));
+                                      : QString(" in <code>%1</code>").arg(file.toHtmlEscaped()));
       docs.insert(name.toLower(), html);
     }
   };
@@ -1183,10 +1137,10 @@ QHash<QString, QString> NMScriptEditorPanel::buildProjectDocHtml() const {
   addDocs(m_symbolIndex.flags, tr("Flag"));
   addDocs(m_symbolIndex.variables, tr("Variable"));
 
-  auto addSimple = [&](const QStringList &list, const QString &label) {
-    for (const auto &item : list) {
-      QString html = QString("<h3>%1</h3><p>%2</p>")
-                         .arg(item.toHtmlEscaped(), label.toHtmlEscaped());
+  auto addSimple = [&](const QStringList& list, const QString& label) {
+    for (const auto& item : list) {
+      QString html =
+          QString("<h3>%1</h3><p>%2</p>").arg(item.toHtmlEscaped(), label.toHtmlEscaped());
       docs.insert(item.toLower(), html);
     }
   };
@@ -1199,12 +1153,11 @@ QHash<QString, QString> NMScriptEditorPanel::buildProjectDocHtml() const {
 }
 
 void NMScriptEditorPanel::pushCompletionsToEditors() {
-  QList<NMScriptEditor::CompletionEntry> entries =
-      detail::buildKeywordEntries();
+  QList<NMScriptEditor::CompletionEntry> entries = detail::buildKeywordEntries();
   entries.append(buildProjectCompletionEntries());
 
   QHash<QString, NMScriptEditor::CompletionEntry> merged;
-  for (const auto &entry : entries) {
+  for (const auto& entry : entries) {
     const QString key = entry.text.toLower();
     if (!merged.contains(key)) {
       merged.insert(key, entry);
@@ -1213,29 +1166,26 @@ void NMScriptEditorPanel::pushCompletionsToEditors() {
 
   QList<NMScriptEditor::CompletionEntry> combined = merged.values();
   std::sort(combined.begin(), combined.end(),
-            [](const NMScriptEditor::CompletionEntry &a,
-               const NMScriptEditor::CompletionEntry &b) {
+            [](const NMScriptEditor::CompletionEntry& a, const NMScriptEditor::CompletionEntry& b) {
               return a.text.compare(b.text, Qt::CaseInsensitive) < 0;
             });
 
   QHash<QString, QString> hoverDocs = detail::buildHoverDocs();
   const QHash<QString, QString> projectHoverDocs = buildProjectHoverDocs();
-  for (auto it = projectHoverDocs.constBegin();
-       it != projectHoverDocs.constEnd(); ++it) {
+  for (auto it = projectHoverDocs.constBegin(); it != projectHoverDocs.constEnd(); ++it) {
     hoverDocs.insert(it.key(), it.value());
   }
 
   QHash<QString, QString> docHtml = detail::buildDocHtml();
   const QHash<QString, QString> projectDocHtml = buildProjectDocHtml();
-  for (auto it = projectDocHtml.constBegin(); it != projectDocHtml.constEnd();
-       ++it) {
+  for (auto it = projectDocHtml.constBegin(); it != projectDocHtml.constEnd(); ++it) {
     docHtml.insert(it.key(), it.value());
   }
 
   // Build symbol locations for go-to-definition
   const auto symbolLocations = buildSymbolLocations();
 
-  for (auto *editor : editors()) {
+  for (auto* editor : editors()) {
     editor->setCompletionEntries(combined);
     editor->setHoverDocs(hoverDocs);
     editor->setProjectDocs(projectHoverDocs);
@@ -1246,35 +1196,34 @@ void NMScriptEditorPanel::pushCompletionsToEditors() {
   m_diagnosticsTimer.start();
 }
 
-QList<NMScriptEditor *> NMScriptEditorPanel::editors() const {
-  QList<NMScriptEditor *> list;
+QList<NMScriptEditor*> NMScriptEditorPanel::editors() const {
+  QList<NMScriptEditor*> list;
   if (!m_tabs) {
     return list;
   }
   for (int i = 0; i < m_tabs->count(); ++i) {
-    if (auto *editor = qobject_cast<NMScriptEditor *>(m_tabs->widget(i))) {
+    if (auto* editor = qobject_cast<NMScriptEditor*>(m_tabs->widget(i))) {
       list.push_back(editor);
     }
   }
   return list;
 }
 
-NMScriptEditor *NMScriptEditorPanel::currentEditor() const {
+NMScriptEditor* NMScriptEditorPanel::currentEditor() const {
   if (!m_tabs) {
     return nullptr;
   }
-  return qobject_cast<NMScriptEditor *>(m_tabs->currentWidget());
+  return qobject_cast<NMScriptEditor*>(m_tabs->currentWidget());
 }
 
-bool NMScriptEditorPanel::goToSceneDefinition(const QString &sceneName) {
+bool NMScriptEditorPanel::goToSceneDefinition(const QString& sceneName) {
   QMutexLocker locker(&m_symbolIndexMutex);
   const QString key = sceneName.toLower();
-  for (auto it = m_symbolIndex.scenes.constBegin();
-       it != m_symbolIndex.scenes.constEnd(); ++it) {
+  for (auto it = m_symbolIndex.scenes.constBegin(); it != m_symbolIndex.scenes.constEnd(); ++it) {
     if (it.key().toLower() == key) {
       const QString filePath = it.value();
       const int line = m_symbolIndex.sceneLines.value(it.key(), 1);
-      locker.unlock();  // Unlock before calling goToLocation to avoid deadlock
+      locker.unlock(); // Unlock before calling goToLocation to avoid deadlock
       goToLocation(filePath, line);
       return true;
     }
@@ -1282,8 +1231,7 @@ bool NMScriptEditorPanel::goToSceneDefinition(const QString &sceneName) {
   return false;
 }
 
-QList<ReferenceResult>
-NMScriptEditorPanel::findAllReferences(const QString &symbol) const {
+QList<ReferenceResult> NMScriptEditorPanel::findAllReferences(const QString& symbol) const {
   QList<ReferenceResult> results;
   const QString root = scriptsRootPath();
   if (root.isEmpty()) {
@@ -1291,9 +1239,8 @@ NMScriptEditorPanel::findAllReferences(const QString &symbol) const {
   }
 
   const QString lowerSymbol = symbol.toLower();
-  const QRegularExpression re(
-      QString("\\b%1\\b").arg(QRegularExpression::escape(symbol)),
-      QRegularExpression::CaseInsensitiveOption);
+  const QRegularExpression re(QString("\\b%1\\b").arg(QRegularExpression::escape(symbol)),
+                              QRegularExpression::CaseInsensitiveOption);
 
   namespace fs = std::filesystem;
   fs::path base(root.toStdString());
@@ -1302,7 +1249,7 @@ NMScriptEditorPanel::findAllReferences(const QString &symbol) const {
   }
 
   try {
-    for (const auto &entry : fs::recursive_directory_iterator(base)) {
+    for (const auto& entry : fs::recursive_directory_iterator(base)) {
       if (!entry.is_regular_file() || entry.path().extension() != ".nms") {
         continue;
       }
@@ -1315,7 +1262,7 @@ NMScriptEditorPanel::findAllReferences(const QString &symbol) const {
 
       const QStringList lines = QString::fromUtf8(file.readAll()).split('\n');
       for (int i = 0; i < lines.size(); ++i) {
-        const QString &line = lines[i];
+        const QString& line = lines[i];
         if (re.match(line).hasMatch()) {
           ReferenceResult ref;
           ref.filePath = filePath;
@@ -1323,23 +1270,21 @@ NMScriptEditorPanel::findAllReferences(const QString &symbol) const {
           ref.context = line.trimmed();
 
           // Check if this is a definition (scene, character declaration)
-          ref.isDefinition = line.contains(
-              QRegularExpression(QString("\\b(scene|character)\\s+%1\\b")
-                                     .arg(QRegularExpression::escape(symbol)),
-                                 QRegularExpression::CaseInsensitiveOption));
+          ref.isDefinition = line.contains(QRegularExpression(
+              QString("\\b(scene|character)\\s+%1\\b").arg(QRegularExpression::escape(symbol)),
+              QRegularExpression::CaseInsensitiveOption));
           results.append(ref);
         }
       }
     }
-  } catch (const std::exception &e) {
-    core::Logger::instance().warning(
-        std::string("Failed to find references: ") + e.what());
+  } catch (const std::exception& e) {
+    core::Logger::instance().warning(std::string("Failed to find references: ") + e.what());
   }
 
   return results;
 }
 
-void NMScriptEditorPanel::onSymbolListActivated(QListWidgetItem *item) {
+void NMScriptEditorPanel::onSymbolListActivated(QListWidgetItem* item) {
   if (!item) {
     return;
   }
@@ -1357,27 +1302,26 @@ void NMScriptEditorPanel::onSymbolNavigatorRequested() {
   }
 }
 
-void NMScriptEditorPanel::onGoToDefinition(const QString &symbol,
-                                           const SymbolLocation &location) {
+void NMScriptEditorPanel::onGoToDefinition(const QString& symbol, const SymbolLocation& location) {
   (void)symbol;
   if (!location.filePath.isEmpty()) {
     goToLocation(location.filePath, location.line);
   }
 }
 
-void NMScriptEditorPanel::onFindReferences(const QString &symbol) {
+void NMScriptEditorPanel::onFindReferences(const QString& symbol) {
   const QList<ReferenceResult> references = findAllReferences(symbol);
   showReferencesDialog(symbol, references);
   emit referencesFound(symbol, references);
 }
 
 void NMScriptEditorPanel::onInsertSnippetRequested() {
-  if (auto *editor = currentEditor()) {
+  if (auto* editor = currentEditor()) {
     editor->insertSnippet("scene");
   }
 }
 
-void NMScriptEditorPanel::onNavigateToGraphNode(const QString &sceneId) {
+void NMScriptEditorPanel::onNavigateToGraphNode(const QString& sceneId) {
   emit navigateToGraphNode(sceneId);
 }
 
@@ -1388,16 +1332,13 @@ void NMScriptEditorPanel::refreshSymbolList() {
   m_symbolList->clear();
 
   QMutexLocker locker(&m_symbolIndexMutex);
-  const auto &palette = NMStyleManager::instance().palette();
-  auto addItems = [this, &palette](const QHash<QString, QString> &map,
-                                   const QString &typeLabel,
-                                   const QColor &color) {
+  const auto& palette = NMStyleManager::instance().palette();
+  auto addItems = [this, &palette](const QHash<QString, QString>& map, const QString& typeLabel,
+                                   const QColor& color) {
     for (auto it = map.constBegin(); it != map.constEnd(); ++it) {
-      auto *item =
-          new QListWidgetItem(QString("%1 (%2)").arg(it.key(), typeLabel));
+      auto* item = new QListWidgetItem(QString("%1 (%2)").arg(it.key(), typeLabel));
       item->setData(Qt::UserRole, it.value());
-      item->setData(Qt::UserRole + 1,
-                    m_symbolIndex.sceneLines.value(it.key(), 1));
+      item->setData(Qt::UserRole + 1, m_symbolIndex.sceneLines.value(it.key(), 1));
       item->setForeground(color);
       m_symbolList->addItem(item);
     }
@@ -1409,49 +1350,45 @@ void NMScriptEditorPanel::refreshSymbolList() {
   addItems(m_symbolIndex.variables, tr("variable"), QColor(200, 170, 255));
 }
 
-void NMScriptEditorPanel::filterSymbolList(const QString &filter) {
+void NMScriptEditorPanel::filterSymbolList(const QString& filter) {
   if (!m_symbolList) {
     return;
   }
   for (int i = 0; i < m_symbolList->count(); ++i) {
-    auto *item = m_symbolList->item(i);
-    const bool matches =
-        filter.isEmpty() || item->text().contains(filter, Qt::CaseInsensitive);
+    auto* item = m_symbolList->item(i);
+    const bool matches = filter.isEmpty() || item->text().contains(filter, Qt::CaseInsensitive);
     item->setHidden(!matches);
   }
 }
 
-void NMScriptEditorPanel::showReferencesDialog(
-    const QString &symbol, const QList<ReferenceResult> &references) {
+void NMScriptEditorPanel::showReferencesDialog(const QString& symbol,
+                                               const QList<ReferenceResult>& references) {
   if (references.isEmpty()) {
     return;
   }
 
   // Create a simple dialog to show references
-  auto *dialog = new QDialog(this);
-  dialog->setWindowTitle(
-      tr("References to '%1' (%2 found)").arg(symbol).arg(references.size()));
+  auto* dialog = new QDialog(this);
+  dialog->setWindowTitle(tr("References to '%1' (%2 found)").arg(symbol).arg(references.size()));
   dialog->resize(600, 400);
 
-  auto *layout = new QVBoxLayout(dialog);
-  auto *list = new QListWidget(dialog);
+  auto* layout = new QVBoxLayout(dialog);
+  auto* list = new QListWidget(dialog);
 
-  const auto &palette = NMStyleManager::instance().palette();
-  list->setStyleSheet(
-      QString("QListWidget { background-color: %1; color: %2; }"
-              "QListWidget::item:selected { background-color: %3; }")
-          .arg(palette.bgMedium.name())
-          .arg(palette.textPrimary.name())
-          .arg(palette.bgLight.name()));
+  const auto& palette = NMStyleManager::instance().palette();
+  list->setStyleSheet(QString("QListWidget { background-color: %1; color: %2; }"
+                              "QListWidget::item:selected { background-color: %3; }")
+                          .arg(palette.bgMedium.name())
+                          .arg(palette.textPrimary.name())
+                          .arg(palette.bgLight.name()));
 
-  for (const auto &ref : references) {
+  for (const auto& ref : references) {
     const QString fileName = QFileInfo(ref.filePath).fileName();
-    QString label =
-        QString("%1:%2: %3").arg(fileName).arg(ref.line).arg(ref.context);
+    QString label = QString("%1:%2: %3").arg(fileName).arg(ref.line).arg(ref.context);
     if (ref.isDefinition) {
       label = "[DEF] " + label;
     }
-    auto *item = new QListWidgetItem(label);
+    auto* item = new QListWidgetItem(label);
     item->setData(Qt::UserRole, ref.filePath);
     item->setData(Qt::UserRole + 1, ref.line);
     if (ref.isDefinition) {
@@ -1460,13 +1397,12 @@ void NMScriptEditorPanel::showReferencesDialog(
     list->addItem(item);
   }
 
-  connect(list, &QListWidget::itemDoubleClicked, this,
-          [this, dialog](QListWidgetItem *item) {
-            const QString path = item->data(Qt::UserRole).toString();
-            const int line = item->data(Qt::UserRole + 1).toInt();
-            goToLocation(path, line);
-            dialog->accept();
-          });
+  connect(list, &QListWidget::itemDoubleClicked, this, [this, dialog](QListWidgetItem* item) {
+    const QString path = item->data(Qt::UserRole).toString();
+    const int line = item->data(Qt::UserRole + 1).toInt();
+    goToLocation(path, line);
+    dialog->accept();
+  });
 
   layout->addWidget(list);
   dialog->setLayout(layout);
@@ -1474,14 +1410,12 @@ void NMScriptEditorPanel::showReferencesDialog(
   dialog->show();
 }
 
-QHash<QString, SymbolLocation>
-NMScriptEditorPanel::buildSymbolLocations() const {
+QHash<QString, SymbolLocation> NMScriptEditorPanel::buildSymbolLocations() const {
   QMutexLocker locker(&m_symbolIndexMutex);
   QHash<QString, SymbolLocation> locations;
 
   // Add scenes
-  for (auto it = m_symbolIndex.scenes.constBegin();
-       it != m_symbolIndex.scenes.constEnd(); ++it) {
+  for (auto it = m_symbolIndex.scenes.constBegin(); it != m_symbolIndex.scenes.constEnd(); ++it) {
     SymbolLocation loc;
     loc.filePath = it.value();
     loc.line = m_symbolIndex.sceneLines.value(it.key(), 1);
@@ -1490,8 +1424,8 @@ NMScriptEditorPanel::buildSymbolLocations() const {
   }
 
   // Add characters
-  for (auto it = m_symbolIndex.characters.constBegin();
-       it != m_symbolIndex.characters.constEnd(); ++it) {
+  for (auto it = m_symbolIndex.characters.constBegin(); it != m_symbolIndex.characters.constEnd();
+       ++it) {
     SymbolLocation loc;
     loc.filePath = it.value();
     loc.line = m_symbolIndex.characterLines.value(it.key(), 1);
@@ -1500,8 +1434,7 @@ NMScriptEditorPanel::buildSymbolLocations() const {
   }
 
   // Add flags and variables
-  for (auto it = m_symbolIndex.flags.constBegin();
-       it != m_symbolIndex.flags.constEnd(); ++it) {
+  for (auto it = m_symbolIndex.flags.constBegin(); it != m_symbolIndex.flags.constEnd(); ++it) {
     SymbolLocation loc;
     loc.filePath = it.value();
     loc.line = 1;
@@ -1509,8 +1442,8 @@ NMScriptEditorPanel::buildSymbolLocations() const {
     locations.insert(it.key().toLower(), loc);
   }
 
-  for (auto it = m_symbolIndex.variables.constBegin();
-       it != m_symbolIndex.variables.constEnd(); ++it) {
+  for (auto it = m_symbolIndex.variables.constBegin(); it != m_symbolIndex.variables.constEnd();
+       ++it) {
     SymbolLocation loc;
     loc.filePath = it.value();
     loc.line = 1;
@@ -1529,7 +1462,7 @@ void NMScriptEditorPanel::showFindDialog() {
   if (!m_findReplaceWidget) {
     return;
   }
-  auto *editor = currentEditor();
+  auto* editor = currentEditor();
   if (editor) {
     m_findReplaceWidget->setEditor(editor);
     // Pre-fill with selected text
@@ -1545,7 +1478,7 @@ void NMScriptEditorPanel::showReplaceDialog() {
   if (!m_findReplaceWidget) {
     return;
   }
-  auto *editor = currentEditor();
+  auto* editor = currentEditor();
   if (editor) {
     m_findReplaceWidget->setEditor(editor);
     const QString selected = editor->textCursor().selectedText();
@@ -1568,73 +1501,64 @@ void NMScriptEditorPanel::setupCommandPalette() {
   }
 
   // File commands
-  m_commandPalette->addCommand(
-      {tr("Save"), "Ctrl+S", tr("File"), [this]() { onSaveRequested(); }});
+  m_commandPalette->addCommand({tr("Save"), "Ctrl+S", tr("File"), [this]() { onSaveRequested(); }});
   m_commandPalette->addCommand(
       {tr("Save All"), "", tr("File"), [this]() { onSaveAllRequested(); }});
 
   // Edit commands
-  m_commandPalette->addCommand(
-      {tr("Find"), "Ctrl+F", tr("Edit"), [this]() { showFindDialog(); }});
+  m_commandPalette->addCommand({tr("Find"), "Ctrl+F", tr("Edit"), [this]() { showFindDialog(); }});
   m_commandPalette->addCommand(
       {tr("Replace"), "Ctrl+H", tr("Edit"), [this]() { showReplaceDialog(); }});
-  m_commandPalette->addCommand({tr("Format Document"), "Ctrl+Shift+F",
-                                tr("Edit"), [this]() { onFormatRequested(); }});
+  m_commandPalette->addCommand(
+      {tr("Format Document"), "Ctrl+Shift+F", tr("Edit"), [this]() { onFormatRequested(); }});
 
   // Navigation commands
-  m_commandPalette->addCommand({tr("Go to Symbol"), "Ctrl+Shift+O",
-                                tr("Navigation"),
+  m_commandPalette->addCommand({tr("Go to Symbol"), "Ctrl+Shift+O", tr("Navigation"),
                                 [this]() { onSymbolNavigatorRequested(); }});
-  m_commandPalette->addCommand(
-      {tr("Go to Definition"), "F12", tr("Navigation"), [this]() {
-         if (auto *editor = currentEditor()) {
-           // Trigger go-to-definition on current word
-           const QString symbol = editor->textCursor().selectedText();
-           if (!symbol.isEmpty()) {
-             goToSceneDefinition(symbol);
-           }
-         }
-       }});
+  m_commandPalette->addCommand({tr("Go to Definition"), "F12", tr("Navigation"), [this]() {
+                                  if (auto* editor = currentEditor()) {
+                                    // Trigger go-to-definition on current word
+                                    const QString symbol = editor->textCursor().selectedText();
+                                    if (!symbol.isEmpty()) {
+                                      goToSceneDefinition(symbol);
+                                    }
+                                  }
+                                }});
 
   // View commands
   m_commandPalette->addCommand(
       {tr("Toggle Minimap"), "", tr("View"), [this]() { onToggleMinimap(); }});
-  m_commandPalette->addCommand(
-      {tr("Fold All"), "", tr("View"), [this]() { onFoldAll(); }});
-  m_commandPalette->addCommand(
-      {tr("Unfold All"), "", tr("View"), [this]() { onUnfoldAll(); }});
+  m_commandPalette->addCommand({tr("Fold All"), "", tr("View"), [this]() { onFoldAll(); }});
+  m_commandPalette->addCommand({tr("Unfold All"), "", tr("View"), [this]() { onUnfoldAll(); }});
 
   // Insert commands
-  m_commandPalette->addCommand(
-      {tr("Insert Scene Snippet"), "Ctrl+J", tr("Insert"), [this]() {
-         if (auto *editor = currentEditor()) {
-           editor->insertSnippet("scene");
-         }
-       }});
-  m_commandPalette->addCommand(
-      {tr("Insert Choice Snippet"), "", tr("Insert"), [this]() {
-         if (auto *editor = currentEditor()) {
-           editor->insertSnippet("choice");
-         }
-       }});
-  m_commandPalette->addCommand(
-      {tr("Insert Character"), "", tr("Insert"), [this]() {
-         if (auto *editor = currentEditor()) {
-           editor->insertSnippet("character");
-         }
-       }});
+  m_commandPalette->addCommand({tr("Insert Scene Snippet"), "Ctrl+J", tr("Insert"), [this]() {
+                                  if (auto* editor = currentEditor()) {
+                                    editor->insertSnippet("scene");
+                                  }
+                                }});
+  m_commandPalette->addCommand({tr("Insert Choice Snippet"), "", tr("Insert"), [this]() {
+                                  if (auto* editor = currentEditor()) {
+                                    editor->insertSnippet("choice");
+                                  }
+                                }});
+  m_commandPalette->addCommand({tr("Insert Character"), "", tr("Insert"), [this]() {
+                                  if (auto* editor = currentEditor()) {
+                                    editor->insertSnippet("character");
+                                  }
+                                }});
 }
 
 void NMScriptEditorPanel::onToggleMinimap() {
   m_minimapEnabled = !m_minimapEnabled;
-  for (auto *editor : editors()) {
+  for (auto* editor : editors()) {
     editor->setMinimapEnabled(m_minimapEnabled);
   }
 }
 
 void NMScriptEditorPanel::onFoldAll() {
-  if (auto *editor = currentEditor()) {
-    for (const auto &region : editor->foldingRegions()) {
+  if (auto* editor = currentEditor()) {
+    for (const auto& region : editor->foldingRegions()) {
       if (!region.isCollapsed) {
         editor->toggleFold(region.startLine);
       }
@@ -1643,8 +1567,8 @@ void NMScriptEditorPanel::onFoldAll() {
 }
 
 void NMScriptEditorPanel::onUnfoldAll() {
-  if (auto *editor = currentEditor()) {
-    for (const auto &region : editor->foldingRegions()) {
+  if (auto* editor = currentEditor()) {
+    for (const auto& region : editor->foldingRegions()) {
       if (region.isCollapsed) {
         editor->toggleFold(region.startLine);
       }
@@ -1652,52 +1576,51 @@ void NMScriptEditorPanel::onUnfoldAll() {
   }
 }
 
-void NMScriptEditorPanel::onSyntaxHintChanged(const QString &hint) {
+void NMScriptEditorPanel::onSyntaxHintChanged(const QString& hint) {
   if (m_syntaxHintLabel) {
     m_syntaxHintLabel->setText(hint);
     m_syntaxHintLabel->setVisible(!hint.isEmpty());
   }
 }
 
-void NMScriptEditorPanel::onBreadcrumbsChanged(const QStringList &breadcrumbs) {
+void NMScriptEditorPanel::onBreadcrumbsChanged(const QStringList& breadcrumbs) {
   if (!m_breadcrumbBar) {
     return;
   }
 
   // Clear existing breadcrumb buttons
-  QLayoutItem *item;
+  QLayoutItem* item;
   while ((item = m_breadcrumbBar->layout()->takeAt(0)) != nullptr) {
     delete item->widget();
     delete item;
   }
 
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
 
   for (int i = 0; i < breadcrumbs.size(); ++i) {
     if (i > 0) {
-      auto *separator = new QLabel(">", m_breadcrumbBar);
-      separator->setStyleSheet(QString("color: %1; padding: 0 4px;")
-                                   .arg(palette.textSecondary.name()));
+      auto* separator = new QLabel(">", m_breadcrumbBar);
+      separator->setStyleSheet(
+          QString("color: %1; padding: 0 4px;").arg(palette.textSecondary.name()));
       m_breadcrumbBar->layout()->addWidget(separator);
     }
 
-    auto *button = new QPushButton(breadcrumbs[i], m_breadcrumbBar);
+    auto* button = new QPushButton(breadcrumbs[i], m_breadcrumbBar);
     button->setFlat(true);
     button->setCursor(Qt::PointingHandCursor);
-    button->setStyleSheet(
-        QString("QPushButton { color: %1; border: none; padding: 2px 4px; }"
-                "QPushButton:hover { background-color: %2; }")
-            .arg(palette.textPrimary.name())
-            .arg(palette.bgLight.name()));
+    button->setStyleSheet(QString("QPushButton { color: %1; border: none; padding: 2px 4px; }"
+                                  "QPushButton:hover { background-color: %2; }")
+                              .arg(palette.textPrimary.name())
+                              .arg(palette.bgLight.name()));
     m_breadcrumbBar->layout()->addWidget(button);
   }
 
   // Add stretch at the end
-  static_cast<QHBoxLayout *>(m_breadcrumbBar->layout())->addStretch();
+  static_cast<QHBoxLayout*>(m_breadcrumbBar->layout())->addStretch();
 }
 
 void NMScriptEditorPanel::onQuickFixRequested() {
-  auto *editor = currentEditor();
+  auto* editor = currentEditor();
   if (!editor) {
     return;
   }
@@ -1709,29 +1632,28 @@ void NMScriptEditorPanel::onQuickFixRequested() {
   }
 }
 
-void NMScriptEditorPanel::showQuickFixMenu(const QList<QuickFix> &fixes) {
-  auto *editor = currentEditor();
+void NMScriptEditorPanel::showQuickFixMenu(const QList<QuickFix>& fixes) {
+  auto* editor = currentEditor();
   if (!editor || fixes.isEmpty()) {
     return;
   }
 
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
 
   QMenu menu(this);
-  menu.setStyleSheet(
-      QString("QMenu { background-color: %1; color: %2; border: 1px solid %3; }"
-              "QMenu::item { padding: 6px 20px; }"
-              "QMenu::item:selected { background-color: %4; }")
-          .arg(palette.bgMedium.name())
-          .arg(palette.textPrimary.name())
-          .arg(palette.borderLight.name())
-          .arg(palette.accentPrimary.name()));
+  menu.setStyleSheet(QString("QMenu { background-color: %1; color: %2; border: 1px solid %3; }"
+                             "QMenu::item { padding: 6px 20px; }"
+                             "QMenu::item:selected { background-color: %4; }")
+                         .arg(palette.bgMedium.name())
+                         .arg(palette.textPrimary.name())
+                         .arg(palette.borderLight.name())
+                         .arg(palette.accentPrimary.name()));
 
-  for (const auto &fix : fixes) {
-    QAction *action = menu.addAction(fix.title);
+  for (const auto& fix : fixes) {
+    QAction* action = menu.addAction(fix.title);
     action->setToolTip(fix.description);
     connect(action, &QAction::triggered, this, [this, fix]() {
-      if (auto *ed = currentEditor()) {
+      if (auto* ed = currentEditor()) {
         ed->applyQuickFix(fix);
         m_diagnosticsTimer.start();
       }
@@ -1744,7 +1666,7 @@ void NMScriptEditorPanel::showQuickFixMenu(const QList<QuickFix> &fixes) {
   menu.exec(globalPos);
 }
 
-void NMScriptEditorPanel::setReadOnly(bool readOnly, const QString &reason) {
+void NMScriptEditorPanel::setReadOnly(bool readOnly, const QString& reason) {
   if (m_readOnly == readOnly) {
     return;
   }
@@ -1756,21 +1678,20 @@ void NMScriptEditorPanel::setReadOnly(bool readOnly, const QString &reason) {
     if (!m_readOnlyBanner) {
       m_readOnlyBanner = new QFrame(m_contentWidget);
       m_readOnlyBanner->setObjectName("WorkflowReadOnlyBanner");
-      m_readOnlyBanner->setStyleSheet(
-          "QFrame#WorkflowReadOnlyBanner {"
-          "  background-color: #4a5568;"
-          "  border: 1px solid #718096;"
-          "  border-radius: 4px;"
-          "  padding: 6px 12px;"
-          "  margin: 4px 8px;"
-          "}");
+      m_readOnlyBanner->setStyleSheet("QFrame#WorkflowReadOnlyBanner {"
+                                      "  background-color: #4a5568;"
+                                      "  border: 1px solid #718096;"
+                                      "  border-radius: 4px;"
+                                      "  padding: 6px 12px;"
+                                      "  margin: 4px 8px;"
+                                      "}");
 
-      auto *bannerLayout = new QHBoxLayout(m_readOnlyBanner);
+      auto* bannerLayout = new QHBoxLayout(m_readOnlyBanner);
       bannerLayout->setContentsMargins(8, 4, 8, 4);
       bannerLayout->setSpacing(8);
 
       // Info icon (using text for now)
-      auto *iconLabel = new QLabel(QString::fromUtf8("\xE2\x84\xB9"), // ℹ
+      auto* iconLabel = new QLabel(QString::fromUtf8("\xE2\x84\xB9"), // ℹ
                                    m_readOnlyBanner);
       iconLabel->setStyleSheet("font-size: 14px; color: #e2e8f0;");
       bannerLayout->addWidget(iconLabel);
@@ -1783,19 +1704,16 @@ void NMScriptEditorPanel::setReadOnly(bool readOnly, const QString &reason) {
 
       // Sync to Graph button for Graph mode
       m_syncToGraphBtn = new QPushButton(tr("Sync to Graph"), m_readOnlyBanner);
-      m_syncToGraphBtn->setToolTip(
-          tr("Parse script content and update Story Graph nodes"));
-      m_syncToGraphBtn->setStyleSheet(
-          "QPushButton { background-color: #4299e1; color: white; "
-          "border: none; padding: 4px 12px; border-radius: 3px; }"
-          "QPushButton:hover { background-color: #3182ce; }");
+      m_syncToGraphBtn->setToolTip(tr("Parse script content and update Story Graph nodes"));
+      m_syncToGraphBtn->setStyleSheet("QPushButton { background-color: #4299e1; color: white; "
+                                      "border: none; padding: 4px 12px; border-radius: 3px; }"
+                                      "QPushButton:hover { background-color: #3182ce; }");
       connect(m_syncToGraphBtn, &QPushButton::clicked, this,
               &NMScriptEditorPanel::syncScriptToGraph);
       bannerLayout->addWidget(m_syncToGraphBtn);
 
       // Insert banner at the top of the content widget
-      if (auto *layout =
-              qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
+      if (auto* layout = qobject_cast<QVBoxLayout*>(m_contentWidget->layout())) {
         layout->insertWidget(0, m_readOnlyBanner);
       }
     }
@@ -1811,15 +1729,14 @@ void NMScriptEditorPanel::setReadOnly(bool readOnly, const QString &reason) {
 
     // Hide sync button in Script mode (it wouldn't make sense)
     if (m_syncToGraphBtn) {
-      m_syncToGraphBtn->setVisible(
-          reason.contains("Graph", Qt::CaseInsensitive));
+      m_syncToGraphBtn->setVisible(reason.contains("Graph", Qt::CaseInsensitive));
     }
   } else if (m_readOnlyBanner) {
     m_readOnlyBanner->setVisible(false);
   }
 
   // Disable/enable all editors
-  for (auto *editor : editors()) {
+  for (auto* editor : editors()) {
     editor->setReadOnly(readOnly);
     if (readOnly) {
       editor->setStyleSheet("background-color: #2d3748;");
@@ -1830,7 +1747,7 @@ void NMScriptEditorPanel::setReadOnly(bool readOnly, const QString &reason) {
 
   // Disable/enable toolbar save buttons
   if (m_toolBar) {
-    for (auto *action : m_toolBar->actions()) {
+    for (auto* action : m_toolBar->actions()) {
       if (action->text().contains("Save", Qt::CaseInsensitive) ||
           action->text().contains("Format", Qt::CaseInsensitive)) {
         action->setEnabled(!readOnly);
@@ -1838,8 +1755,7 @@ void NMScriptEditorPanel::setReadOnly(bool readOnly, const QString &reason) {
     }
   }
 
-  qDebug() << "[ScriptEditor] Read-only mode:" << readOnly
-           << "reason:" << reason;
+  qDebug() << "[ScriptEditor] Read-only mode:" << readOnly << "reason:" << reason;
 }
 
 void NMScriptEditorPanel::syncScriptToGraph() {
@@ -1855,8 +1771,7 @@ void NMScriptEditorPanel::syncScriptToGraph() {
   namespace fs = std::filesystem;
   fs::path base(scriptsRoot.toStdString());
   if (!fs::exists(base)) {
-    qWarning() << "[ScriptEditor] Scripts directory does not exist:"
-               << scriptsRoot;
+    qWarning() << "[ScriptEditor] Scripts directory does not exist:" << scriptsRoot;
     return;
   }
 
@@ -1864,7 +1779,7 @@ void NMScriptEditorPanel::syncScriptToGraph() {
   int total = 0;
 
   // Parse each NMS file
-  for (const auto &entry : fs::recursive_directory_iterator(base)) {
+  for (const auto& entry : fs::recursive_directory_iterator(base)) {
     if (!entry.is_regular_file() || entry.path().extension() != ".nms") {
       continue;
     }
@@ -1877,19 +1792,15 @@ void NMScriptEditorPanel::syncScriptToGraph() {
     file.close();
 
     // Parse scene definitions
-    const QRegularExpression sceneRe(
-        "\\bscene\\s+([\\p{L}_][\\p{L}\\p{N}_]*)\\s*\\{",
-        QRegularExpression::UseUnicodePropertiesOption);
-    const QRegularExpression sayRe(
-        "\\bsay\\s*(?:\"([^\"]*)\"\\s*)?\"([^\"]*)\"",
-        QRegularExpression::UseUnicodePropertiesOption);
-    const QRegularExpression choiceRe(
-        "\\bchoice\\s*\\{([^}]*)\\}",
-        QRegularExpression::UseUnicodePropertiesOption |
-            QRegularExpression::DotMatchesEverythingOption);
-    const QRegularExpression optionRe(
-        "\"([^\"]+)\"\\s*->\\s*([\\p{L}_][\\p{L}\\p{N}_]*)",
-        QRegularExpression::UseUnicodePropertiesOption);
+    const QRegularExpression sceneRe("\\bscene\\s+([\\p{L}_][\\p{L}\\p{N}_]*)\\s*\\{",
+                                     QRegularExpression::UseUnicodePropertiesOption);
+    const QRegularExpression sayRe("\\bsay\\s*(?:\"([^\"]*)\"\\s*)?\"([^\"]*)\"",
+                                   QRegularExpression::UseUnicodePropertiesOption);
+    const QRegularExpression choiceRe("\\bchoice\\s*\\{([^}]*)\\}",
+                                      QRegularExpression::UseUnicodePropertiesOption |
+                                          QRegularExpression::DotMatchesEverythingOption);
+    const QRegularExpression optionRe("\"([^\"]+)\"\\s*->\\s*([\\p{L}_][\\p{L}\\p{N}_]*)",
+                                      QRegularExpression::UseUnicodePropertiesOption);
 
     // Find each scene
     QRegularExpressionMatchIterator sceneIt = sceneRe.globalMatch(content);
@@ -1901,8 +1812,7 @@ void NMScriptEditorPanel::syncScriptToGraph() {
       // Find scene end (matching brace)
       int braceCount = 1;
       qsizetype sceneEnd = sceneStart;
-      for (qsizetype i = sceneStart; i < content.size() && braceCount > 0;
-           ++i) {
+      for (qsizetype i = sceneStart; i < content.size() && braceCount > 0; ++i) {
         if (content[i] == '{') {
           braceCount++;
         } else if (content[i] == '}') {
@@ -1942,11 +1852,10 @@ void NMScriptEditorPanel::syncScriptToGraph() {
     }
   }
 
-  qDebug() << "[ScriptEditor] Sync complete:" << synced << "of" << total
-           << "scenes with data";
+  qDebug() << "[ScriptEditor] Sync complete:" << synced << "of" << total << "scenes with data";
 }
 
-void NMScriptEditorPanel::loadSampleScript(const QString &sampleId) {
+void NMScriptEditorPanel::loadSampleScript(const QString& sampleId) {
   // Sample script content based on sampleId
   QString scriptContent;
   QString fileName;
@@ -2186,16 +2095,14 @@ scene learning_ending {
 }
 )";
   } else {
-    core::Logger::instance().warning("Unknown sample script ID: " +
-                                     sampleId.toStdString());
+    core::Logger::instance().warning("Unknown sample script ID: " + sampleId.toStdString());
     return;
   }
 
   // Create sample script in project scripts folder
   const QString scriptsPath = scriptsRootPath();
   if (scriptsPath.isEmpty()) {
-    core::Logger::instance().warning(
-        "Cannot load sample script: No scripts folder found");
+    core::Logger::instance().warning("Cannot load sample script: No scripts folder found");
     return;
   }
 
@@ -2208,15 +2115,13 @@ scene learning_ending {
     out << scriptContent;
     file.close();
 
-    core::Logger::instance().info("Created sample script: " +
-                                  fullPath.toStdString());
+    core::Logger::instance().info("Created sample script: " + fullPath.toStdString());
 
     // Refresh file list and open the sample
     refreshFileList();
     openScript(fullPath);
   } else {
-    core::Logger::instance().error("Failed to create sample script: " +
-                                   fullPath.toStdString());
+    core::Logger::instance().error("Failed to create sample script: " + fullPath.toStdString());
   }
 }
 
@@ -2238,7 +2143,7 @@ void NMScriptEditorPanel::saveState() {
   // Save open files
   QStringList openFiles;
   for (int i = 0; i < m_tabs->count(); ++i) {
-    QWidget *widget = m_tabs->widget(i);
+    QWidget* widget = m_tabs->widget(i);
     QString path = m_tabPaths.value(widget);
     if (!path.isEmpty()) {
       openFiles.append(path);
@@ -2251,7 +2156,7 @@ void NMScriptEditorPanel::saveState() {
 
   // Save cursor positions for each open file
   for (int i = 0; i < m_tabs->count(); ++i) {
-    if (auto *editor = qobject_cast<NMScriptEditor *>(m_tabs->widget(i))) {
+    if (auto* editor = qobject_cast<NMScriptEditor*>(m_tabs->widget(i))) {
       QString path = m_tabPaths.value(editor);
       if (!path.isEmpty()) {
         QTextCursor cursor = editor->textCursor();
@@ -2290,15 +2195,16 @@ void NMScriptEditorPanel::restoreState() {
     QStringList openFiles = settings.value("scriptEditor/openFiles").toStringList();
     int activeIndex = settings.value("scriptEditor/activeFileIndex", 0).toInt();
 
-    for (const QString &path : openFiles) {
+    for (const QString& path : openFiles) {
       if (QFileInfo::exists(path)) {
         openScript(path);
 
         // Restore cursor position if enabled
         bool restoreCursor = settings.value("editor.script.restore_cursor_position", true).toBool();
         if (restoreCursor) {
-          if (auto *editor = qobject_cast<NMScriptEditor *>(m_tabs->currentWidget())) {
-            int cursorPos = settings.value(QString("scriptEditor/cursorPos/%1").arg(path), 0).toInt();
+          if (auto* editor = qobject_cast<NMScriptEditor*>(m_tabs->currentWidget())) {
+            int cursorPos =
+                settings.value(QString("scriptEditor/cursorPos/%1").arg(path), 0).toInt();
             QTextCursor cursor = editor->textCursor();
             cursor.setPosition(cursorPos);
             editor->setTextCursor(cursor);
@@ -2325,8 +2231,9 @@ void NMScriptEditorPanel::applySettings() {
   m_diagnosticsTimer.setInterval(diagnosticDelay);
 
   // Apply settings to all open editors
-  for (auto *editor : editors()) {
-    if (!editor) continue;
+  for (auto* editor : editors()) {
+    if (!editor)
+      continue;
 
     // Font settings
     QString fontFamily = settings.value("editor.script.font_family", "monospace").toString();
@@ -2354,22 +2261,21 @@ void NMScriptEditorPanel::applySettings() {
 // File Conflict Detection (Issue #246)
 // ============================================================================
 
-NMScriptEditor *
-NMScriptEditorPanel::findEditorForPath(const QString &path) const {
+NMScriptEditor* NMScriptEditorPanel::findEditorForPath(const QString& path) const {
   for (int i = 0; i < m_tabs->count(); ++i) {
-    QWidget *widget = m_tabs->widget(i);
+    QWidget* widget = m_tabs->widget(i);
     if (m_tabPaths.value(widget) == path) {
-      return qobject_cast<NMScriptEditor *>(widget);
+      return qobject_cast<NMScriptEditor*>(widget);
     }
   }
   return nullptr;
 }
 
-bool NMScriptEditorPanel::isTabModified(const QWidget *editor) const {
+bool NMScriptEditorPanel::isTabModified(const QWidget* editor) const {
   if (!editor || !m_tabs) {
     return false;
   }
-  const int index = m_tabs->indexOf(const_cast<QWidget *>(editor));
+  const int index = m_tabs->indexOf(const_cast<QWidget*>(editor));
   if (index < 0) {
     return false;
   }
@@ -2377,21 +2283,19 @@ bool NMScriptEditorPanel::isTabModified(const QWidget *editor) const {
   return m_tabs->tabText(index).endsWith("*");
 }
 
-QDateTime
-NMScriptEditorPanel::getEditorSaveTime(const QWidget *editor) const {
-  return m_editorSaveTimes.value(const_cast<QWidget *>(editor));
+QDateTime NMScriptEditorPanel::getEditorSaveTime(const QWidget* editor) const {
+  return m_editorSaveTimes.value(const_cast<QWidget*>(editor));
 }
 
-void NMScriptEditorPanel::setEditorSaveTime(QWidget *editor,
-                                            const QDateTime &time) {
+void NMScriptEditorPanel::setEditorSaveTime(QWidget* editor, const QDateTime& time) {
   if (editor) {
     m_editorSaveTimes.insert(editor, time);
   }
 }
 
-void NMScriptEditorPanel::onFileChanged(const QString &path) {
+void NMScriptEditorPanel::onFileChanged(const QString& path) {
   // Find if this file is open in an editor tab
-  NMScriptEditor *editor = findEditorForPath(path);
+  NMScriptEditor* editor = findEditorForPath(path);
   if (!editor) {
     // File not open, just refresh symbol index
     refreshSymbolIndex();
@@ -2405,8 +2309,7 @@ void NMScriptEditorPanel::onFileChanged(const QString &path) {
   QFileInfo fileInfo(path);
   if (!fileInfo.exists()) {
     // File was deleted, handle separately if needed
-    core::Logger::instance().warning(
-        "File was deleted externally: " + path.toStdString());
+    core::Logger::instance().warning("File was deleted externally: " + path.toStdString());
     return;
   }
   const QDateTime fileMTime = fileInfo.lastModified();
@@ -2430,64 +2333,59 @@ void NMScriptEditorPanel::onFileChanged(const QString &path) {
   }
 }
 
-void NMScriptEditorPanel::onDirectoryChanged(const QString &path) {
+void NMScriptEditorPanel::onDirectoryChanged(const QString& path) {
   Q_UNUSED(path);
   // Directory changes don't affect open files, just refresh file list
   refreshFileList();
   refreshSymbolIndex();
 }
 
-void NMScriptEditorPanel::showConflictDialog(const QString &path,
-                                              NMScriptEditor *editor) {
+void NMScriptEditorPanel::showConflictDialog(const QString& path, NMScriptEditor* editor) {
   if (!editor) {
     return;
   }
 
   const QString fileName = QFileInfo(path).fileName();
-  const QString message =
-      tr("The file \"%1\" has been modified externally, but you have unsaved "
-         "changes in the editor.\n\nWhat would you like to do?")
-          .arg(fileName);
+  const QString message = tr("The file \"%1\" has been modified externally, but you have unsaved "
+                             "changes in the editor.\n\nWhat would you like to do?")
+                              .arg(fileName);
 
   // Create custom dialog with three options
-  auto *dialog = new QDialog(this);
+  auto* dialog = new QDialog(this);
   dialog->setWindowTitle(tr("File Conflict Detected"));
   dialog->setModal(true);
   dialog->setMinimumWidth(450);
 
-  auto *layout = new QVBoxLayout(dialog);
+  auto* layout = new QVBoxLayout(dialog);
   layout->setContentsMargins(16, 16, 16, 16);
   layout->setSpacing(12);
 
   // Warning icon and message
-  auto *messageLayout = new QHBoxLayout();
-  auto *iconLabel = new QLabel(dialog);
+  auto* messageLayout = new QHBoxLayout();
+  auto* iconLabel = new QLabel(dialog);
   iconLabel->setText("⚠️");
   iconLabel->setStyleSheet("font-size: 32px;");
   messageLayout->addWidget(iconLabel);
 
-  auto *messageLabel = new QLabel(message, dialog);
+  auto* messageLabel = new QLabel(message, dialog);
   messageLabel->setWordWrap(true);
   messageLayout->addWidget(messageLabel, 1);
   layout->addLayout(messageLayout);
 
   // Button layout
-  auto *buttonLayout = new QHBoxLayout();
+  auto* buttonLayout = new QHBoxLayout();
   buttonLayout->addStretch();
 
-  auto *keepMyChangesBtn =
-      new QPushButton(tr("Keep My Changes"), dialog);
+  auto* keepMyChangesBtn = new QPushButton(tr("Keep My Changes"), dialog);
   keepMyChangesBtn->setToolTip(
       tr("Discard the external file version and keep your unsaved changes"));
   buttonLayout->addWidget(keepMyChangesBtn);
 
-  auto *useFileVersionBtn =
-      new QPushButton(tr("Use File Version"), dialog);
-  useFileVersionBtn->setToolTip(
-      tr("Discard your unsaved changes and reload from disk"));
+  auto* useFileVersionBtn = new QPushButton(tr("Use File Version"), dialog);
+  useFileVersionBtn->setToolTip(tr("Discard your unsaved changes and reload from disk"));
   buttonLayout->addWidget(useFileVersionBtn);
 
-  auto *cancelBtn = new QPushButton(tr("Cancel"), dialog);
+  auto* cancelBtn = new QPushButton(tr("Cancel"), dialog);
   cancelBtn->setToolTip(tr("Do nothing for now"));
   buttonLayout->addWidget(cancelBtn);
 
@@ -2495,31 +2393,25 @@ void NMScriptEditorPanel::showConflictDialog(const QString &path,
 
   // Connect buttons
   int result = 0; // 1 = Keep Mine, 2 = Use File, 0 = Cancel
-  connect(keepMyChangesBtn, &QPushButton::clicked, dialog,
-          [dialog, &result]() {
-            result = 1;
-            dialog->accept();
-          });
-  connect(useFileVersionBtn, &QPushButton::clicked, dialog,
-          [dialog, &result]() {
-            result = 2;
-            dialog->accept();
-          });
-  connect(cancelBtn, &QPushButton::clicked, dialog, [dialog]() {
-    dialog->reject();
+  connect(keepMyChangesBtn, &QPushButton::clicked, dialog, [dialog, &result]() {
+    result = 1;
+    dialog->accept();
   });
+  connect(useFileVersionBtn, &QPushButton::clicked, dialog, [dialog, &result]() {
+    result = 2;
+    dialog->accept();
+  });
+  connect(cancelBtn, &QPushButton::clicked, dialog, [dialog]() { dialog->reject(); });
 
   dialog->exec();
 
   if (result == 1) {
     // Keep My Changes - force save over file version
-    core::Logger::instance().info(
-        "User chose to keep editor changes for: " + path.toStdString());
+    core::Logger::instance().info("User chose to keep editor changes for: " + path.toStdString());
     saveEditor(editor);
   } else if (result == 2) {
     // Use File Version - reload from disk
-    core::Logger::instance().info(
-        "User chose to reload file from disk: " + path.toStdString());
+    core::Logger::instance().info("User chose to reload file from disk: " + path.toStdString());
     QFile file(path);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
       const QString content = QString::fromUtf8(file.readAll());
@@ -2544,70 +2436,64 @@ void NMScriptEditorPanel::showConflictDialog(const QString &path,
   delete dialog;
 }
 
-void NMScriptEditorPanel::showReloadPrompt(const QString &path,
-                                            NMScriptEditor *editor) {
+void NMScriptEditorPanel::showReloadPrompt(const QString& path, NMScriptEditor* editor) {
   if (!editor) {
     return;
   }
 
   const QString fileName = QFileInfo(path).fileName();
-  const QString message =
-      tr("The file \"%1\" has been modified externally.\n\nDo you want to "
-         "reload it from disk?")
-          .arg(fileName);
+  const QString message = tr("The file \"%1\" has been modified externally.\n\nDo you want to "
+                             "reload it from disk?")
+                              .arg(fileName);
 
   // Create simple reload dialog
-  auto *dialog = new QDialog(this);
+  auto* dialog = new QDialog(this);
   dialog->setWindowTitle(tr("File Changed Externally"));
   dialog->setModal(true);
   dialog->setMinimumWidth(400);
 
-  auto *layout = new QVBoxLayout(dialog);
+  auto* layout = new QVBoxLayout(dialog);
   layout->setContentsMargins(16, 16, 16, 16);
   layout->setSpacing(12);
 
   // Info icon and message
-  auto *messageLayout = new QHBoxLayout();
-  auto *iconLabel = new QLabel(dialog);
+  auto* messageLayout = new QHBoxLayout();
+  auto* iconLabel = new QLabel(dialog);
   iconLabel->setText("ℹ️");
   iconLabel->setStyleSheet("font-size: 28px;");
   messageLayout->addWidget(iconLabel);
 
-  auto *messageLabel = new QLabel(message, dialog);
+  auto* messageLabel = new QLabel(message, dialog);
   messageLabel->setWordWrap(true);
   messageLayout->addWidget(messageLabel, 1);
   layout->addLayout(messageLayout);
 
   // Button layout
-  auto *buttonLayout = new QHBoxLayout();
+  auto* buttonLayout = new QHBoxLayout();
   buttonLayout->addStretch();
 
-  auto *reloadBtn = new QPushButton(tr("Reload"), dialog);
+  auto* reloadBtn = new QPushButton(tr("Reload"), dialog);
   reloadBtn->setToolTip(tr("Reload the file from disk"));
   buttonLayout->addWidget(reloadBtn);
 
-  auto *ignoreBtn = new QPushButton(tr("Ignore"), dialog);
-  ignoreBtn->setToolTip(
-      tr("Keep current version, you will be warned on save"));
+  auto* ignoreBtn = new QPushButton(tr("Ignore"), dialog);
+  ignoreBtn->setToolTip(tr("Keep current version, you will be warned on save"));
   buttonLayout->addWidget(ignoreBtn);
 
   layout->addLayout(buttonLayout);
 
   // Connect buttons
   bool shouldReload = false;
-  connect(reloadBtn, &QPushButton::clicked, dialog,
-          [dialog, &shouldReload]() {
-            shouldReload = true;
-            dialog->accept();
-          });
-  connect(ignoreBtn, &QPushButton::clicked, dialog,
-          [dialog]() { dialog->reject(); });
+  connect(reloadBtn, &QPushButton::clicked, dialog, [dialog, &shouldReload]() {
+    shouldReload = true;
+    dialog->accept();
+  });
+  connect(ignoreBtn, &QPushButton::clicked, dialog, [dialog]() { dialog->reject(); });
 
   dialog->exec();
 
   if (shouldReload) {
-    core::Logger::instance().info("User chose to reload file: " +
-                                  path.toStdString());
+    core::Logger::instance().info("User chose to reload file: " + path.toStdString());
     QFile file(path);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
       const QString content = QString::fromUtf8(file.readAll());

@@ -112,8 +112,7 @@ inline void unlockMemory(void* ptr, usize size) {
  * - Attempts to lock memory to prevent swapping
  * - Unlocks memory on deallocation
  */
-template <typename T>
-class SecureAllocator {
+template <typename T> class SecureAllocator {
 public:
   using value_type = T;
   using size_type = std::size_t;
@@ -121,18 +120,11 @@ public:
 
   SecureAllocator() noexcept = default;
 
-  template <typename U>
-  SecureAllocator(const SecureAllocator<U>&) noexcept {}
+  template <typename U> SecureAllocator(const SecureAllocator<U>&) noexcept {}
 
-  template <typename U>
-  bool operator==(const SecureAllocator<U>&) const noexcept {
-    return true;
-  }
+  template <typename U> bool operator==(const SecureAllocator<U>&) const noexcept { return true; }
 
-  template <typename U>
-  bool operator!=(const SecureAllocator<U>&) const noexcept {
-    return false;
-  }
+  template <typename U> bool operator!=(const SecureAllocator<U>&) const noexcept { return false; }
 
   T* allocate(size_type n) {
     if (n == 0) {
@@ -180,8 +172,7 @@ public:
  *
  * Use this for encryption keys, passwords, and other sensitive data.
  */
-template <typename T>
-using SecureVector = std::vector<T, SecureAllocator<T>>;
+template <typename T> using SecureVector = std::vector<T, SecureAllocator<T>>;
 
 /**
  * @brief RAII wrapper for secure memory management

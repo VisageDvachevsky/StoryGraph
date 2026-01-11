@@ -24,7 +24,7 @@ ProjectManager::~ProjectManager() {
   }
 }
 
-ProjectManager &ProjectManager::instance() {
+ProjectManager& ProjectManager::instance() {
   if (!s_instance) {
     s_instance = std::make_unique<ProjectManager>();
   }
@@ -35,9 +35,8 @@ ProjectManager &ProjectManager::instance() {
 // Project Lifecycle
 // ============================================================================
 
-Result<void> ProjectManager::createProject(const std::string &path,
-                                           const std::string &name,
-                                           const std::string &templateName) {
+Result<void> ProjectManager::createProject(const std::string& path, const std::string& name,
+                                           const std::string& templateName) {
   if (m_state != ProjectState::Closed) {
     return Result<void>::error("A project is already open. Close it first.");
   }
@@ -99,7 +98,7 @@ Result<void> ProjectManager::createProject(const std::string &path,
   return Result<void>::ok();
 }
 
-Result<void> ProjectManager::openProject(const std::string &path) {
+Result<void> ProjectManager::openProject(const std::string& path) {
   if (m_state != ProjectState::Closed) {
     auto closeResult = closeProject();
     if (closeResult.isError()) {
@@ -138,9 +137,8 @@ Result<void> ProjectManager::openProject(const std::string &path) {
     auto repairResult = createFolderStructure();
     if (repairResult.isError()) {
       m_state = ProjectState::Closed;
-      return Result<void>::error(
-          "Project folder structure is invalid and could not be "
-          "repaired");
+      return Result<void>::error("Project folder structure is invalid and could not be "
+                                 "repaired");
     }
   }
 
@@ -180,7 +178,7 @@ Result<void> ProjectManager::saveProject() {
   return Result<void>::ok();
 }
 
-Result<void> ProjectManager::saveProjectAs(const std::string &path) {
+Result<void> ProjectManager::saveProjectAs(const std::string& path) {
   if (m_state != ProjectState::Open) {
     return Result<void>::error("No project is open");
   }
@@ -189,8 +187,7 @@ Result<void> ProjectManager::saveProjectAs(const std::string &path) {
 
   // Copy current project to new location
   std::error_code ec;
-  fs::copy(m_projectPath, path,
-           fs::copy_options::recursive | fs::copy_options::overwrite_existing,
+  fs::copy(m_projectPath, path, fs::copy_options::recursive | fs::copy_options::overwrite_existing,
            ec);
   if (ec) {
     return Result<void>::error("Failed to copy project: " + ec.message());
@@ -243,9 +240,13 @@ bool ProjectManager::hasOpenProject() const {
   return m_state == ProjectState::Open;
 }
 
-ProjectState ProjectManager::getState() const { return m_state; }
+ProjectState ProjectManager::getState() const {
+  return m_state;
+}
 
-bool ProjectManager::hasUnsavedChanges() const { return m_modified; }
+bool ProjectManager::hasUnsavedChanges() const {
+  return m_modified;
+}
 
 void ProjectManager::markModified() {
   if (!m_modified) {
@@ -254,30 +255,36 @@ void ProjectManager::markModified() {
   }
 }
 
-void ProjectManager::markSaved() { m_modified = false; }
+void ProjectManager::markSaved() {
+  m_modified = false;
+}
 
 // ============================================================================
 // Project Information
 // ============================================================================
 
-const ProjectMetadata &ProjectManager::getMetadata() const {
+const ProjectMetadata& ProjectManager::getMetadata() const {
   return m_metadata;
 }
 
-void ProjectManager::setMetadata(const ProjectMetadata &metadata) {
+void ProjectManager::setMetadata(const ProjectMetadata& metadata) {
   m_metadata = metadata;
   markModified();
 }
 
-std::string ProjectManager::getProjectPath() const { return m_projectPath; }
+std::string ProjectManager::getProjectPath() const {
+  return m_projectPath;
+}
 
-std::string ProjectManager::getProjectName() const { return m_metadata.name; }
+std::string ProjectManager::getProjectName() const {
+  return m_metadata.name;
+}
 
 std::string ProjectManager::getStartScene() const {
   return m_metadata.startScene;
 }
 
-void ProjectManager::setStartScene(const std::string &sceneId) {
+void ProjectManager::setStartScene(const std::string& sceneId) {
   if (m_metadata.startScene == sceneId) {
     return;
   }
@@ -324,8 +331,7 @@ std::string ProjectManager::getFolderPath(ProjectFolder folder) const {
   return m_projectPath;
 }
 
-std::vector<std::string>
-ProjectManager::getProjectFiles(const std::string &extension) const {
+std::vector<std::string> ProjectManager::getProjectFiles(const std::string& extension) const {
   namespace fs = std::filesystem;
 
   std::vector<std::string> files;
@@ -334,7 +340,7 @@ ProjectManager::getProjectFiles(const std::string &extension) const {
     return files;
   }
 
-  for (const auto &entry : fs::recursive_directory_iterator(m_projectPath)) {
+  for (const auto& entry : fs::recursive_directory_iterator(m_projectPath)) {
     if (entry.is_regular_file() && entry.path().extension() == extension) {
       files.push_back(entry.path().string());
     }
@@ -370,11 +376,11 @@ Result<void> ProjectManager::createFolderStructure() {
                                    base / ".temp",
                                    base / ".backup"};
 
-  for (const auto &folder : folders) {
+  for (const auto& folder : folders) {
     if (!fs::exists(folder)) {
       if (!fs::create_directories(folder, ec)) {
-        return Result<void>::error("Failed to create folder: " +
-                                   folder.string() + " - " + ec.message());
+        return Result<void>::error("Failed to create folder: " + folder.string() + " - " +
+                                   ec.message());
       }
     }
   }
@@ -392,10 +398,9 @@ bool ProjectManager::verifyFolderStructure() const {
   fs::path base(m_projectPath);
 
   // Check required folders
-  std::vector<fs::path> required = {base / "Assets", base / "scripts",
-                                    base / "Scenes"};
+  std::vector<fs::path> required = {base / "Assets", base / "scripts", base / "Scenes"};
 
-  for (const auto &folder : required) {
+  for (const auto& folder : required) {
     if (!fs::exists(folder) || !fs::is_directory(folder)) {
       return false;
     }
@@ -404,7 +409,7 @@ bool ProjectManager::verifyFolderStructure() const {
   return true;
 }
 
-Result<void> ProjectManager::createFolder(const std::string &relativePath) {
+Result<void> ProjectManager::createFolder(const std::string& relativePath) {
   namespace fs = std::filesystem;
 
   if (m_projectPath.empty()) {
@@ -421,7 +426,7 @@ Result<void> ProjectManager::createFolder(const std::string &relativePath) {
   return Result<void>::ok();
 }
 
-bool ProjectManager::isPathInProject(const std::string &path) const {
+bool ProjectManager::isPathInProject(const std::string& path) const {
   namespace fs = std::filesystem;
 
   if (m_projectPath.empty()) {
@@ -431,14 +436,13 @@ bool ProjectManager::isPathInProject(const std::string &path) const {
   fs::path projectPath = fs::canonical(m_projectPath);
   fs::path targetPath = fs::canonical(path);
 
-  auto it = std::search(targetPath.begin(), targetPath.end(),
-                        projectPath.begin(), projectPath.end());
+  auto it =
+      std::search(targetPath.begin(), targetPath.end(), projectPath.begin(), projectPath.end());
 
   return it == targetPath.begin();
 }
 
-std::string
-ProjectManager::toRelativePath(const std::string &absolutePath) const {
+std::string ProjectManager::toRelativePath(const std::string& absolutePath) const {
   namespace fs = std::filesystem;
 
   if (m_projectPath.empty()) {
@@ -448,8 +452,7 @@ ProjectManager::toRelativePath(const std::string &absolutePath) const {
   return fs::relative(absolutePath, m_projectPath).string();
 }
 
-std::string
-ProjectManager::toAbsolutePath(const std::string &relativePath) const {
+std::string ProjectManager::toAbsolutePath(const std::string& relativePath) const {
   namespace fs = std::filesystem;
 
   if (m_projectPath.empty()) {
@@ -463,11 +466,11 @@ ProjectManager::toAbsolutePath(const std::string &relativePath) const {
 // Recent Projects
 // ============================================================================
 
-const std::vector<RecentProject> &ProjectManager::getRecentProjects() const {
+const std::vector<RecentProject>& ProjectManager::getRecentProjects() const {
   return m_recentProjects;
 }
 
-void ProjectManager::addToRecentProjects(const std::string &path) {
+void ProjectManager::addToRecentProjects(const std::string& path) {
   namespace fs = std::filesystem;
 
   // Remove existing entry for this path
@@ -496,21 +499,20 @@ void ProjectManager::addToRecentProjects(const std::string &path) {
   }
 }
 
-void ProjectManager::removeFromRecentProjects(const std::string &path) {
-  m_recentProjects.erase(std::remove_if(m_recentProjects.begin(),
-                                        m_recentProjects.end(),
-                                        [&path](const RecentProject &p) {
-                                          return p.path == path;
-                                        }),
+void ProjectManager::removeFromRecentProjects(const std::string& path) {
+  m_recentProjects.erase(std::remove_if(m_recentProjects.begin(), m_recentProjects.end(),
+                                        [&path](const RecentProject& p) { return p.path == path; }),
                          m_recentProjects.end());
 }
 
-void ProjectManager::clearRecentProjects() { m_recentProjects.clear(); }
+void ProjectManager::clearRecentProjects() {
+  m_recentProjects.clear();
+}
 
 void ProjectManager::refreshRecentProjects() {
   namespace fs = std::filesystem;
 
-  for (auto &project : m_recentProjects) {
+  for (auto& project : m_recentProjects) {
     project.exists = fs::exists(project.path);
   }
 }
@@ -530,7 +532,9 @@ void ProjectManager::setAutoSaveEnabled(bool enabled) {
   m_autoSaveEnabled = enabled;
 }
 
-bool ProjectManager::isAutoSaveEnabled() const { return m_autoSaveEnabled; }
+bool ProjectManager::isAutoSaveEnabled() const {
+  return m_autoSaveEnabled;
+}
 
 void ProjectManager::setAutoSaveInterval(u32 seconds) {
   m_autoSaveIntervalSeconds = seconds;
@@ -563,7 +567,7 @@ void ProjectManager::triggerAutoSave() {
   // Save project
   auto result = saveProject();
   if (result.isOk()) {
-    for (auto *listener : m_listeners) {
+    for (auto* listener : m_listeners) {
       listener->onAutoSaveTriggered();
     }
   }
@@ -608,7 +612,7 @@ ProjectValidation ProjectManager::validateProject() const {
   // Convert IntegrityReport to ProjectValidation
   validation.valid = report.passed;
 
-  for (const auto &issue : report.issues) {
+  for (const auto& issue : report.issues) {
     std::string location;
     if (!issue.filePath.empty()) {
       location = issue.filePath;
@@ -655,7 +659,7 @@ ProjectValidation ProjectManager::validateProject() const {
   return validation;
 }
 
-bool ProjectManager::isValidProjectPath(const std::string &path) {
+bool ProjectManager::isValidProjectPath(const std::string& path) {
   namespace fs = std::filesystem;
 
   fs::path projectFile = fs::path(path);
@@ -696,8 +700,7 @@ Result<std::string> ProjectManager::createBackup() {
     std::error_code ec;
     fs::create_directories(backupDir, ec);
     if (ec) {
-      return Result<std::string>::error("Failed to create backup directory: " +
-                                        ec.message());
+      return Result<std::string>::error("Failed to create backup directory: " + ec.message());
     }
   }
 
@@ -713,20 +716,17 @@ Result<std::string> ProjectManager::createBackup() {
   std::error_code ec;
   fs::create_directory(backupPath, ec);
   if (ec) {
-    return Result<std::string>::error("Failed to create backup: " +
-                                      ec.message());
+    return Result<std::string>::error("Failed to create backup: " + ec.message());
   }
 
   // Copy project files (excluding backup and build directories)
-  for (const auto &entry : fs::directory_iterator(m_projectPath)) {
-    if (entry.path().filename() == ".backup" ||
-        entry.path().filename() == ".temp" ||
+  for (const auto& entry : fs::directory_iterator(m_projectPath)) {
+    if (entry.path().filename() == ".backup" || entry.path().filename() == ".temp" ||
         entry.path().filename() == "Build") {
       continue;
     }
 
-    fs::copy(entry.path(), backupPath / entry.path().filename(),
-             fs::copy_options::recursive, ec);
+    fs::copy(entry.path(), backupPath / entry.path().filename(), fs::copy_options::recursive, ec);
     if (ec) {
       // Log warning but continue
       ec.clear();
@@ -744,7 +744,7 @@ Result<std::string> ProjectManager::createBackup() {
   return Result<std::string>::ok(backupPath.string());
 }
 
-Result<void> ProjectManager::restoreFromBackup(const std::string &backupPath) {
+Result<void> ProjectManager::restoreFromBackup(const std::string& backupPath) {
   namespace fs = std::filesystem;
 
   if (!fs::exists(backupPath)) {
@@ -759,11 +759,10 @@ Result<void> ProjectManager::restoreFromBackup(const std::string &backupPath) {
   fs::path backupRoot(backupPath);
   fs::path projectRoot(m_projectPath);
 
-  for (const auto &entry : fs::directory_iterator(backupRoot)) {
+  for (const auto& entry : fs::directory_iterator(backupRoot)) {
     fs::path target = projectRoot / entry.path().filename();
     fs::copy(entry.path(), target,
-             fs::copy_options::recursive | fs::copy_options::overwrite_existing,
-             ec);
+             fs::copy_options::recursive | fs::copy_options::overwrite_existing, ec);
     if (ec) {
       return Result<void>::error("Failed to restore backup: " + ec.message());
     }
@@ -787,7 +786,7 @@ std::vector<std::string> ProjectManager::getAvailableBackups() const {
     return backups;
   }
 
-  for (const auto &entry : fs::directory_iterator(backupDir)) {
+  for (const auto& entry : fs::directory_iterator(backupDir)) {
     if (entry.is_directory()) {
       backups.push_back(entry.path().string());
     }
@@ -799,27 +798,27 @@ std::vector<std::string> ProjectManager::getAvailableBackups() const {
   return backups;
 }
 
-void ProjectManager::setMaxBackups(size_t count) { m_maxBackups = count; }
+void ProjectManager::setMaxBackups(size_t count) {
+  m_maxBackups = count;
+}
 
 // ============================================================================
 // Listeners
 // ============================================================================
 
-void ProjectManager::addListener(IProjectListener *listener) {
-  if (listener && std::find(m_listeners.begin(), m_listeners.end(), listener) ==
-                      m_listeners.end()) {
+void ProjectManager::addListener(IProjectListener* listener) {
+  if (listener &&
+      std::find(m_listeners.begin(), m_listeners.end(), listener) == m_listeners.end()) {
     m_listeners.push_back(listener);
   }
 }
 
-void ProjectManager::removeListener(IProjectListener *listener) {
-  m_listeners.erase(
-      std::remove(m_listeners.begin(), m_listeners.end(), listener),
-      m_listeners.end());
+void ProjectManager::removeListener(IProjectListener* listener) {
+  m_listeners.erase(std::remove(m_listeners.begin(), m_listeners.end(), listener),
+                    m_listeners.end());
 }
 
-void ProjectManager::setOnUnsavedChangesPrompt(
-    std::function<std::optional<bool>()> callback) {
+void ProjectManager::setOnUnsavedChangesPrompt(std::function<std::optional<bool>()> callback) {
   m_onUnsavedChangesPrompt = std::move(callback);
 }
 
@@ -827,12 +826,11 @@ void ProjectManager::setOnUnsavedChangesPrompt(
 // Private Methods
 // ============================================================================
 
-Result<void> ProjectManager::loadProjectFile(const std::string &path) {
+Result<void> ProjectManager::loadProjectFile(const std::string& path) {
   // Use robust JSON parser with validation
   auto result = ProjectJsonHandler::loadFromFile(path, m_metadata);
   if (result.isError()) {
-    return Result<void>::error("Failed to load project file: " + path + " - " +
-                               result.error());
+    return Result<void>::error("Failed to load project file: " + path + " - " + result.error());
   }
 
   return Result<void>::ok();
@@ -844,18 +842,15 @@ Result<void> ProjectManager::saveProjectFile() {
   fs::path projectFile = fs::path(m_projectPath) / "project.json";
 
   // Use atomic write with validation
-  auto result =
-      ProjectJsonHandler::saveToFile(projectFile.string(), m_metadata);
+  auto result = ProjectJsonHandler::saveToFile(projectFile.string(), m_metadata);
   if (result.isError()) {
-    return Result<void>::error("Failed to save project file: " +
-                               result.error());
+    return Result<void>::error("Failed to save project file: " + result.error());
   }
 
   return Result<void>::ok();
 }
 
-Result<void>
-ProjectManager::createProjectFromTemplate(const std::string &templateName) {
+Result<void> ProjectManager::createProjectFromTemplate(const std::string& templateName) {
   // Template would be copied from editor/templates/<templateName>/
   // For now, just create a basic main.nms script
 
@@ -951,8 +946,7 @@ ProjectManager::createProjectFromTemplate(const std::string &templateName) {
 
   file.close();
 
-  auto createSceneDoc = [&](const std::string &sceneId,
-                            const std::string &bgAsset,
+  auto createSceneDoc = [&](const std::string& sceneId, const std::string& bgAsset,
                             bool includeHero) -> void {
     SceneDocument doc;
     doc.sceneId = sceneId;
@@ -1002,31 +996,31 @@ ProjectManager::createProjectFromTemplate(const std::string &templateName) {
 }
 
 void ProjectManager::notifyProjectCreated() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onProjectCreated(m_projectPath);
   }
 }
 
 void ProjectManager::notifyProjectOpened() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onProjectOpened(m_projectPath);
   }
 }
 
 void ProjectManager::notifyProjectClosed() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onProjectClosed();
   }
 }
 
 void ProjectManager::notifyProjectSaved() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onProjectSaved();
   }
 }
 
 void ProjectManager::notifyProjectModified() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onProjectModified();
   }
 }
@@ -1035,7 +1029,7 @@ void ProjectManager::notifyProjectModified() {
 // ProjectScope Implementation
 // ============================================================================
 
-ProjectScope::ProjectScope(const std::string &projectPath) {
+ProjectScope::ProjectScope(const std::string& projectPath) {
   auto result = ProjectManager::instance().openProject(projectPath);
   m_valid = result.isOk();
 }

@@ -42,7 +42,7 @@ public:
    * @param delayMs Delay in milliseconds before callback is executed
    * @param parent Parent QObject
    */
-  explicit Debouncer(int delayMs = 300, QObject *parent = nullptr)
+  explicit Debouncer(int delayMs = 300, QObject* parent = nullptr)
       : QObject(parent), m_delayMs(delayMs) {
     m_timer.setSingleShot(true);
     connect(&m_timer, &QTimer::timeout, this, &Debouncer::onTimeout);
@@ -128,7 +128,7 @@ class PropertyDebouncer : public Debouncer {
   Q_OBJECT
 
 public:
-  explicit PropertyDebouncer(int delayMs = 300, QObject *parent = nullptr)
+  explicit PropertyDebouncer(int delayMs = 300, QObject* parent = nullptr)
       : Debouncer(delayMs, parent) {}
 
   /**
@@ -138,9 +138,8 @@ public:
    * @param newValue New value for the property
    * @param callback Callback to execute with the final value
    */
-  void triggerPropertyChange(const QString &propertyName,
-                             const QString &newValue,
-                             std::function<void(const QString &, const QString &)> callback) {
+  void triggerPropertyChange(const QString& propertyName, const QString& newValue,
+                             std::function<void(const QString&, const QString&)> callback) {
     m_lastPropertyName = propertyName;
     m_lastValue = newValue;
     m_propertyCallback = std::move(callback);
@@ -167,7 +166,7 @@ public:
 private:
   QString m_lastPropertyName;
   QString m_lastValue;
-  std::function<void(const QString &, const QString &)> m_propertyCallback;
+  std::function<void(const QString&, const QString&)> m_propertyCallback;
 };
 
 } // namespace NovelMind::editor::qt

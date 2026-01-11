@@ -86,11 +86,11 @@ void NMStoryGraphPanel::onAutoLayout() {
   }
 
   // Layout constants - can be made configurable in the future
-  const qreal horizontalSpacing = 280.0;  // Increased for better readability
-  const qreal verticalSpacing = 160.0;    // Increased for better readability
-  const qreal startX = 100.0;             // Left margin
-  const qreal startY = 100.0;             // Top margin
-  [[maybe_unused]] const qreal orphanAreaGap = 100.0;      // Gap before orphan section
+  const qreal horizontalSpacing = 280.0;              // Increased for better readability
+  const qreal verticalSpacing = 160.0;                // Increased for better readability
+  const qreal startX = 100.0;                         // Left margin
+  const qreal startY = 100.0;                         // Top margin
+  [[maybe_unused]] const qreal orphanAreaGap = 100.0; // Gap before orphan section
 
   // Build adjacency lists (forward and reverse)
   QHash<uint64_t, QList<uint64_t>> successors;   // node -> children
@@ -126,7 +126,7 @@ void NMStoryGraphPanel::onAutoLayout() {
   }
 
   // Then add nodes with no incoming edges (sources)
-  for (auto *node : nodes) {
+  for (auto* node : nodes) {
     uint64_t id = node->nodeId();
     if (inDegree[id] == 0 && !entryNodeSet.contains(id)) {
       entryNodes.append(id);
@@ -147,7 +147,7 @@ void NMStoryGraphPanel::onAutoLayout() {
   QQueue<uint64_t> zeroInDegreeQueue;
 
   // Initialize queue with sources
-  for (auto *node : nodes) {
+  for (auto* node : nodes) {
     if (tempInDegree[node->nodeId()] == 0) {
       zeroInDegreeQueue.enqueue(node->nodeId());
       nodeLayers[node->nodeId()] = 0;
@@ -176,7 +176,7 @@ void NMStoryGraphPanel::onAutoLayout() {
 
   // Handle cycles: nodes not in topo order are part of cycles
   // Place them based on their connections to already-placed nodes
-  for (auto *node : nodes) {
+  for (auto* node : nodes) {
     uint64_t id = node->nodeId();
     if (!visited.contains(id)) {
       // Find the minimum layer of any successor that's already placed
@@ -215,7 +215,7 @@ void NMStoryGraphPanel::onAutoLayout() {
   QList<uint64_t> orphanedNodes;
   QSet<uint64_t> connectedNodes;
 
-  for (auto *node : nodes) {
+  for (auto* node : nodes) {
     uint64_t id = node->nodeId();
     if (inDegree[id] == 0 && outDegree[id] == 0) {
       orphanedNodes.append(id);
@@ -240,18 +240,17 @@ void NMStoryGraphPanel::onAutoLayout() {
 
   // First, order the first layer: put entry nodes first, then by out-degree
   if (layerNodes.contains(0)) {
-    QList<uint64_t> &layer0 = layerNodes[0];
-    std::sort(layer0.begin(), layer0.end(),
-              [&entryNodeSet, &outDegree](uint64_t a, uint64_t b) {
-                // Entry nodes come first
-                bool aIsEntry = entryNodeSet.contains(a);
-                bool bIsEntry = entryNodeSet.contains(b);
-                if (aIsEntry != bIsEntry) {
-                  return aIsEntry;
-                }
-                // Then sort by out-degree (more connections = more central)
-                return outDegree[a] > outDegree[b];
-              });
+    QList<uint64_t>& layer0 = layerNodes[0];
+    std::sort(layer0.begin(), layer0.end(), [&entryNodeSet, &outDegree](uint64_t a, uint64_t b) {
+      // Entry nodes come first
+      bool aIsEntry = entryNodeSet.contains(a);
+      bool bIsEntry = entryNodeSet.contains(b);
+      if (aIsEntry != bIsEntry) {
+        return aIsEntry;
+      }
+      // Then sort by out-degree (more connections = more central)
+      return outDegree[a] > outDegree[b];
+    });
   }
 
   // Apply barycenter heuristic for subsequent layers
@@ -264,7 +263,7 @@ void NMStoryGraphPanel::onAutoLayout() {
         continue;
       }
 
-      QList<uint64_t> &currentLayer = layerNodes[layer];
+      QList<uint64_t>& currentLayer = layerNodes[layer];
       QHash<uint64_t, qreal> barycenter;
 
       // Calculate barycenter for each node based on predecessor positions
@@ -293,9 +292,7 @@ void NMStoryGraphPanel::onAutoLayout() {
 
       // Sort by barycenter
       std::sort(currentLayer.begin(), currentLayer.end(),
-                [&barycenter](uint64_t a, uint64_t b) {
-                  return barycenter[a] < barycenter[b];
-                });
+                [&barycenter](uint64_t a, uint64_t b) { return barycenter[a] < barycenter[b]; });
     }
 
     // Backward sweep (maxLayer-1 down to 0)
@@ -304,7 +301,7 @@ void NMStoryGraphPanel::onAutoLayout() {
         continue;
       }
 
-      QList<uint64_t> &currentLayer = layerNodes[layer];
+      QList<uint64_t>& currentLayer = layerNodes[layer];
       QHash<uint64_t, qreal> barycenter;
 
       // Calculate barycenter for each node based on successor positions
@@ -333,9 +330,7 @@ void NMStoryGraphPanel::onAutoLayout() {
 
       // Sort by barycenter
       std::sort(currentLayer.begin(), currentLayer.end(),
-                [&barycenter](uint64_t a, uint64_t b) {
-                  return barycenter[a] < barycenter[b];
-                });
+                [&barycenter](uint64_t a, uint64_t b) { return barycenter[a] < barycenter[b]; });
     }
   }
 
@@ -536,7 +531,8 @@ void NMStoryGraphPanel::onConnectionAdded(uint64_t fromNodeId, uint64_t toNodeId
   if (from->isConditionNode()) {
     QStringList outputs = from->conditionOutputs();
     if (outputs.isEmpty()) {
-      outputs << "true" << "false"; // Default outputs
+      outputs << "true"
+              << "false"; // Default outputs
     }
 
     QHash<QString, QString> newTargets;
@@ -625,7 +621,8 @@ void NMStoryGraphPanel::onConnectionDeleted(uint64_t fromNodeId, uint64_t toNode
   if (from->isConditionNode()) {
     QStringList outputs = from->conditionOutputs();
     if (outputs.isEmpty()) {
-      outputs << "true" << "false";
+      outputs << "true"
+              << "false";
     }
 
     QHash<QString, QString> newTargets;
@@ -1543,9 +1540,8 @@ void NMStoryGraphPanel::onSyncScriptToGraph() {
   NMMessageDialog::showInfo(this, tr("Sync Script to Graph"), message);
 }
 
-void NMStoryGraphPanel::onScriptFileCreationFailed(uint64_t nodeId,
-                                                    const QString &nodeIdString,
-                                                    const QString &errorMessage) {
+void NMStoryGraphPanel::onScriptFileCreationFailed(uint64_t nodeId, const QString& nodeIdString,
+                                                   const QString& errorMessage) {
   // Show error dialog to notify the user
   const QString title = tr("Script File Creation Failed");
   const QString message = tr("Failed to create script file for node '%1' (ID: %2).\n\n"
@@ -1561,8 +1557,8 @@ void NMStoryGraphPanel::onScriptFileCreationFailed(uint64_t nodeId,
                               .arg(nodeId)
                               .arg(errorMessage);
 
-  qWarning() << "[StoryGraphPanel] Script file creation failed for node"
-             << nodeIdString << ":" << errorMessage;
+  qWarning() << "[StoryGraphPanel] Script file creation failed for node" << nodeIdString << ":"
+             << errorMessage;
 
   NMMessageDialog::showError(this, title, message);
 }
