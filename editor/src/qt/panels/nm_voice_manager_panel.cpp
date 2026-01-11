@@ -47,9 +47,9 @@ namespace NovelMind::editor::qt {
 // DurationProbeTask implementation (issue #469)
 // ============================================================================
 
-DurationProbeTask::DurationProbeTask(const QString &path,
+DurationProbeTask::DurationProbeTask(const QString& path,
                                      std::shared_ptr<std::atomic<bool>> cancelled,
-                                     QObject *receiver)
+                                     QObject* receiver)
     : m_path(path), m_cancelled(cancelled), m_receiver(receiver) {
   setAutoDelete(true); // QThreadPool will delete this task when done
 }
@@ -72,22 +72,22 @@ void DurationProbeTask::run() {
   // Connect to get duration
   QObject::connect(&player, &QMediaPlayer::durationChanged,
                    [&duration, &loop, &finished](qint64 durationMs) {
-    if (durationMs > 0 && !finished) {
-      duration = static_cast<double>(durationMs) / 1000.0;
-      finished = true;
-      loop.quit();
-    }
-  });
+                     if (durationMs > 0 && !finished) {
+                       duration = static_cast<double>(durationMs) / 1000.0;
+                       finished = true;
+                       loop.quit();
+                     }
+                   });
 
   // Connect to handle errors
   QObject::connect(&player, &QMediaPlayer::errorOccurred,
                    [&loop, &finished]([[maybe_unused]] QMediaPlayer::Error error,
                                       [[maybe_unused]] const QString& errorString) {
-    if (!finished) {
-      finished = true;
-      loop.quit();
-    }
-  });
+                     if (!finished) {
+                       finished = true;
+                       loop.quit();
+                     }
+                   });
 
   // Set source and wait for duration
   player.setSource(QUrl::fromLocalFile(m_path));
@@ -122,10 +122,8 @@ void DurationProbeTask::run() {
   // Emit result if valid and not cancelled
   if (duration > 0 && !m_cancelled->load() && m_receiver) {
     // Use QMetaObject::invokeMethod to safely call across threads
-    QMetaObject::invokeMethod(m_receiver, "durationProbedInternal",
-                              Qt::QueuedConnection,
-                              Q_ARG(QString, m_path),
-                              Q_ARG(double, duration));
+    QMetaObject::invokeMethod(m_receiver, "durationProbedInternal", Qt::QueuedConnection,
+                              Q_ARG(QString, m_path), Q_ARG(double, duration));
   }
 }
 
@@ -1237,7 +1235,7 @@ void NMVoiceManagerPanel::onProbeDurationFinished() {
   // Kept for compatibility, does nothing
 }
 
-void NMVoiceManagerPanel::onDurationProbed(const QString &filePath, double duration) {
+void NMVoiceManagerPanel::onDurationProbed(const QString& filePath, double duration) {
   if (!m_manifest || filePath.isEmpty() || duration <= 0) {
     // Remove from active tasks
     {

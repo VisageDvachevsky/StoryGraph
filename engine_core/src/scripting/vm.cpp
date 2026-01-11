@@ -7,14 +7,13 @@
 namespace NovelMind::scripting {
 
 VirtualMachine::VirtualMachine()
-    : m_ip(0), m_running(false), m_paused(false), m_waiting(false),
-      m_halted(false), m_skipNextIncrement(false), m_choiceResult(-1),
-      m_debugger(nullptr) {}
+    : m_ip(0), m_running(false), m_paused(false), m_waiting(false), m_halted(false),
+      m_skipNextIncrement(false), m_choiceResult(-1), m_debugger(nullptr) {}
 
 VirtualMachine::~VirtualMachine() = default;
 
-Result<void> VirtualMachine::load(const std::vector<Instruction> &program,
-                                  const std::vector<std::string> &stringTable) {
+Result<void> VirtualMachine::load(const std::vector<Instruction>& program,
+                                  const std::vector<std::string>& stringTable) {
   if (program.empty()) {
     return Result<void>::error("Empty program");
   }
@@ -44,9 +43,8 @@ bool VirtualMachine::step() {
   }
 
   if (m_ip >= m_program.size()) {
-    NOVELMIND_LOG_ERROR("VM Error: Instruction pointer out of bounds: " +
-                        std::to_string(m_ip) + " >= " +
-                        std::to_string(m_program.size()));
+    NOVELMIND_LOG_ERROR("VM Error: Instruction pointer out of bounds: " + std::to_string(m_ip) +
+                        " >= " + std::to_string(m_program.size()));
     m_halted = true;
     return false;
   }
@@ -86,7 +84,9 @@ void VirtualMachine::run() {
   }
 }
 
-void VirtualMachine::pause() { m_paused = true; }
+void VirtualMachine::pause() {
+  m_paused = true;
+}
 
 void VirtualMachine::resume() {
   m_paused = false;
@@ -95,13 +95,21 @@ void VirtualMachine::resume() {
   }
 }
 
-bool VirtualMachine::isRunning() const { return m_running; }
+bool VirtualMachine::isRunning() const {
+  return m_running;
+}
 
-bool VirtualMachine::isPaused() const { return m_paused; }
+bool VirtualMachine::isPaused() const {
+  return m_paused;
+}
 
-bool VirtualMachine::isWaiting() const { return m_waiting; }
+bool VirtualMachine::isWaiting() const {
+  return m_waiting;
+}
 
-bool VirtualMachine::isHalted() const { return m_halted; }
+bool VirtualMachine::isHalted() const {
+  return m_halted;
+}
 
 void VirtualMachine::setIP(u32 ip) {
   // Validate IP is within program bounds
@@ -113,7 +121,7 @@ void VirtualMachine::setIP(u32 ip) {
   }
 }
 
-void VirtualMachine::setVariable(const std::string &name, Value value) {
+void VirtualMachine::setVariable(const std::string& name, Value value) {
   // Track variable changes for debugger
   if (m_debugger) {
     Value oldValue = getVariable(name);
@@ -122,7 +130,7 @@ void VirtualMachine::setVariable(const std::string &name, Value value) {
   m_variables[name] = std::move(value);
 }
 
-Value VirtualMachine::getVariable(const std::string &name) const {
+Value VirtualMachine::getVariable(const std::string& name) const {
   auto it = m_variables.find(name);
   if (it != m_variables.end()) {
     return it->second;
@@ -130,15 +138,15 @@ Value VirtualMachine::getVariable(const std::string &name) const {
   return std::monostate{};
 }
 
-bool VirtualMachine::hasVariable(const std::string &name) const {
+bool VirtualMachine::hasVariable(const std::string& name) const {
   return m_variables.find(name) != m_variables.end();
 }
 
-void VirtualMachine::setFlag(const std::string &name, bool value) {
+void VirtualMachine::setFlag(const std::string& name, bool value) {
   m_flags[name] = value;
 }
 
-bool VirtualMachine::getFlag(const std::string &name) const {
+bool VirtualMachine::getFlag(const std::string& name) const {
   auto it = m_flags.find(name);
   if (it != m_flags.end()) {
     return it->second;
@@ -167,7 +175,7 @@ void VirtualMachine::signalChoice(i32 choice) {
   }
 }
 
-void VirtualMachine::executeInstruction(const Instruction &instr) {
+void VirtualMachine::executeInstruction(const Instruction& instr) {
   switch (instr.opcode) {
   case OpCode::NOP:
     break;
@@ -267,13 +275,13 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
     break;
 
   case OpCode::LOAD_VAR: {
-    const std::string &name = getString(instr.operand);
+    const std::string& name = getString(instr.operand);
     push(getVariable(name));
     break;
   }
 
   case OpCode::STORE_VAR: {
-    const std::string &name = getString(instr.operand);
+    const std::string& name = getString(instr.operand);
     setVariable(name, pop());
     break;
   }
@@ -281,11 +289,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   case OpCode::ADD: {
     Value b = pop();
     Value a = pop();
-    if (getValueType(a) == ValueType::String ||
-        getValueType(b) == ValueType::String) {
+    if (getValueType(a) == ValueType::String || getValueType(b) == ValueType::String) {
       push(asString(a) + asString(b));
-    } else if (getValueType(a) == ValueType::Float ||
-               getValueType(b) == ValueType::Float) {
+    } else if (getValueType(a) == ValueType::Float || getValueType(b) == ValueType::Float) {
       push(asFloat(a) + asFloat(b));
     } else {
       push(asInt(a) + asInt(b));
@@ -296,8 +302,7 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   case OpCode::SUB: {
     Value b = pop();
     Value a = pop();
-    if (getValueType(a) == ValueType::Float ||
-        getValueType(b) == ValueType::Float) {
+    if (getValueType(a) == ValueType::Float || getValueType(b) == ValueType::Float) {
       push(asFloat(a) - asFloat(b));
     } else {
       push(asInt(a) - asInt(b));
@@ -308,8 +313,7 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   case OpCode::MUL: {
     Value b = pop();
     Value a = pop();
-    if (getValueType(a) == ValueType::Float ||
-        getValueType(b) == ValueType::Float) {
+    if (getValueType(a) == ValueType::Float || getValueType(b) == ValueType::Float) {
       push(asFloat(a) * asFloat(b));
     } else {
       push(asInt(a) * asInt(b));
@@ -511,13 +515,13 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::LOAD_GLOBAL: {
-    const std::string &name = getString(instr.operand);
+    const std::string& name = getString(instr.operand);
     push(getVariable(name));
     break;
   }
 
   case OpCode::STORE_GLOBAL: {
-    const std::string &name = getString(instr.operand);
+    const std::string& name = getString(instr.operand);
     setVariable(name, pop());
     break;
   }
@@ -525,7 +529,7 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   case OpCode::CALL: {
     // CALL opcode: operand is index into string table for function name
     // For now, function calls are handled as native callbacks
-    const std::string &funcName = getString(instr.operand);
+    const std::string& funcName = getString(instr.operand);
     auto it = m_callbacks.find(OpCode::CALL);
     if (it != m_callbacks.end()) {
       std::vector<Value> args;
@@ -533,8 +537,7 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
       args.push_back(funcName);
       it->second(args);
     } else {
-      NOVELMIND_LOG_WARN("No callback registered for CALL opcode, function: " +
-                         funcName);
+      NOVELMIND_LOG_WARN("No callback registered for CALL opcode, function: " + funcName);
     }
     // Push null as return value for unhandled functions
     push(std::monostate{});
@@ -550,13 +553,13 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
 
   case OpCode::SET_FLAG: {
     bool value = asBool(pop());
-    const std::string &name = getString(instr.operand);
+    const std::string& name = getString(instr.operand);
     setFlag(name, value);
     break;
   }
 
   case OpCode::CHECK_FLAG: {
-    const std::string &name = getString(instr.operand);
+    const std::string& name = getString(instr.operand);
     push(getFlag(name));
     break;
   }
@@ -609,8 +612,8 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
       case OpCode::SHOW_CHARACTER: {
         // Collect arguments from stack (in reverse order)
         std::vector<Value> stackArgs;
-        stackArgs.push_back(popArg());  // position
-        stackArgs.push_back(popArg());  // id
+        stackArgs.push_back(popArg()); // position
+        stackArgs.push_back(popArg()); // id
 
         // Reverse to get declaration order
         std::reverse(stackArgs.begin(), stackArgs.end());
@@ -624,8 +627,8 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
         }
 
         // Build final args array in correct order
-        args.push_back(std::move(stackArgs[0]));  // id
-        args.push_back(std::move(stackArgs[1]));  // position
+        args.push_back(std::move(stackArgs[0])); // id
+        args.push_back(std::move(stackArgs[1])); // position
         break;
       }
       case OpCode::HIDE_CHARACTER:
@@ -634,8 +637,8 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
       case OpCode::MOVE_CHARACTER: {
         // Collect arguments from stack (in reverse order)
         // Stack layout (top to bottom): duration, [customY, customX if custom], posCode, charId
-        Value durVal = popArg();  // duration
-        Value posVal = popArg();  // position code
+        Value durVal = popArg(); // duration
+        Value posVal = popArg(); // position code
 
         // Check if position is custom (posCode == 3)
         i32 posCode = std::holds_alternative<i32>(posVal) ? std::get<i32>(posVal) : 1;
@@ -668,7 +671,7 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
         }
 
         // Build final args array in declaration order
-        for (auto &arg : stackArgs) {
+        for (auto& arg : stackArgs) {
           args.push_back(std::move(arg));
         }
         break;
@@ -676,8 +679,8 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
       case OpCode::SAY: {
         // Only one stack argument (speaker), text comes from operand
         Value speakerVal = popArg();
-        args.emplace_back(getString(instr.operand));  // text
-        args.push_back(std::move(speakerVal));        // speaker
+        args.emplace_back(getString(instr.operand)); // text
+        args.push_back(std::move(speakerVal));       // speaker
         break;
       }
       case OpCode::CHOICE: {
@@ -690,7 +693,7 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
         popArg(); // discard pushed count if present
         std::reverse(choices.begin(), choices.end());
         args.emplace_back(static_cast<i32>(count));
-        for (auto &choice : choices) {
+        for (auto& choice : choices) {
           args.push_back(std::move(choice));
         }
         break;
@@ -701,8 +704,8 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
       case OpCode::TRANSITION: {
         // Only one stack argument (duration), type comes from operand
         Value durVal = popArg();
-        args.emplace_back(getString(instr.operand));  // type
-        args.push_back(std::move(durVal));            // duration
+        args.emplace_back(getString(instr.operand)); // type
+        args.push_back(std::move(durVal));           // duration
         break;
       }
       case OpCode::PLAY_SOUND:
@@ -761,15 +764,14 @@ Value VirtualMachine::pop() {
   return val;
 }
 
-const std::string &VirtualMachine::getString(u32 index) const {
+const std::string& VirtualMachine::getString(u32 index) const {
   static const std::string empty;
   if (index < m_stringTable.size()) {
     return m_stringTable[index];
   }
   // Log error and halt VM to prevent silent data corruption
   NOVELMIND_LOG_ERROR("Invalid string table index: " + std::to_string(index) +
-                      " (table size: " + std::to_string(m_stringTable.size()) +
-                      ")");
+                      " (table size: " + std::to_string(m_stringTable.size()) + ")");
   m_halted = true;
   return empty;
 }
@@ -778,7 +780,7 @@ const std::string &VirtualMachine::getString(u32 index) const {
 // Debugger Integration
 // =========================================================================
 
-void VirtualMachine::attachDebugger(VMDebugger *debugger) {
+void VirtualMachine::attachDebugger(VMDebugger* debugger) {
   m_debugger = debugger;
   NOVELMIND_LOG_DEBUG("Debugger attached to VM");
 }

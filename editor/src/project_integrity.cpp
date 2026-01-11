@@ -997,7 +997,8 @@ void ProjectIntegrityChecker::analyzeReachability(std::vector<IntegrityIssue>& i
 
   // Build scene graph
   std::unordered_set<std::string> definedScenes;
-  std::unordered_map<std::string, std::vector<std::string>> sceneTransitions; // scene -> [target scenes]
+  std::unordered_map<std::string, std::vector<std::string>>
+      sceneTransitions; // scene -> [target scenes]
   std::unordered_map<std::string, std::string> sceneFiles;
 
   std::regex scenePattern(R"(scene\s+(\w+)\s*\{)");
@@ -1042,8 +1043,8 @@ void ProjectIntegrityChecker::analyzeReachability(std::vector<IntegrityIssue>& i
 
       while (std::regex_search(sceneSearchStart, content.cend(), sceneMatch, scenePattern)) {
         currentScene = sceneMatch[1].str();
-        size_t sceneStart = static_cast<size_t>(
-            std::distance(content.cbegin(), sceneSearchStart) + sceneMatch.position(0));
+        size_t sceneStart = static_cast<size_t>(std::distance(content.cbegin(), sceneSearchStart) +
+                                                sceneMatch.position(0));
 
         // Find scene end (matching closing brace)
         size_t braceStart = content.find('{', sceneStart);
@@ -1192,8 +1193,8 @@ void ProjectIntegrityChecker::detectCycles(std::vector<IntegrityIssue>& issues) 
 
       while (std::regex_search(sceneSearchStart, content.cend(), sceneMatch, scenePattern)) {
         std::string currentScene = sceneMatch[1].str();
-        size_t sceneStart = static_cast<size_t>(
-            std::distance(content.cbegin(), sceneSearchStart) + sceneMatch.position(0));
+        size_t sceneStart = static_cast<size_t>(std::distance(content.cbegin(), sceneSearchStart) +
+                                                sceneMatch.position(0));
 
         size_t braceStart = content.find('{', sceneStart);
         if (braceStart == std::string::npos) {
@@ -1293,7 +1294,8 @@ void ProjectIntegrityChecker::detectCycles(std::vector<IntegrityIssue>& issues) 
             issue.message = "Cycle detected in story graph";
             issue.context = cyclePath;
             issue.filePath = sceneFiles[node];
-            issue.suggestions.push_back("Verify if this cycle is intentional (e.g., gameplay loop)");
+            issue.suggestions.push_back(
+                "Verify if this cycle is intentional (e.g., gameplay loop)");
             issue.suggestions.push_back("Add an 'end' statement to break unintended loops");
             issue.suggestions.push_back("Ensure player has a way to exit the cycle");
             issue.hasQuickFix = false;

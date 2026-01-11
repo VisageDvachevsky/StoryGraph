@@ -21,7 +21,7 @@ struct QtAppFixture {
   QtAppFixture() {
     if (!QCoreApplication::instance()) {
       static int argc = 1;
-      static char *argv[] = {const_cast<char *>("test")};
+      static char* argv[] = {const_cast<char*>("test")};
       static QCoreApplication app(argc, argv);
     }
   }
@@ -213,11 +213,15 @@ TEST_CASE("SceneTemplateManager template content", "[scene_template]") {
     bool hasCharacterRight = false;
     bool hasDialogueBox = false;
 
-    for (const auto &obj : tmpl->content.objects) {
-      if (obj.type == "Background") hasBackground = true;
-      if (obj.id == "character_left") hasCharacterLeft = true;
-      if (obj.id == "character_right") hasCharacterRight = true;
-      if (obj.id == "dialogue_box") hasDialogueBox = true;
+    for (const auto& obj : tmpl->content.objects) {
+      if (obj.type == "Background")
+        hasBackground = true;
+      if (obj.id == "character_left")
+        hasCharacterLeft = true;
+      if (obj.id == "character_right")
+        hasCharacterRight = true;
+      if (obj.id == "dialogue_box")
+        hasDialogueBox = true;
     }
 
     REQUIRE(hasBackground);
@@ -231,8 +235,9 @@ TEST_CASE("SceneTemplateManager template content", "[scene_template]") {
     REQUIRE(tmpl.has_value());
 
     bool hasChoiceMenu = false;
-    for (const auto &obj : tmpl->content.objects) {
-      if (obj.id == "choice_menu") hasChoiceMenu = true;
+    for (const auto& obj : tmpl->content.objects) {
+      if (obj.id == "choice_menu")
+        hasChoiceMenu = true;
     }
     REQUIRE(hasChoiceMenu);
   }
@@ -243,9 +248,11 @@ TEST_CASE("SceneTemplateManager template content", "[scene_template]") {
 
     bool hasLogo = false;
     bool hasMenu = false;
-    for (const auto &obj : tmpl->content.objects) {
-      if (obj.id == "logo") hasLogo = true;
-      if (obj.id == "menu_buttons") hasMenu = true;
+    for (const auto& obj : tmpl->content.objects) {
+      if (obj.id == "logo")
+        hasLogo = true;
+      if (obj.id == "menu_buttons")
+        hasMenu = true;
     }
     REQUIRE(hasLogo);
     REQUIRE(hasMenu);
@@ -280,9 +287,11 @@ TEST_CASE("SceneTemplateManager template content", "[scene_template]") {
     REQUIRE(tmpl->metadata.category == "Dialogue");
     bool hasSeated = false;
     bool hasStanding = false;
-    for (const auto &obj : tmpl->content.objects) {
-      if (obj.id == "character_seated") hasSeated = true;
-      if (obj.id == "character_standing") hasStanding = true;
+    for (const auto& obj : tmpl->content.objects) {
+      if (obj.id == "character_seated")
+        hasSeated = true;
+      if (obj.id == "character_standing")
+        hasStanding = true;
     }
     REQUIRE(hasSeated);
     REQUIRE(hasStanding);
@@ -293,8 +302,9 @@ TEST_CASE("SceneTemplateManager template content", "[scene_template]") {
     REQUIRE(tmpl.has_value());
     REQUIRE(tmpl->metadata.category == "Dialogue");
     bool hasSplitDivider = false;
-    for (const auto &obj : tmpl->content.objects) {
-      if (obj.id == "split_divider") hasSplitDivider = true;
+    for (const auto& obj : tmpl->content.objects) {
+      if (obj.id == "split_divider")
+        hasSplitDivider = true;
     }
     REQUIRE(hasSplitDivider);
   }
@@ -310,7 +320,7 @@ TEST_CASE("SceneTemplateManager template content", "[scene_template]") {
     REQUIRE(tmpl.has_value());
     REQUIRE(tmpl->metadata.category == "Scene Types");
     bool hasCloseup = false;
-    for (const auto &obj : tmpl->content.objects) {
+    for (const auto& obj : tmpl->content.objects) {
       if (obj.id == "character_closeup" && obj.scaleX > 1.0f) {
         hasCloseup = true;
       }
@@ -323,8 +333,9 @@ TEST_CASE("SceneTemplateManager template content", "[scene_template]") {
     REQUIRE(tmpl.has_value());
     REQUIRE(tmpl->metadata.category == "Location");
     bool hasFurniture = false;
-    for (const auto &obj : tmpl->content.objects) {
-      if (obj.type == "Prop") hasFurniture = true;
+    for (const auto& obj : tmpl->content.objects) {
+      if (obj.type == "Prop")
+        hasFurniture = true;
     }
     REQUIRE(hasFurniture);
   }
@@ -334,8 +345,9 @@ TEST_CASE("SceneTemplateManager template content", "[scene_template]") {
     REQUIRE(tmpl.has_value());
     REQUIRE(tmpl->metadata.category == "Special");
     bool hasFilter = false;
-    for (const auto &obj : tmpl->content.objects) {
-      if (obj.id == "filter_overlay") hasFilter = true;
+    for (const auto& obj : tmpl->content.objects) {
+      if (obj.id == "filter_overlay")
+        hasFilter = true;
     }
     REQUIRE(hasFilter);
   }
@@ -371,10 +383,10 @@ TEST_CASE("SceneTemplateManager categories", "[scene_template]") {
     REQUIRE(standardTemplates.size() >= 1);
 
     // Check categories are correct
-    for (const auto &meta : vnTemplates) {
+    for (const auto& meta : vnTemplates) {
       REQUIRE(meta.category == "Visual Novel");
     }
-    for (const auto &meta : standardTemplates) {
+    for (const auto& meta : standardTemplates) {
       REQUIRE(meta.category == "Standard");
     }
   }
@@ -394,7 +406,7 @@ TEST_CASE("SceneTemplateManager template instantiation", "[scene_template]") {
     auto result = manager.instantiateTemplate("dialogue_scene", "my_scene");
 
     REQUIRE(result.isOk());
-    const auto &doc = result.value();
+    const auto& doc = result.value();
     REQUIRE(doc.sceneId == "my_scene");
   }
 
@@ -402,12 +414,12 @@ TEST_CASE("SceneTemplateManager template instantiation", "[scene_template]") {
     auto result = manager.instantiateTemplate("dialogue_scene", "test");
 
     REQUIRE(result.isOk());
-    const auto &doc = result.value();
+    const auto& doc = result.value();
     REQUIRE(!doc.objects.empty());
 
     // Check that background is present
     bool hasBackground = false;
-    for (const auto &obj : doc.objects) {
+    for (const auto& obj : doc.objects) {
       if (obj.type == "Background") {
         hasBackground = true;
       }
@@ -424,7 +436,7 @@ TEST_CASE("SceneTemplateManager template instantiation", "[scene_template]") {
     auto result = manager.instantiateTemplate("empty_scene", "blank");
 
     REQUIRE(result.isOk());
-    const auto &doc = result.value();
+    const auto& doc = result.value();
     REQUIRE(doc.sceneId == "blank");
     REQUIRE(doc.objects.empty());
   }
@@ -441,8 +453,7 @@ TEST_CASE("SceneTemplateManager file creation", "[scene_template]") {
   SECTION("createSceneFromTemplate creates valid file") {
     QString outputPath = QDir(tempDir.path()).filePath("test_scene.nmscene");
 
-    auto result =
-        manager.createSceneFromTemplate("dialogue_scene", "test", outputPath);
+    auto result = manager.createSceneFromTemplate("dialogue_scene", "test", outputPath);
 
     REQUIRE(result.isOk());
     REQUIRE(QFile::exists(outputPath));
@@ -462,11 +473,9 @@ TEST_CASE("SceneTemplateManager file creation", "[scene_template]") {
   }
 
   SECTION("createSceneFromTemplate creates parent directories") {
-    QString outputPath =
-        QDir(tempDir.path()).filePath("nested/dir/scene.nmscene");
+    QString outputPath = QDir(tempDir.path()).filePath("nested/dir/scene.nmscene");
 
-    auto result =
-        manager.createSceneFromTemplate("empty_scene", "nested_scene", outputPath);
+    auto result = manager.createSceneFromTemplate("empty_scene", "nested_scene", outputPath);
 
     REQUIRE(result.isOk());
     REQUIRE(QFile::exists(outputPath));
@@ -506,8 +515,7 @@ TEST_CASE("SceneTemplateManager user templates", "[scene_template]") {
     SceneDocument doc;
     doc.sceneId = "test";
 
-    auto saveResult =
-        manager.saveAsUserTemplate(doc, "Test Template", "Test", projectPath);
+    auto saveResult = manager.saveAsUserTemplate(doc, "Test Template", "Test", projectPath);
     REQUIRE(saveResult.isOk());
 
     // Clear and reload
@@ -521,8 +529,7 @@ TEST_CASE("SceneTemplateManager user templates", "[scene_template]") {
   SECTION("deleteUserTemplate removes template") {
     // Create template
     SceneDocument doc;
-    auto result =
-        manager.saveAsUserTemplate(doc, "To Delete", "Delete me", projectPath);
+    auto result = manager.saveAsUserTemplate(doc, "To Delete", "Delete me", projectPath);
     REQUIRE(result.isOk());
 
     QString templateId = result.value();
@@ -542,8 +549,7 @@ TEST_CASE("SceneTemplateManager user templates", "[scene_template]") {
   SECTION("updateUserTemplate modifies template") {
     // Create template
     SceneDocument doc;
-    auto createResult =
-        manager.saveAsUserTemplate(doc, "Updateable", "Original", projectPath);
+    auto createResult = manager.saveAsUserTemplate(doc, "Updateable", "Original", projectPath);
     REQUIRE(createResult.isOk());
 
     QString templateId = createResult.value();
@@ -624,14 +630,13 @@ TEST_CASE("SceneTemplateManager signals", "[scene_template]") {
   bool userDeleted = false;
   bool userUpdated = false;
 
-  QObject::connect(&manager, &SceneTemplateManager::templatesReloaded,
-                   [&]() { reloaded = true; });
+  QObject::connect(&manager, &SceneTemplateManager::templatesReloaded, [&]() { reloaded = true; });
   QObject::connect(&manager, &SceneTemplateManager::userTemplateCreated,
-                   [&](const QString &) { userCreated = true; });
+                   [&](const QString&) { userCreated = true; });
   QObject::connect(&manager, &SceneTemplateManager::userTemplateDeleted,
-                   [&](const QString &) { userDeleted = true; });
+                   [&](const QString&) { userDeleted = true; });
   QObject::connect(&manager, &SceneTemplateManager::userTemplateUpdated,
-                   [&](const QString &) { userUpdated = true; });
+                   [&](const QString&) { userUpdated = true; });
 
   SECTION("templatesReloaded signal emitted on reload") {
     manager.reloadAllTemplates();
@@ -650,8 +655,7 @@ TEST_CASE("SceneTemplateManager signals", "[scene_template]") {
     auto result = manager.saveAsUserTemplate(doc, "Test", "Test", tempDir.path());
     REQUIRE(result.isOk());
 
-    [[maybe_unused]] auto deleteResult =
-        manager.deleteUserTemplate(result.value(), tempDir.path());
+    [[maybe_unused]] auto deleteResult = manager.deleteUserTemplate(result.value(), tempDir.path());
     REQUIRE(userDeleted);
   }
 

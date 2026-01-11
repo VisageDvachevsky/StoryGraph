@@ -35,29 +35,22 @@ struct PackResourceEntry {
   u8 iv[8];
 };
 
-enum class PackFlags : u32 {
-  None = 0,
-  Encrypted = 1 << 0,
-  Compressed = 1 << 1,
-  Signed = 1 << 2
-};
+enum class PackFlags : u32 { None = 0, Encrypted = 1 << 0, Compressed = 1 << 1, Signed = 1 << 2 };
 
 class PackReader : public IVirtualFileSystem {
 public:
   PackReader() = default;
   ~PackReader() override;
 
-  Result<void> mount(const std::string &packPath) override;
-  void unmount(const std::string &packPath) override;
+  Result<void> mount(const std::string& packPath) override;
+  void unmount(const std::string& packPath) override;
   void unmountAll() override;
 
-  [[nodiscard]] Result<std::vector<u8>>
-  readFile(const std::string &resourceId) const override;
+  [[nodiscard]] Result<std::vector<u8>> readFile(const std::string& resourceId) const override;
 
-  [[nodiscard]] bool exists(const std::string &resourceId) const override;
+  [[nodiscard]] bool exists(const std::string& resourceId) const override;
 
-  [[nodiscard]] std::optional<ResourceInfo>
-  getInfo(const std::string &resourceId) const override;
+  [[nodiscard]] std::optional<ResourceInfo> getInfo(const std::string& resourceId) const override;
 
   [[nodiscard]] std::vector<std::string>
   listResources(ResourceType type = ResourceType::Unknown) const override;
@@ -70,13 +63,12 @@ private:
     std::vector<std::string> stringTable;
   };
 
-  Result<void> readPackHeader(std::ifstream &file, PackHeader &header);
-  Result<void> readResourceTable(std::ifstream &file, MountedPack &pack);
-  Result<void> readStringTable(std::ifstream &file, MountedPack &pack);
+  Result<void> readPackHeader(std::ifstream& file, PackHeader& header);
+  Result<void> readResourceTable(std::ifstream& file, MountedPack& pack);
+  Result<void> readStringTable(std::ifstream& file, MountedPack& pack);
 
-  [[nodiscard]] Result<std::vector<u8>>
-  readResourceData(const std::string &packPath,
-                   const PackResourceEntry &entry) const;
+  [[nodiscard]] Result<std::vector<u8>> readResourceData(const std::string& packPath,
+                                                         const PackResourceEntry& entry) const;
 
   mutable std::mutex m_mutex;
   std::unordered_map<std::string, MountedPack> m_packs;

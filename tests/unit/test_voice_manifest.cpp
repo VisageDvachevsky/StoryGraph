@@ -22,7 +22,7 @@ VoiceManifest createTestManifest() {
 }
 
 // Helper to create a test voice line
-VoiceManifestLine createTestLine(const std::string &id = "test.line.001") {
+VoiceManifestLine createTestLine(const std::string& id = "test.line.001") {
   VoiceManifestLine line;
   line.id = id;
   line.textKey = "dialog." + id;
@@ -80,7 +80,7 @@ TEST_CASE("VoiceManifest project configuration", "[voice_manifest]") {
 
     auto locales = manifest.getLocales();
     int count = 0;
-    for (const auto &loc : locales) {
+    for (const auto& loc : locales) {
       if (loc == "en")
         ++count;
     }
@@ -124,14 +124,14 @@ TEST_CASE("VoiceManifest voice line operations", "[voice_manifest]") {
     VoiceManifestLine line = createTestLine();
     manifest.addLine(line);
 
-    const auto *retrieved = manifest.getLine("test.line.001");
+    const auto* retrieved = manifest.getLine("test.line.001");
     REQUIRE(retrieved != nullptr);
     REQUIRE(retrieved->id == "test.line.001");
     REQUIRE(retrieved->speaker == "narrator");
   }
 
   SECTION("get non-existent line returns nullptr") {
-    const auto *retrieved = manifest.getLine("non.existent");
+    const auto* retrieved = manifest.getLine("non.existent");
     REQUIRE(retrieved == nullptr);
   }
 
@@ -143,7 +143,7 @@ TEST_CASE("VoiceManifest voice line operations", "[voice_manifest]") {
     auto result = manifest.updateLine(line);
 
     REQUIRE(result.isOk());
-    const auto *updated = manifest.getLine("test.line.001");
+    const auto* updated = manifest.getLine("test.line.001");
     REQUIRE(updated->speaker == "alex");
   }
 
@@ -250,7 +250,7 @@ TEST_CASE("VoiceManifest status management", "[voice_manifest]") {
   manifest.addLine(line);
 
   SECTION("initial status is missing") {
-    const auto *retrieved = manifest.getLine("test.line.001");
+    const auto* retrieved = manifest.getLine("test.line.001");
     REQUIRE(retrieved->getOverallStatus() == VoiceLineStatus::Missing);
   }
 
@@ -258,7 +258,7 @@ TEST_CASE("VoiceManifest status management", "[voice_manifest]") {
     auto result = manifest.markAsRecorded("test.line.001", "en", "en/test.line.001.ogg");
 
     REQUIRE(result.isOk());
-    const auto *retrieved = manifest.getLine("test.line.001");
+    const auto* retrieved = manifest.getLine("test.line.001");
     auto file = retrieved->getFile("en");
     REQUIRE(file != nullptr);
     REQUIRE(file->status == VoiceLineStatus::Recorded);
@@ -269,7 +269,7 @@ TEST_CASE("VoiceManifest status management", "[voice_manifest]") {
     auto result = manifest.markAsImported("test.line.001", "en", "imported/voice.ogg");
 
     REQUIRE(result.isOk());
-    const auto *retrieved = manifest.getLine("test.line.001");
+    const auto* retrieved = manifest.getLine("test.line.001");
     auto file = retrieved->getFile("en");
     REQUIRE(file->status == VoiceLineStatus::Imported);
   }
@@ -280,7 +280,7 @@ TEST_CASE("VoiceManifest status management", "[voice_manifest]") {
     auto result = manifest.setStatus("test.line.001", "en", VoiceLineStatus::NeedsReview);
     REQUIRE(result.isOk());
 
-    const auto *retrieved = manifest.getLine("test.line.001");
+    const auto* retrieved = manifest.getLine("test.line.001");
     auto file = retrieved->getFile("en");
     REQUIRE(file->status == VoiceLineStatus::NeedsReview);
   }
@@ -355,7 +355,7 @@ TEST_CASE("VoiceManifest take management", "[voice_manifest]") {
     auto result = manifest.setActiveTake("test.line.001", "en", 1);
     REQUIRE(result.isOk());
 
-    const auto *retrieved = manifest.getLine("test.line.001");
+    const auto* retrieved = manifest.getLine("test.line.001");
     auto file = retrieved->getFile("en");
     REQUIRE(file->activeTakeIndex == 1);
     REQUIRE(file->filePath == "take2.ogg");
@@ -401,7 +401,7 @@ TEST_CASE("VoiceManifest validation", "[voice_manifest]") {
     REQUIRE_FALSE(errors.empty());
 
     bool foundMissingField = false;
-    for (const auto &error : errors) {
+    for (const auto& error : errors) {
       if (error.type == ManifestValidationError::Type::MissingRequiredField) {
         foundMissingField = true;
         break;
@@ -422,7 +422,7 @@ TEST_CASE("VoiceManifest validation", "[voice_manifest]") {
     REQUIRE_FALSE(errors.empty());
 
     bool foundInvalidLocale = false;
-    for (const auto &error : errors) {
+    for (const auto& error : errors) {
       if (error.type == ManifestValidationError::Type::InvalidLocale) {
         foundInvalidLocale = true;
         break;
@@ -522,7 +522,7 @@ TEST_CASE("VoiceManifest JSON serialization", "[voice_manifest]") {
     REQUIRE(loadedManifest.getDefaultLocale() == manifest.getDefaultLocale());
     REQUIRE(loadedManifest.getLineCount() == manifest.getLineCount());
 
-    const auto *loadedLine = loadedManifest.getLine("test.line.001");
+    const auto* loadedLine = loadedManifest.getLine("test.line.001");
     REQUIRE(loadedLine != nullptr);
     REQUIRE(loadedLine->speaker == "narrator");
   }
@@ -537,8 +537,7 @@ TEST_CASE("VoiceLineStatus string conversion", "[voice_manifest]") {
     REQUIRE(std::string(voiceLineStatusToString(VoiceLineStatus::Missing)) == "missing");
     REQUIRE(std::string(voiceLineStatusToString(VoiceLineStatus::Recorded)) == "recorded");
     REQUIRE(std::string(voiceLineStatusToString(VoiceLineStatus::Imported)) == "imported");
-    REQUIRE(std::string(voiceLineStatusToString(VoiceLineStatus::NeedsReview)) ==
-            "needs_review");
+    REQUIRE(std::string(voiceLineStatusToString(VoiceLineStatus::NeedsReview)) == "needs_review");
     REQUIRE(std::string(voiceLineStatusToString(VoiceLineStatus::Approved)) == "approved");
   }
 

@@ -6,7 +6,7 @@ Parser::Parser() : m_tokens(nullptr), m_current(0) {}
 
 Parser::~Parser() = default;
 
-Result<Program> Parser::parse(const std::vector<Token> &tokens) {
+Result<Program> Parser::parse(const std::vector<Token>& tokens) {
   m_tokens = &tokens;
   m_current = 0;
   m_errors.clear();
@@ -27,17 +27,25 @@ Result<Program> Parser::parse(const std::vector<Token> &tokens) {
   return Result<Program>::ok(std::move(m_program));
 }
 
-const std::vector<ParseError> &Parser::getErrors() const { return m_errors; }
+const std::vector<ParseError>& Parser::getErrors() const {
+  return m_errors;
+}
 
 // Token navigation
 
-bool Parser::isAtEnd() const { return peek().type == TokenType::EndOfFile; }
+bool Parser::isAtEnd() const {
+  return peek().type == TokenType::EndOfFile;
+}
 
-const Token &Parser::peek() const { return (*m_tokens)[m_current]; }
+const Token& Parser::peek() const {
+  return (*m_tokens)[m_current];
+}
 
-const Token &Parser::previous() const { return (*m_tokens)[m_current - 1]; }
+const Token& Parser::previous() const {
+  return (*m_tokens)[m_current - 1];
+}
 
-const Token &Parser::advance() {
+const Token& Parser::advance() {
   if (!isAtEnd()) {
     ++m_current;
   }
@@ -68,7 +76,7 @@ bool Parser::match(std::initializer_list<TokenType> types) {
   return false;
 }
 
-const Token &Parser::consume(TokenType type, const std::string &message) {
+const Token& Parser::consume(TokenType type, const std::string& message) {
   if (check(type)) {
     return advance();
   }
@@ -78,7 +86,7 @@ const Token &Parser::consume(TokenType type, const std::string &message) {
 
 // Error handling
 
-void Parser::error(const std::string &message) {
+void Parser::error(const std::string& message) {
   m_errors.emplace_back(message, peek().location);
 }
 
@@ -140,28 +148,23 @@ CharacterDecl Parser::parseCharacterDecl() {
   // character Hero(name="Alex", color="#FFCC00")
   CharacterDecl decl;
 
-  const Token &id =
-      consume(TokenType::Identifier, "Expected character identifier");
+  const Token& id = consume(TokenType::Identifier, "Expected character identifier");
   decl.id = id.lexeme;
 
   if (match(TokenType::LeftParen)) {
     // Parse properties
     do {
-      const Token &propName =
-          consume(TokenType::Identifier, "Expected property name");
+      const Token& propName = consume(TokenType::Identifier, "Expected property name");
       consume(TokenType::Assign, "Expected '=' after property name");
 
       if (propName.lexeme == "name") {
-        const Token &value =
-            consume(TokenType::String, "Expected string for name");
+        const Token& value = consume(TokenType::String, "Expected string for name");
         decl.displayName = value.lexeme;
       } else if (propName.lexeme == "color") {
-        const Token &value =
-            consume(TokenType::String, "Expected color string");
+        const Token& value = consume(TokenType::String, "Expected color string");
         decl.color = value.lexeme;
       } else if (propName.lexeme == "sprite") {
-        const Token &value =
-            consume(TokenType::String, "Expected sprite string");
+        const Token& value = consume(TokenType::String, "Expected sprite string");
         decl.defaultSprite = value.lexeme;
       } else {
         error("Unknown character property: " + propName.lexeme);
@@ -180,7 +183,7 @@ SceneDecl Parser::parseSceneDecl() {
   // scene intro { ... }
   SceneDecl decl;
 
-  const Token &name = consume(TokenType::Identifier, "Expected scene name");
+  const Token& name = consume(TokenType::Identifier, "Expected scene name");
   decl.name = name.lexeme;
 
   consume(TokenType::LeftBrace, "Expected '{' before scene body");
@@ -237,14 +240,12 @@ StmtPtr Parser::parseStatement() {
 
   // Check for shorthand say: Identifier "string"
   if (check(TokenType::Identifier)) {
-    const Token &id = peek();
-    if (m_current + 1 < m_tokens->size() &&
-        (*m_tokens)[m_current + 1].type == TokenType::String) {
+    const Token& id = peek();
+    if (m_current + 1 < m_tokens->size() && (*m_tokens)[m_current + 1].type == TokenType::String) {
       advance(); // consume identifier
       SayStmt say;
       say.speaker = id.lexeme;
-      const Token &text =
-          consume(TokenType::String, "Expected string after speaker");
+      const Token& text = consume(TokenType::String, "Expected string after speaker");
       say.text = text.lexeme;
       return makeStmt(std::move(say), id.location);
     }
@@ -270,18 +271,16 @@ StmtPtr Parser::parseShowStmt() {
 
   if (match(TokenType::Background)) {
     stmt.target = ShowStmt::Target::Background;
-    const Token &resource =
-        consume(TokenType::String, "Expected background resource");
+    const Token& resource = consume(TokenType::String, "Expected background resource");
     stmt.resource = resource.lexeme;
   } else {
-    const Token &id =
-        consume(TokenType::Identifier, "Expected character/sprite identifier");
+    const Token& id = consume(TokenType::Identifier, "Expected character/sprite identifier");
     stmt.identifier = id.lexeme;
     stmt.target = ShowStmt::Target::Character;
 
     // Optional sprite override
     if (check(TokenType::String)) {
-      const Token &sprite = advance();
+      const Token& sprite = advance();
       stmt.resource = sprite.lexeme;
     }
 
@@ -290,10 +289,10 @@ StmtPtr Parser::parseShowStmt() {
       stmt.position = parsePosition();
 
       if (stmt.position == Position::Custom) {
-        const Token &x = consume(TokenType::Float, "Expected X coordinate");
+        const Token& x = consume(TokenType::Float, "Expected X coordinate");
         stmt.customX = x.floatValue;
         consume(TokenType::Comma, "Expected ',' between coordinates");
-        const Token &y = consume(TokenType::Float, "Expected Y coordinate");
+        const Token& y = consume(TokenType::Float, "Expected Y coordinate");
         stmt.customY = y.floatValue;
       }
     }
@@ -301,15 +300,13 @@ StmtPtr Parser::parseShowStmt() {
 
   // Optional transition
   if (match(TokenType::Transition)) {
-    const Token &trans =
-        consume(TokenType::Identifier, "Expected transition type");
+    const Token& trans = consume(TokenType::Identifier, "Expected transition type");
     stmt.transition = trans.lexeme;
 
     if (check(TokenType::Float) || check(TokenType::Integer)) {
-      const Token &dur = advance();
-      stmt.duration = dur.type == TokenType::Float
-                          ? dur.floatValue
-                          : static_cast<f32>(dur.intValue);
+      const Token& dur = advance();
+      stmt.duration =
+          dur.type == TokenType::Float ? dur.floatValue : static_cast<f32>(dur.intValue);
     }
   }
 
@@ -321,21 +318,18 @@ StmtPtr Parser::parseHideStmt() {
   SourceLocation loc = previous().location;
   HideStmt stmt;
 
-  const Token &id =
-      consume(TokenType::Identifier, "Expected identifier to hide");
+  const Token& id = consume(TokenType::Identifier, "Expected identifier to hide");
   stmt.identifier = id.lexeme;
 
   // Optional transition
   if (match(TokenType::Transition)) {
-    const Token &trans =
-        consume(TokenType::Identifier, "Expected transition type");
+    const Token& trans = consume(TokenType::Identifier, "Expected transition type");
     stmt.transition = trans.lexeme;
 
     if (check(TokenType::Float) || check(TokenType::Integer)) {
-      const Token &dur = advance();
-      stmt.duration = dur.type == TokenType::Float
-                          ? dur.floatValue
-                          : static_cast<f32>(dur.intValue);
+      const Token& dur = advance();
+      stmt.duration =
+          dur.type == TokenType::Float ? dur.floatValue : static_cast<f32>(dur.intValue);
     }
   }
 
@@ -349,11 +343,11 @@ StmtPtr Parser::parseSayStmt() {
   SayStmt stmt;
 
   if (check(TokenType::Identifier)) {
-    const Token &speaker = advance();
+    const Token& speaker = advance();
     stmt.speaker = speaker.lexeme;
   }
 
-  const Token &text = consume(TokenType::String, "Expected dialogue text");
+  const Token& text = consume(TokenType::String, "Expected dialogue text");
   stmt.text = text.lexeme;
 
   return makeStmt(std::move(stmt), loc);
@@ -372,18 +366,17 @@ StmtPtr Parser::parseChoiceStmt() {
   while (!check(TokenType::RightBrace) && !isAtEnd()) {
     ChoiceOption option;
 
-    const Token &text = consume(TokenType::String, "Expected choice text");
+    const Token& text = consume(TokenType::String, "Expected choice text");
     option.text = text.lexeme;
 
     // Optional condition
     if (match(TokenType::If)) {
       auto condExpr = parseExpression();
       if (condExpr && !isValidConditionExpression(*condExpr)) {
-        error(
-            "Invalid condition expression in choice. Conditions must be "
-            "boolean expressions, not string or numeric literals. Use "
-            "variables (e.g., 'has_key'), comparisons (e.g., 'counter > 5'), or "
-            "boolean operators (e.g., 'flag1 and flag2')");
+        error("Invalid condition expression in choice. Conditions must be "
+              "boolean expressions, not string or numeric literals. Use "
+              "variables (e.g., 'has_key'), comparisons (e.g., 'counter > 5'), or "
+              "boolean operators (e.g., 'flag1 and flag2')");
       }
       option.condition = std::move(condExpr);
     }
@@ -392,8 +385,7 @@ StmtPtr Parser::parseChoiceStmt() {
 
     // Either goto or block
     if (match(TokenType::Goto)) {
-      const Token &target =
-          consume(TokenType::Identifier, "Expected goto target");
+      const Token& target = consume(TokenType::Identifier, "Expected goto target");
       option.gotoTarget = target.lexeme;
     } else if (check(TokenType::LeftBrace)) {
       advance();
@@ -448,7 +440,7 @@ StmtPtr Parser::parseGotoStmt() {
   SourceLocation loc = previous().location;
   GotoStmt stmt;
 
-  const Token &target = consume(TokenType::Identifier, "Expected goto target");
+  const Token& target = consume(TokenType::Identifier, "Expected goto target");
   stmt.target = target.lexeme;
 
   return makeStmt(std::move(stmt), loc);
@@ -459,7 +451,7 @@ StmtPtr Parser::parseWaitStmt() {
   SourceLocation loc = previous().location;
   WaitStmt stmt;
 
-  const Token &duration = advance();
+  const Token& duration = advance();
   if (duration.type == TokenType::Float) {
     stmt.duration = duration.floatValue;
   } else if (duration.type == TokenType::Integer) {
@@ -487,14 +479,13 @@ StmtPtr Parser::parsePlayStmt() {
     return nullptr;
   }
 
-  const Token &resource = consume(TokenType::String, "Expected resource path");
+  const Token& resource = consume(TokenType::String, "Expected resource path");
   stmt.resource = resource.lexeme;
 
   // Optional volume
   if (check(TokenType::Float) || check(TokenType::Integer)) {
-    const Token &vol = advance();
-    stmt.volume = vol.type == TokenType::Float ? vol.floatValue
-                                               : static_cast<f32>(vol.intValue);
+    const Token& vol = advance();
+    stmt.volume = vol.type == TokenType::Float ? vol.floatValue : static_cast<f32>(vol.intValue);
   }
 
   // Optional loop keyword (represented as identifier)
@@ -523,7 +514,7 @@ StmtPtr Parser::parseStopStmt() {
 
   // Optional fade
   if (match(TokenType::Fade)) {
-    const Token &dur = advance();
+    const Token& dur = advance();
     if (dur.type == TokenType::Float) {
       stmt.fadeOut = dur.floatValue;
     } else if (dur.type == TokenType::Integer) {
@@ -546,7 +537,7 @@ StmtPtr Parser::parseSetStmt() {
     stmt.isFlag = true;
   }
 
-  const Token &var = consume(TokenType::Identifier, "Expected variable name");
+  const Token& var = consume(TokenType::Identifier, "Expected variable name");
   stmt.variable = var.lexeme;
 
   consume(TokenType::Assign, "Expected '=' after variable name");
@@ -564,7 +555,7 @@ StmtPtr Parser::parseTransitionStmt() {
 
   // Transition type can be a keyword (fade) or identifier (dissolve, slide,
   // etc.)
-  const Token &type = advance();
+  const Token& type = advance();
   if (type.type == TokenType::Fade) {
     stmt.type = "fade";
   } else if (type.type == TokenType::Identifier) {
@@ -574,7 +565,7 @@ StmtPtr Parser::parseTransitionStmt() {
     stmt.type = "fade";
   }
 
-  const Token &dur = advance();
+  const Token& dur = advance();
   if (dur.type == TokenType::Float) {
     stmt.duration = dur.floatValue;
   } else if (dur.type == TokenType::Integer) {
@@ -586,7 +577,7 @@ StmtPtr Parser::parseTransitionStmt() {
 
   // Optional color
   if (check(TokenType::String)) {
-    const Token &color = advance();
+    const Token& color = advance();
     stmt.color = color.lexeme;
   }
 
@@ -598,8 +589,7 @@ StmtPtr Parser::parseMoveStmt() {
   SourceLocation loc = previous().location;
   MoveStmt stmt;
 
-  const Token &id =
-      consume(TokenType::Identifier, "Expected character identifier after 'move'");
+  const Token& id = consume(TokenType::Identifier, "Expected character identifier after 'move'");
   stmt.characterId = id.lexeme;
 
   consume(TokenType::To, "Expected 'to' after character name");
@@ -607,10 +597,10 @@ StmtPtr Parser::parseMoveStmt() {
   stmt.position = parsePosition();
 
   if (stmt.position == Position::Custom) {
-    const Token &x = consume(TokenType::Float, "Expected X coordinate");
+    const Token& x = consume(TokenType::Float, "Expected X coordinate");
     stmt.customX = x.floatValue;
     consume(TokenType::Comma, "Expected ',' between coordinates");
-    const Token &y = consume(TokenType::Float, "Expected Y coordinate");
+    const Token& y = consume(TokenType::Float, "Expected Y coordinate");
     stmt.customY = y.floatValue;
   }
 
@@ -618,7 +608,7 @@ StmtPtr Parser::parseMoveStmt() {
   if (match(TokenType::Duration)) {
     consume(TokenType::Assign, "Expected '=' after 'duration'");
 
-    const Token &dur = advance();
+    const Token& dur = advance();
     if (dur.type == TokenType::Float) {
       stmt.duration = dur.floatValue;
     } else if (dur.type == TokenType::Integer) {
@@ -645,7 +635,9 @@ StmtPtr Parser::parseBlock() {
 
 // Grammar rules - expressions (precedence climbing)
 
-ExprPtr Parser::parseExpression() { return parseOr(); }
+ExprPtr Parser::parseExpression() {
+  return parseOr();
+}
 
 ExprPtr Parser::parseOr() {
   auto expr = parseAnd();
@@ -707,8 +699,8 @@ ExprPtr Parser::parseEquality() {
 ExprPtr Parser::parseComparison() {
   auto expr = parseTerm();
 
-  while (match({TokenType::Less, TokenType::LessEqual, TokenType::Greater,
-                TokenType::GreaterEqual})) {
+  while (
+      match({TokenType::Less, TokenType::LessEqual, TokenType::Greater, TokenType::GreaterEqual})) {
     SourceLocation loc = previous().location;
     TokenType op = previous().type;
     auto right = parseTerm();
@@ -809,8 +801,7 @@ ExprPtr Parser::parseCall() {
     } else if (match(TokenType::Dot)) {
       // Property access
       SourceLocation loc = previous().location;
-      const Token &name =
-          consume(TokenType::Identifier, "Expected property name after '.'");
+      const Token& name = consume(TokenType::Identifier, "Expected property name after '.'");
 
       PropertyExpr prop;
       prop.object = std::move(expr);
@@ -881,7 +872,7 @@ ExprPtr Parser::parsePrimary() {
 
 Position Parser::parsePosition() {
   if (check(TokenType::Identifier)) {
-    const std::string &pos = peek().lexeme;
+    const std::string& pos = peek().lexeme;
 
     if (pos == "left") {
       advance();
@@ -906,7 +897,7 @@ Position Parser::parsePosition() {
 }
 
 std::string Parser::parseString() {
-  const Token &str = consume(TokenType::String, "Expected string");
+  const Token& str = consume(TokenType::String, "Expected string");
   return str.lexeme;
 }
 
@@ -935,10 +926,10 @@ std::vector<StmtPtr> Parser::parseStatementList() {
 
 // Validation helpers
 
-bool Parser::isValidConditionExpression(const Expression &expr) const {
+bool Parser::isValidConditionExpression(const Expression& expr) const {
   // Check if the expression is obviously non-boolean
   return std::visit(
-      [](const auto &e) -> bool {
+      [](const auto& e) -> bool {
         using T = std::decay_t<decltype(e)>;
 
         if constexpr (std::is_same_v<T, LiteralExpr>) {
@@ -948,16 +939,13 @@ bool Parser::isValidConditionExpression(const Expression &expr) const {
           }
           // Pure numeric literals (non-boolean) should not be used as
           // conditions
-          if (std::holds_alternative<i32>(e.value) ||
-              std::holds_alternative<f32>(e.value)) {
+          if (std::holds_alternative<i32>(e.value) || std::holds_alternative<f32>(e.value)) {
             return false;
           }
           // Boolean literals and monostate are OK
           return true;
-        } else if constexpr (std::is_same_v<T, IdentifierExpr> ||
-                             std::is_same_v<T, BinaryExpr> ||
-                             std::is_same_v<T, UnaryExpr> ||
-                             std::is_same_v<T, CallExpr> ||
+        } else if constexpr (std::is_same_v<T, IdentifierExpr> || std::is_same_v<T, BinaryExpr> ||
+                             std::is_same_v<T, UnaryExpr> || std::is_same_v<T, CallExpr> ||
                              std::is_same_v<T, PropertyExpr>) {
           // These can potentially be boolean, allow them
           return true;

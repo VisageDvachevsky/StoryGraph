@@ -6,8 +6,7 @@
 
 namespace NovelMind::editor::qt {
 
-NMSceneViewPanel::NMSceneViewPanel(QWidget *parent)
-    : NMDockPanel(tr("Scene View"), parent) {
+NMSceneViewPanel::NMSceneViewPanel(QWidget* parent) : NMDockPanel(tr("Scene View"), parent) {
   setPanelId("SceneView");
 
   // Scene View is a central panel that needs sufficient space for
@@ -27,7 +26,7 @@ void NMSceneViewPanel::onInitialize() {
   }
 
   // Connect to Play Mode Controller for runtime preview
-  auto &playController = NMPlayModeController::instance();
+  auto& playController = NMPlayModeController::instance();
   connect(&playController, &NMPlayModeController::currentNodeChanged, this,
           &NMSceneViewPanel::onPlayModeCurrentNodeChanged);
   connect(&playController, &NMPlayModeController::dialogueLineChanged, this,
@@ -37,23 +36,20 @@ void NMSceneViewPanel::onInitialize() {
   connect(&playController, &NMPlayModeController::playModeChanged, this,
           &NMSceneViewPanel::onPlayModeChanged);
   connect(&playController, &NMPlayModeController::sceneSnapshotUpdated, this,
-          [this, &playController]() {
-            applyRuntimeSnapshot(playController.lastSnapshot());
-          });
+          [this, &playController]() { applyRuntimeSnapshot(playController.lastSnapshot()); });
 
   qDebug() << "[SceneView] Connected to PlayModeController for runtime preview";
 
   connect(this, &NMSceneViewPanel::sceneObjectsChanged, this, [this]() {
-    if (!m_isLoadingScene && !m_runtimePreviewActive && !m_playModeActive &&
-        !m_suppressSceneSave) {
+    if (!m_isLoadingScene && !m_runtimePreviewActive && !m_playModeActive && !m_suppressSceneSave) {
       saveSceneDocument();
     }
   });
   connect(this, &NMSceneViewPanel::objectTransformFinished, this,
-          [this](const QString &, const QPointF &, const QPointF &, qreal,
-                 qreal, qreal, qreal, qreal, qreal) {
-            if (!m_isLoadingScene && !m_runtimePreviewActive &&
-                !m_playModeActive && !m_suppressSceneSave) {
+          [this](const QString&, const QPointF&, const QPointF&, qreal, qreal, qreal, qreal, qreal,
+                 qreal) {
+            if (!m_isLoadingScene && !m_runtimePreviewActive && !m_playModeActive &&
+                !m_suppressSceneSave) {
               saveSceneDocument();
             }
           });

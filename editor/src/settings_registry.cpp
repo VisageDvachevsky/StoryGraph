@@ -16,7 +16,7 @@
 namespace {
 
 // Helper to escape JSON strings
-std::string escapeJson(const std::string &str) {
+std::string escapeJson(const std::string& str) {
   std::string result;
   for (char c : str) {
     switch (c) {
@@ -44,7 +44,7 @@ std::string escapeJson(const std::string &str) {
 }
 
 // Helper to unescape JSON strings
-std::string unescapeJson(const std::string &str) {
+std::string unescapeJson(const std::string& str) {
   std::string result;
   bool escape = false;
   for (char c : str) {
@@ -74,7 +74,7 @@ std::string unescapeJson(const std::string &str) {
 }
 
 // Convert lowercase string for case-insensitive search
-std::string toLower(const std::string &str) {
+std::string toLower(const std::string& str) {
   std::string result = str;
   std::transform(result.begin(), result.end(), result.begin(),
                  [](unsigned char c) { return std::tolower(c); });
@@ -91,7 +91,7 @@ namespace NovelMind::editor {
 
 NMSettingsRegistry::NMSettingsRegistry() {}
 
-void NMSettingsRegistry::registerSetting(const SettingDefinition &def) {
+void NMSettingsRegistry::registerSetting(const SettingDefinition& def) {
   m_definitions[def.key] = def;
 
   // Set default value if not already set
@@ -101,15 +101,14 @@ void NMSettingsRegistry::registerSetting(const SettingDefinition &def) {
   }
 }
 
-void NMSettingsRegistry::unregisterSetting(const std::string &key) {
+void NMSettingsRegistry::unregisterSetting(const std::string& key) {
   m_definitions.erase(key);
   m_values.erase(key);
   m_originalValues.erase(key);
   m_changeCallbacks.erase(key);
 }
 
-std::optional<SettingDefinition>
-NMSettingsRegistry::getDefinition(const std::string &key) const {
+std::optional<SettingDefinition> NMSettingsRegistry::getDefinition(const std::string& key) const {
   auto it = m_definitions.find(key);
   if (it != m_definitions.end()) {
     return it->second;
@@ -117,15 +116,15 @@ NMSettingsRegistry::getDefinition(const std::string &key) const {
   return std::nullopt;
 }
 
-const std::unordered_map<std::string, SettingDefinition> &
+const std::unordered_map<std::string, SettingDefinition>&
 NMSettingsRegistry::getAllDefinitions() const {
   return m_definitions;
 }
 
 std::vector<SettingDefinition>
-NMSettingsRegistry::getByCategory(const std::string &category) const {
+NMSettingsRegistry::getByCategory(const std::string& category) const {
   std::vector<SettingDefinition> result;
-  for (const auto &[key, def] : m_definitions) {
+  for (const auto& [key, def] : m_definitions) {
     if (def.category == category) {
       result.push_back(def);
     }
@@ -133,10 +132,9 @@ NMSettingsRegistry::getByCategory(const std::string &category) const {
   return result;
 }
 
-std::vector<SettingDefinition>
-NMSettingsRegistry::getByScope(SettingScope scope) const {
+std::vector<SettingDefinition> NMSettingsRegistry::getByScope(SettingScope scope) const {
   std::vector<SettingDefinition> result;
-  for (const auto &[key, def] : m_definitions) {
+  for (const auto& [key, def] : m_definitions) {
     if (def.scope == scope) {
       result.push_back(def);
     }
@@ -144,11 +142,10 @@ NMSettingsRegistry::getByScope(SettingScope scope) const {
   return result;
 }
 
-std::vector<SettingDefinition>
-NMSettingsRegistry::search(const std::string &query) const {
+std::vector<SettingDefinition> NMSettingsRegistry::search(const std::string& query) const {
   if (query.empty()) {
     std::vector<SettingDefinition> all;
-    for (const auto &[key, def] : m_definitions) {
+    for (const auto& [key, def] : m_definitions) {
       all.push_back(def);
     }
     return all;
@@ -157,7 +154,7 @@ NMSettingsRegistry::search(const std::string &query) const {
   std::string queryLower = toLower(query);
   std::vector<SettingDefinition> result;
 
-  for (const auto &[key, def] : m_definitions) {
+  for (const auto& [key, def] : m_definitions) {
     // Search in key, display name, description, and tags
     if (toLower(def.key).find(queryLower) != std::string::npos ||
         toLower(def.displayName).find(queryLower) != std::string::npos ||
@@ -167,7 +164,7 @@ NMSettingsRegistry::search(const std::string &query) const {
       continue;
     }
 
-    for (const auto &tag : def.tags) {
+    for (const auto& tag : def.tags) {
       if (toLower(tag).find(queryLower) != std::string::npos) {
         result.push_back(def);
         break;
@@ -180,8 +177,7 @@ NMSettingsRegistry::search(const std::string &query) const {
 
 // ========== Value Management ==========
 
-std::optional<SettingValue>
-NMSettingsRegistry::getValue(const std::string &key) const {
+std::optional<SettingValue> NMSettingsRegistry::getValue(const std::string& key) const {
   auto it = m_values.find(key);
   if (it != m_values.end()) {
     return it->second;
@@ -196,8 +192,7 @@ NMSettingsRegistry::getValue(const std::string &key) const {
   return std::nullopt;
 }
 
-std::string NMSettingsRegistry::setValue(const std::string &key,
-                                         const SettingValue &value) {
+std::string NMSettingsRegistry::setValue(const std::string& key, const SettingValue& value) {
   auto defIt = m_definitions.find(key);
   if (defIt == m_definitions.end()) {
     return "Setting not registered: " + key;
@@ -224,7 +219,7 @@ std::string NMSettingsRegistry::setValue(const std::string &key,
   return ""; // Success
 }
 
-void NMSettingsRegistry::resetToDefault(const std::string &key) {
+void NMSettingsRegistry::resetToDefault(const std::string& key) {
   auto defIt = m_definitions.find(key);
   if (defIt != m_definitions.end()) {
     m_values[key] = defIt->second.defaultValue;
@@ -235,15 +230,15 @@ void NMSettingsRegistry::resetToDefault(const std::string &key) {
 }
 
 void NMSettingsRegistry::resetAllToDefaults() {
-  for (const auto &[key, def] : m_definitions) {
+  for (const auto& [key, def] : m_definitions) {
     m_values[key] = def.defaultValue;
   }
   m_originalValues.clear();
   m_isDirty = true;
 }
 
-void NMSettingsRegistry::resetCategoryToDefaults(const std::string &category) {
-  for (const auto &[key, def] : m_definitions) {
+void NMSettingsRegistry::resetCategoryToDefaults(const std::string& category) {
+  for (const auto& [key, def] : m_definitions) {
     if (def.category == category) {
       m_values[key] = def.defaultValue;
       m_originalValues.erase(key);
@@ -255,8 +250,7 @@ void NMSettingsRegistry::resetCategoryToDefaults(const std::string &category) {
 
 // ========== Type-safe Getters ==========
 
-bool NMSettingsRegistry::getBool(const std::string &key,
-                                 bool defaultVal) const {
+bool NMSettingsRegistry::getBool(const std::string& key, bool defaultVal) const {
   auto value = getValue(key);
   if (!value)
     return defaultVal;
@@ -267,7 +261,7 @@ bool NMSettingsRegistry::getBool(const std::string &key,
   }
 }
 
-i32 NMSettingsRegistry::getInt(const std::string &key, i32 defaultVal) const {
+i32 NMSettingsRegistry::getInt(const std::string& key, i32 defaultVal) const {
   auto value = getValue(key);
   if (!value)
     return defaultVal;
@@ -278,7 +272,7 @@ i32 NMSettingsRegistry::getInt(const std::string &key, i32 defaultVal) const {
   }
 }
 
-f32 NMSettingsRegistry::getFloat(const std::string &key, f32 defaultVal) const {
+f32 NMSettingsRegistry::getFloat(const std::string& key, f32 defaultVal) const {
   auto value = getValue(key);
   if (!value)
     return defaultVal;
@@ -289,8 +283,8 @@ f32 NMSettingsRegistry::getFloat(const std::string &key, f32 defaultVal) const {
   }
 }
 
-std::string NMSettingsRegistry::getString(const std::string &key,
-                                          const std::string &defaultVal) const {
+std::string NMSettingsRegistry::getString(const std::string& key,
+                                          const std::string& defaultVal) const {
   auto value = getValue(key);
   if (!value)
     return defaultVal;
@@ -303,20 +297,20 @@ std::string NMSettingsRegistry::getString(const std::string &key,
 
 // ========== Change Tracking ==========
 
-bool NMSettingsRegistry::isModified(const std::string &key) const {
+bool NMSettingsRegistry::isModified(const std::string& key) const {
   return m_originalValues.find(key) != m_originalValues.end();
 }
 
 std::vector<std::string> NMSettingsRegistry::getModifiedSettings() const {
   std::vector<std::string> result;
-  for (const auto &[key, value] : m_originalValues) {
+  for (const auto& [key, value] : m_originalValues) {
     result.push_back(key);
   }
   return result;
 }
 
 void NMSettingsRegistry::revert() {
-  for (const auto &[key, originalValue] : m_originalValues) {
+  for (const auto& [key, originalValue] : m_originalValues) {
     m_values[key] = originalValue;
     notifyChange(key, originalValue);
   }
@@ -329,65 +323,62 @@ void NMSettingsRegistry::apply() {
   m_isDirty = false;
 }
 
-void NMSettingsRegistry::registerChangeCallback(
-    const std::string &key, SettingChangeCallback callback) {
+void NMSettingsRegistry::registerChangeCallback(const std::string& key,
+                                                SettingChangeCallback callback) {
   m_changeCallbacks[key].push_back(std::move(callback));
 }
 
-void NMSettingsRegistry::unregisterChangeCallback(const std::string &key) {
+void NMSettingsRegistry::unregisterChangeCallback(const std::string& key) {
   m_changeCallbacks.erase(key);
 }
 
 // ========== Persistence ==========
 
-Result<void> NMSettingsRegistry::loadUserSettings(const std::string &path) {
+Result<void> NMSettingsRegistry::loadUserSettings(const std::string& path) {
   m_userSettingsPath = path;
   return loadFromJson(path, SettingScope::User);
 }
 
-Result<void> NMSettingsRegistry::saveUserSettings(const std::string &path) {
+Result<void> NMSettingsRegistry::saveUserSettings(const std::string& path) {
   m_userSettingsPath = path;
   return saveToJson(path, SettingScope::User);
 }
 
-Result<void> NMSettingsRegistry::loadProjectSettings(const std::string &path) {
+Result<void> NMSettingsRegistry::loadProjectSettings(const std::string& path) {
   m_projectSettingsPath = path;
   return loadFromJson(path, SettingScope::Project);
 }
 
-Result<void> NMSettingsRegistry::saveProjectSettings(const std::string &path) {
+Result<void> NMSettingsRegistry::saveProjectSettings(const std::string& path) {
   m_projectSettingsPath = path;
   return saveToJson(path, SettingScope::Project);
 }
 
 // ========== Private Methods ==========
 
-std::string NMSettingsRegistry::validateValue(const std::string &key,
-                                              const SettingValue &value) const {
+std::string NMSettingsRegistry::validateValue(const std::string& key,
+                                              const SettingValue& value) const {
   auto defIt = m_definitions.find(key);
   if (defIt == m_definitions.end()) {
     return "Setting not found";
   }
 
-  const auto &def = defIt->second;
+  const auto& def = defIt->second;
 
   // Type-specific validation
   if (def.type == SettingType::Int || def.type == SettingType::IntRange) {
     try {
       i32 intVal = std::get<i32>(value);
       if (def.type == SettingType::IntRange) {
-        if (intVal < static_cast<i32>(def.minValue) ||
-            intVal > static_cast<i32>(def.maxValue)) {
-          return "Value out of range [" +
-                 std::to_string(static_cast<i32>(def.minValue)) + ", " +
+        if (intVal < static_cast<i32>(def.minValue) || intVal > static_cast<i32>(def.maxValue)) {
+          return "Value out of range [" + std::to_string(static_cast<i32>(def.minValue)) + ", " +
                  std::to_string(static_cast<i32>(def.maxValue)) + "]";
         }
       }
     } catch (...) {
       return "Invalid type (expected Int)";
     }
-  } else if (def.type == SettingType::Float ||
-             def.type == SettingType::FloatRange) {
+  } else if (def.type == SettingType::Float || def.type == SettingType::FloatRange) {
     try {
       f32 floatVal = std::get<f32>(value);
       if (def.type == SettingType::FloatRange) {
@@ -429,13 +420,11 @@ std::string NMSettingsRegistry::validateValue(const std::string &key,
   return ""; // Valid
 }
 
-Result<void> NMSettingsRegistry::loadFromJson(const std::string &path,
-                                              SettingScope scope) {
+Result<void> NMSettingsRegistry::loadFromJson(const std::string& path, SettingScope scope) {
   namespace fs = std::filesystem;
 
   if (!fs::exists(path)) {
-    NOVELMIND_LOG_INFO(
-        std::string("Settings file not found, using defaults: ") + path);
+    NOVELMIND_LOG_INFO(std::string("Settings file not found, using defaults: ") + path);
     return Result<void>::ok();
   }
 
@@ -472,8 +461,7 @@ Result<void> NMSettingsRegistry::loadFromJson(const std::string &path,
       // Parse key-value pairs
       if (line.find("\":") != std::string::npos && line[0] == '"') {
         auto colonPos = line.find("\":");
-        std::string key =
-            line.substr(1, colonPos - 1); // Extract key between quotes
+        std::string key = line.substr(1, colonPos - 1); // Extract key between quotes
         std::string valueStr = line.substr(colonPos + 2);
 
         // Remove trailing comma and whitespace
@@ -486,24 +474,21 @@ Result<void> NMSettingsRegistry::loadFromJson(const std::string &path,
         // Find definition for this key
         auto defIt = m_definitions.find(key);
         if (defIt != m_definitions.end() && defIt->second.scope == scope) {
-          const auto &def = defIt->second;
+          const auto& def = defIt->second;
 
           // Parse value based on type
           if (def.type == SettingType::Bool) {
             bool val = (valueStr == "true");
             m_values[key] = val;
-          } else if (def.type == SettingType::Int ||
-                     def.type == SettingType::IntRange) {
+          } else if (def.type == SettingType::Int || def.type == SettingType::IntRange) {
             i32 val = std::stoi(valueStr);
             m_values[key] = val;
-          } else if (def.type == SettingType::Float ||
-                     def.type == SettingType::FloatRange) {
+          } else if (def.type == SettingType::Float || def.type == SettingType::FloatRange) {
             f32 val = std::stof(valueStr);
             m_values[key] = val;
           } else {
             // String type - remove quotes
-            if (valueStr.size() >= 2 && valueStr.front() == '"' &&
-                valueStr.back() == '"') {
+            if (valueStr.size() >= 2 && valueStr.front() == '"' && valueStr.back() == '"') {
               valueStr = valueStr.substr(1, valueStr.size() - 2);
             }
             m_values[key] = unescapeJson(valueStr);
@@ -518,14 +503,12 @@ Result<void> NMSettingsRegistry::loadFromJson(const std::string &path,
 
     NOVELMIND_LOG_INFO(std::string("Loaded settings from: ") + path);
     return Result<void>::ok();
-  } catch (const std::exception &e) {
-    return Result<void>::error(std::string("Failed to load settings: ") +
-                               e.what());
+  } catch (const std::exception& e) {
+    return Result<void>::error(std::string("Failed to load settings: ") + e.what());
   }
 }
 
-Result<void> NMSettingsRegistry::saveToJson(const std::string &path,
-                                            SettingScope scope) const {
+Result<void> NMSettingsRegistry::saveToJson(const std::string& path, SettingScope scope) const {
   namespace fs = std::filesystem;
 
   try {
@@ -546,7 +529,7 @@ Result<void> NMSettingsRegistry::saveToJson(const std::string &path,
     file << "  \"settings\": {\n";
 
     bool first = true;
-    for (const auto &[key, def] : m_definitions) {
+    for (const auto& [key, def] : m_definitions) {
       if (def.scope != scope)
         continue;
 
@@ -560,14 +543,12 @@ Result<void> NMSettingsRegistry::saveToJson(const std::string &path,
 
       file << "    \"" << escapeJson(key) << "\": ";
 
-      const auto &value = valueIt->second;
+      const auto& value = valueIt->second;
       if (def.type == SettingType::Bool) {
         file << (std::get<bool>(value) ? "true" : "false");
-      } else if (def.type == SettingType::Int ||
-                 def.type == SettingType::IntRange) {
+      } else if (def.type == SettingType::Int || def.type == SettingType::IntRange) {
         file << std::get<i32>(value);
-      } else if (def.type == SettingType::Float ||
-                 def.type == SettingType::FloatRange) {
+      } else if (def.type == SettingType::Float || def.type == SettingType::FloatRange) {
         file << std::get<f32>(value);
       } else {
         file << "\"" << escapeJson(std::get<std::string>(value)) << "\"";
@@ -579,17 +560,15 @@ Result<void> NMSettingsRegistry::saveToJson(const std::string &path,
 
     NOVELMIND_LOG_INFO(std::string("Saved settings to: ") + path);
     return Result<void>::ok();
-  } catch (const std::exception &e) {
-    return Result<void>::error(std::string("Failed to save settings: ") +
-                               e.what());
+  } catch (const std::exception& e) {
+    return Result<void>::error(std::string("Failed to save settings: ") + e.what());
   }
 }
 
-void NMSettingsRegistry::notifyChange(const std::string &key,
-                                      const SettingValue &newValue) {
+void NMSettingsRegistry::notifyChange(const std::string& key, const SettingValue& newValue) {
   auto it = m_changeCallbacks.find(key);
   if (it != m_changeCallbacks.end()) {
-    for (const auto &callback : it->second) {
+    for (const auto& callback : it->second) {
       if (callback) {
         callback(key, newValue);
       }
@@ -730,8 +709,7 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Enum,
       SettingScope::User,
       std::string("default"),
-      {"default", "story_focused", "scene_focused", "script_focused",
-       "minimal"},
+      {"default", "story_focused", "scene_focused", "script_focused", "minimal"},
       0.0f,  // minValue
       1.0f,  // maxValue
       {},    // validator
@@ -869,13 +847,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::String,
       SettingScope::User,
       std::string("monospace"),
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      false, // isAdvanced
-      {"font", "editor"}     // tags
+      {},                // enumOptions
+      0.0f,              // minValue
+      1.0f,              // maxValue
+      {},                // validator
+      false,             // requiresRestart
+      false,             // isAdvanced
+      {"font", "editor"} // tags
   });
 
   registerSetting({
@@ -887,12 +865,12 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingScope::User,
       14,
       {},
-      8.0f,   // min
-      32.0f,  // max
-      {},     // validator
-      false,  // requiresRestart
-      false,  // isAdvanced
-      {"font", "editor"}     // tags
+      8.0f,              // min
+      32.0f,             // max
+      {},                // validator
+      false,             // requiresRestart
+      false,             // isAdvanced
+      {"font", "editor"} // tags
   });
 
   registerSetting({
@@ -903,13 +881,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       false,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      false, // isAdvanced
-      {"font", "editor"}     // tags
+      {},                // enumOptions
+      0.0f,              // minValue
+      1.0f,              // maxValue
+      {},                // validator
+      false,             // requiresRestart
+      false,             // isAdvanced
+      {"font", "editor"} // tags
   });
 
   // ========== Script Editor - Display Settings ==========
@@ -921,13 +899,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       true,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      false, // isAdvanced
-      {"display", "editor"}     // tags
+      {},                   // enumOptions
+      0.0f,                 // minValue
+      1.0f,                 // maxValue
+      {},                   // validator
+      false,                // requiresRestart
+      false,                // isAdvanced
+      {"display", "editor"} // tags
   });
 
   registerSetting({
@@ -938,13 +916,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       true,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      false, // isAdvanced
-      {"display", "editor"}     // tags
+      {},                   // enumOptions
+      0.0f,                 // minValue
+      1.0f,                 // maxValue
+      {},                   // validator
+      false,                // requiresRestart
+      false,                // isAdvanced
+      {"display", "editor"} // tags
   });
 
   registerSetting({
@@ -955,13 +933,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       false,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      false, // isAdvanced
-      {"display", "editor"}     // tags
+      {},                   // enumOptions
+      0.0f,                 // minValue
+      1.0f,                 // maxValue
+      {},                   // validator
+      false,                // requiresRestart
+      false,                // isAdvanced
+      {"display", "editor"} // tags
   });
 
   // ========== Script Editor - Indentation Settings ==========
@@ -973,13 +951,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       true,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      false, // isAdvanced
-      {"indentation", "editor"}     // tags
+      {},                       // enumOptions
+      0.0f,                     // minValue
+      1.0f,                     // maxValue
+      {},                       // validator
+      false,                    // requiresRestart
+      false,                    // isAdvanced
+      {"indentation", "editor"} // tags
   });
 
   // ========== Script Editor - Diagnostics Settings ==========
@@ -992,12 +970,12 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingScope::User,
       600,
       {},
-      100.0f,  // min
-      2000.0f, // max
-      {},      // validator
-      false,   // requiresRestart
-      false,   // isAdvanced
-      {"diagnostics", "editor"}     // tags
+      100.0f,                   // min
+      2000.0f,                  // max
+      {},                       // validator
+      false,                    // requiresRestart
+      false,                    // isAdvanced
+      {"diagnostics", "editor"} // tags
   });
 
   registerSetting({
@@ -1008,13 +986,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       true,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      false, // isAdvanced
-      {"diagnostics", "editor"}     // tags
+      {},                       // enumOptions
+      0.0f,                     // minValue
+      1.0f,                     // maxValue
+      {},                       // validator
+      false,                    // requiresRestart
+      false,                    // isAdvanced
+      {"diagnostics", "editor"} // tags
   });
 
   registerSetting({
@@ -1025,13 +1003,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       true,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      false, // isAdvanced
-      {"diagnostics", "editor"}     // tags
+      {},                       // enumOptions
+      0.0f,                     // minValue
+      1.0f,                     // maxValue
+      {},                       // validator
+      false,                    // requiresRestart
+      false,                    // isAdvanced
+      {"diagnostics", "editor"} // tags
   });
 
   registerSetting({
@@ -1042,13 +1020,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       true,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      false, // isAdvanced
-      {"diagnostics", "editor"}     // tags
+      {},                       // enumOptions
+      0.0f,                     // minValue
+      1.0f,                     // maxValue
+      {},                       // validator
+      false,                    // requiresRestart
+      false,                    // isAdvanced
+      {"diagnostics", "editor"} // tags
   });
 
   registerSetting({
@@ -1059,13 +1037,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       true,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      false, // isAdvanced
-      {"diagnostics", "editor"}     // tags
+      {},                       // enumOptions
+      0.0f,                     // minValue
+      1.0f,                     // maxValue
+      {},                       // validator
+      false,                    // requiresRestart
+      false,                    // isAdvanced
+      {"diagnostics", "editor"} // tags
   });
 
   registerSetting({
@@ -1077,12 +1055,12 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingScope::User,
       100,
       {},
-      10.0f,   // min
-      1000.0f, // max
-      {},      // validator
-      false,   // requiresRestart
-      true,    // isAdvanced
-      {"diagnostics", "editor"}     // tags
+      10.0f,                    // min
+      1000.0f,                  // max
+      {},                       // validator
+      false,                    // requiresRestart
+      true,                     // isAdvanced
+      {"diagnostics", "editor"} // tags
   });
 
   // ========== Script Editor - Advanced Settings ==========
@@ -1094,13 +1072,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       false,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      true,  // isAdvanced
-      {"auto-save", "editor"}     // tags
+      {},                     // enumOptions
+      0.0f,                   // minValue
+      1.0f,                   // maxValue
+      {},                     // validator
+      false,                  // requiresRestart
+      true,                   // isAdvanced
+      {"auto-save", "editor"} // tags
   });
 
   registerSetting({
@@ -1112,12 +1090,12 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingScope::User,
       30,
       {},
-      5.0f,    // min
-      300.0f,  // max
-      {},      // validator
-      false,   // requiresRestart
-      true,    // isAdvanced
-      {"auto-save", "editor"}     // tags
+      5.0f,                   // min
+      300.0f,                 // max
+      {},                     // validator
+      false,                  // requiresRestart
+      true,                   // isAdvanced
+      {"auto-save", "editor"} // tags
   });
 
   registerSetting({
@@ -1128,13 +1106,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       true,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      true,  // isAdvanced
-      {"session", "editor"}     // tags
+      {},                   // enumOptions
+      0.0f,                 // minValue
+      1.0f,                 // maxValue
+      {},                   // validator
+      false,                // requiresRestart
+      true,                 // isAdvanced
+      {"session", "editor"} // tags
   });
 
   registerSetting({
@@ -1145,13 +1123,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       true,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      true,  // isAdvanced
-      {"session", "editor"}     // tags
+      {},                   // enumOptions
+      0.0f,                 // minValue
+      1.0f,                 // maxValue
+      {},                   // validator
+      false,                // requiresRestart
+      true,                 // isAdvanced
+      {"session", "editor"} // tags
   });
 
   registerSetting({
@@ -1163,12 +1141,12 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingScope::User,
       std::string("enabled"),
       {"enabled", "disabled", "prompt"},
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      true,  // isAdvanced
-      {"file-watcher", "editor"}     // tags
+      0.0f,                      // minValue
+      1.0f,                      // maxValue
+      {},                        // validator
+      false,                     // requiresRestart
+      true,                      // isAdvanced
+      {"file-watcher", "editor"} // tags
   });
 
   registerSetting({
@@ -1180,12 +1158,12 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingScope::User,
       1000,
       {},
-      100.0f,   // min
-      10000.0f, // max
-      {},       // validator
-      false,    // requiresRestart
-      true,     // isAdvanced
-      {"performance", "editor"}     // tags
+      100.0f,                   // min
+      10000.0f,                 // max
+      {},                       // validator
+      false,                    // requiresRestart
+      true,                     // isAdvanced
+      {"performance", "editor"} // tags
   });
 
   registerSetting({
@@ -1197,12 +1175,12 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingScope::User,
       100,
       {},
-      0.0f,    // min
-      500.0f,  // max
-      {},      // validator
-      false,   // requiresRestart
-      true,    // isAdvanced
-      {"performance", "minimap", "editor"}     // tags
+      0.0f,                                // min
+      500.0f,                              // max
+      {},                                  // validator
+      false,                               // requiresRestart
+      true,                                // isAdvanced
+      {"performance", "minimap", "editor"} // tags
   });
 
   // ========== Audio ==========
@@ -1697,9 +1675,9 @@ void NMSettingsRegistry::registerProjectDefaults() {
 // Helper Functions
 // ============================================================================
 
-std::string settingValueToString(const SettingValue &value) {
+std::string settingValueToString(const SettingValue& value) {
   return std::visit(
-      [](auto &&arg) -> std::string {
+      [](auto&& arg) -> std::string {
         using T = std::decay_t<decltype(arg)>;
         if constexpr (std::is_same_v<T, bool>) {
           return arg ? "true" : "false";
@@ -1724,8 +1702,7 @@ std::string settingValueToString(const SettingValue &value) {
       value);
 }
 
-std::optional<SettingValue> stringToSettingValue(const std::string &str,
-                                                 SettingType type) {
+std::optional<SettingValue> stringToSettingValue(const std::string& str, SettingType type) {
   try {
     switch (type) {
     case SettingType::Bool:
@@ -1749,7 +1726,7 @@ std::optional<SettingValue> stringToSettingValue(const std::string &str,
   return std::nullopt;
 }
 
-const char *settingTypeToString(SettingType type) {
+const char* settingTypeToString(SettingType type) {
   switch (type) {
   case SettingType::Bool:
     return "Bool";
@@ -1775,7 +1752,7 @@ const char *settingTypeToString(SettingType type) {
   return "Unknown";
 }
 
-const char *settingScopeToString(SettingScope scope) {
+const char* settingScopeToString(SettingScope scope) {
   switch (scope) {
   case SettingScope::User:
     return "User (Editor Preferences)";
