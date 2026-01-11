@@ -55,6 +55,11 @@ add_executable(unit_tests
     unit/test_build_system.cpp
     # Issue #574 - Secure memory for encryption keys
     unit/test_secure_memory.cpp
+    # Issue #495 - Resource Manager test coverage
+    unit/test_resource_cache.cpp
+    unit/test_resource_id.cpp
+    unit/test_resource_manager.cpp
+    unit/test_cached_file_system.cpp
 )
 
 target_link_libraries(unit_tests
