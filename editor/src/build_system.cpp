@@ -404,6 +404,49 @@ std::string BuildSystem::normalizeVfsPath(const std::string& path) {
   return result;
 }
 
+// Path security validation to prevent path traversal attacks
+Result<std::string> BuildSystem::sanitizeOutputPath(const std::string& basePath,
+                                                     const std::string& relativePath) {
+  // Reject paths containing ".." components before filesystem resolution
+  // This provides an early defense against path traversal attempts
+  if (relativePath.find("..") != std::string::npos) {
+    return Result<std::string>::error(
+        "Path traversal detected: path contains '..' component: " + relativePath);
+  }
+
+  // Normalize the base path to ensure we have a canonical reference
+  std::error_code ec;
+  fs::path canonicalBase = fs::weakly_canonical(basePath, ec);
+  if (ec) {
+    return Result<std::string>::error("Failed to canonicalize base path: " + basePath +
+                                      " - " + ec.message());
+  }
+
+  // Construct the full output path
+  fs::path fullPath = fs::path(basePath) / relativePath;
+
+  // Resolve the full path to its canonical form
+  // weakly_canonical resolves ".." and "." components and follows symlinks
+  fs::path canonicalPath = fs::weakly_canonical(fullPath, ec);
+  if (ec) {
+    return Result<std::string>::error("Failed to canonicalize output path: " +
+                                      fullPath.string() + " - " + ec.message());
+  }
+
+  // Security check: Verify the resolved path is within the base directory
+  // This prevents writing to arbitrary locations on the filesystem
+  auto [rootEnd, nothing] = std::mismatch(canonicalBase.begin(), canonicalBase.end(),
+                                           canonicalPath.begin(), canonicalPath.end());
+
+  if (rootEnd != canonicalBase.end()) {
+    return Result<std::string>::error(
+        "Path traversal detected: resolved path '" + canonicalPath.string() +
+        "' escapes base directory '" + canonicalBase.string() + "'");
+  }
+
+  return Result<std::string>::ok(fullPath.string());
+}
+
 // Load encryption key from environment variables
 Result<Core::SecureVector<u8>> BuildSystem::loadEncryptionKeyFromEnv() {
   // Try NOVELMIND_PACK_AES_KEY_HEX first
@@ -1042,7 +1085,14 @@ Result<void> BuildSystem::processAssets() {
     std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
     fs::path relativePath = fs::relative(assetPath, fs::path(m_config.projectPath) / "assets");
-    fs::path outputPath = assetsDir / relativePath;
+
+    // Security: Validate output path to prevent path traversal attacks
+    auto sanitizedPathResult = sanitizeOutputPath(assetsDir.string(), relativePath.string());
+    if (sanitizedPathResult.isError()) {
+      endStep(false, sanitizedPathResult.error());
+      return Result<void>::error(sanitizedPathResult.error());
+    }
+    fs::path outputPath = sanitizedPathResult.value();
 
     // Create output directory
     fs::create_directories(outputPath.parent_path());
@@ -3366,7 +3416,7 @@ Result<std::vector<u8>> PackBuilder::compressData(const std::vector<u8>& data) {
   case CompressionLevel::Balanced:
     zlibLevel = Z_DEFAULT_COMPRESSION;
     break;
-  case CompressionLevel::Best:
+  case CompressionLevel::Maximum:
     zlibLevel = Z_BEST_COMPRESSION;
     break;
   }

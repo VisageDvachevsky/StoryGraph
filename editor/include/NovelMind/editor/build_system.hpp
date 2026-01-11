@@ -317,6 +317,10 @@ public:
   // VFS path normalization
   [[nodiscard]] static std::string normalizeVfsPath(const std::string& path);
 
+  // Path security validation
+  [[nodiscard]] static Result<std::string> sanitizeOutputPath(const std::string& basePath,
+                                                              const std::string& relativePath);
+
   // Key management
   [[nodiscard]] static Result<Core::SecureVector<u8>>
   loadEncryptionKeyFromEnv(); // Load from NOVELMIND_PACK_AES_KEY_HEX or _FILE
