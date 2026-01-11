@@ -563,11 +563,12 @@ TEST_CASE("Parser error recovery", "[parser]")
     SECTION("test_parser_error_recovery_scene")
     {
         // Test that parser recovers from error and continues parsing next scene
+        // Missing close brace in first scene
         auto tokens = lexer.tokenize(R"(
             scene broken {
-                invalid syntax here @#$%
                 show Hero at center
-            }
+                say "Missing close brace"
+
             scene good {
                 say Hero "Hello!"
             }
@@ -590,10 +591,11 @@ TEST_CASE("Parser error recovery", "[parser]")
     SECTION("test_parser_error_recovery_choice")
     {
         // Test that parser recovers from error in choice and continues
+        // Missing arrow in choice option
         auto tokens = lexer.tokenize(R"(
             choice {
                 "Option 1" -> goto scene1
-                "Broken option" -> invalid @#$%
+                "Broken option" goto badscene
                 "Option 2" -> goto scene2
             }
             say "After choice"
@@ -616,30 +618,29 @@ TEST_CASE("Parser error recovery", "[parser]")
     SECTION("recovers from error and finds multiple statements")
     {
         // Test that synchronize finds all statement types
+        // Mix valid statements with invalid ones (missing required tokens)
         auto tokens = lexer.tokenize(R"(
-            invalid @#$%
+            show
             show Hero at center
-            broken syntax
+            hide
             hide Hero
-            bad code
+            say
             say "Hello"
-            more bad stuff
-            if true { }
-            wrong
+            if { }
             choice { "opt" -> goto x }
-            error
+            goto
             goto scene
-            fail
+            wait
             wait 1.0
-            nope
+            play
             play sound "x.ogg"
-            bad
+            stop
             stop music
-            wrong
+            set
             set x = 1
-            fail
+            transition
             transition fade 1.0
-            error
+            move
             move Hero to left
         )");
         REQUIRE(tokens.isOk());
@@ -661,10 +662,11 @@ TEST_CASE("Parser error recovery", "[parser]")
     SECTION("recovers at else keyword")
     {
         // Test that parser synchronizes at else keyword
+        // Missing closing brace before else
         auto tokens = lexer.tokenize(R"(
             if true {
-                broken @#$%
-            } else {
+                say "Missing brace"
+            else {
                 say "In else branch"
             }
         )");
@@ -680,8 +682,9 @@ TEST_CASE("Parser error recovery", "[parser]")
     SECTION("recovers at left brace for blocks")
     {
         // Test that parser synchronizes at block statements
+        // Invalid expression statement followed by block
         auto tokens = lexer.tokenize(R"(
-            invalid syntax here
+            5 +
             {
                 say "In block"
             }
@@ -691,7 +694,7 @@ TEST_CASE("Parser error recovery", "[parser]")
         auto result = parser.parse(tokens.value());
         const auto& errors = parser.getErrors();
 
-        // Should have errors from invalid syntax
+        // Should have errors from invalid expression
         REQUIRE(errors.size() > 0);
 
         // Should still parse the block
