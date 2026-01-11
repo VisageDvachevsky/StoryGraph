@@ -53,6 +53,8 @@ add_executable(unit_tests
     unit/test_recording_callback_marshaling.cpp
     # Issue #572 - Build system path traversal security tests
     unit/test_build_system.cpp
+    # Issue #574 - Secure memory for encryption keys
+    unit/test_secure_memory.cpp
 )
 
 target_link_libraries(unit_tests
