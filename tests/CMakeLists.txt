@@ -51,6 +51,8 @@ add_executable(unit_tests
     # Issue #465 - Recording panel thread safety tests
     unit/test_recording_panel_thread_safety.cpp
     unit/test_recording_callback_marshaling.cpp
+    # Issue #572 - Build system path traversal security tests
+    unit/test_build_system.cpp
 )
 
 target_link_libraries(unit_tests
@@ -59,6 +61,11 @@ target_link_libraries(unit_tests
         Catch2::Catch2WithMain
         novelmind_compiler_options
 )
+
+# Link editor library if available (for build_system tests)
+if(TARGET novelmind_editor)
+    target_link_libraries(unit_tests PRIVATE novelmind_editor)
+endif()
 
 # Link Qt6::Core for tests that may rely on Qt types
 if(TARGET Qt6::Core)
