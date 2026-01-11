@@ -3362,7 +3362,7 @@ Result<std::vector<u8>> PackBuilder::compressData(const std::vector<u8>& data) {
   case CompressionLevel::Balanced:
     zlibLevel = Z_DEFAULT_COMPRESSION;
     break;
-  case CompressionLevel::Best:
+  case CompressionLevel::Maximum:
     zlibLevel = Z_BEST_COMPRESSION;
     break;
   }
