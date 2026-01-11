@@ -51,6 +51,10 @@ add_executable(unit_tests
     # Issue #465 - Recording panel thread safety tests
     unit/test_recording_panel_thread_safety.cpp
     unit/test_recording_callback_marshaling.cpp
+    # Issue #572 - Build system path traversal security tests
+    unit/test_build_system.cpp
+    # Issue #574 - Secure memory for encryption keys
+    unit/test_secure_memory.cpp
 )
 
 target_link_libraries(unit_tests
@@ -59,6 +63,11 @@ target_link_libraries(unit_tests
         Catch2::Catch2WithMain
         novelmind_compiler_options
 )
+
+# Link editor library if available (for build_system tests)
+if(TARGET novelmind_editor)
+    target_link_libraries(unit_tests PRIVATE novelmind_editor)
+endif()
 
 # Link Qt6::Core for tests that may rely on Qt types
 if(TARGET Qt6::Core)
@@ -85,12 +94,12 @@ if(NOVELMIND_BUILD_EDITOR)
         integration/test_voice_manager.cpp
         integration/test_project_json.cpp
         integration/test_ui_panel_features.cpp
-        integration/test_playback_source_mode.cpp  
-        integration/test_scene_workflow.cpp  
-        integration/test_scene_registry.cpp 
-        integration/test_scene_template_manager.cpp  
-        integration/test_scene_validation.cpp 
-        integration/test_scene_id_picker.cpp  
+        integration/test_playback_source_mode.cpp
+        integration/test_scene_workflow.cpp
+        integration/test_scene_registry.cpp
+        integration/test_scene_template_manager.cpp
+        integration/test_scene_validation.cpp
+        integration/test_scene_id_picker.cpp
         unit/test_voice_integration.cpp
         unit/test_performance_cache.cpp
         unit/test_tutorial_types.cpp
@@ -101,6 +110,9 @@ if(NOVELMIND_BUILD_EDITOR)
         unit/test_gizmo_memory.cpp
         # Issue #460 - Gizmo DPI scaling tests
         unit/test_gizmo_dpi_scaling.cpp
+        # Issue #570 - Build size analyzer hash security tests
+        unit/test_build_size_analyzer.cpp
+        unit/test_build_system.cpp
     )
 
     target_link_libraries(integration_tests
