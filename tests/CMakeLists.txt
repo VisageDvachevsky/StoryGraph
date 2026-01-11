@@ -48,6 +48,9 @@ add_executable(unit_tests
     unit/test_audio_manager.cpp
     # Issue #428 - Clipboard integration tests
     unit/test_clipboard.cpp
+    # Issue #465 - Recording panel thread safety tests
+    unit/test_recording_panel_thread_safety.cpp
+    unit/test_recording_callback_marshaling.cpp
 )
 
 target_link_libraries(unit_tests
@@ -94,6 +97,8 @@ if(NOVELMIND_BUILD_EDITOR)
         unit/test_state_machine_robustness.cpp
         unit/test_project_integrity.cpp
         unit/test_event_bus.cpp
+        # Issue #477 - Gizmo memory management tests
+        unit/test_gizmo_memory.cpp
     )
 
     target_link_libraries(integration_tests
