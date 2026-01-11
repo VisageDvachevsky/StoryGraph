@@ -25,6 +25,7 @@ add_executable(unit_tests
     unit/test_validator.cpp
     unit/test_story_graph.cpp
     unit/test_dialogue_localization.cpp
+    unit/test_localization_manager.cpp
     unit/test_dialogue_box.cpp
     unit/test_animation.cpp
     unit/test_snapshot.cpp
