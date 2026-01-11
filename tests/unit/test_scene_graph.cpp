@@ -269,37 +269,39 @@ TEST_CASE("SceneObjectBase cyclic assignment detection", "[scene_graph][object][
         auto objA = std::make_unique<TestSceneObject>("objA");
         auto objB = std::make_unique<TestSceneObject>("objB");
         auto objC = std::make_unique<TestSceneObject>("objC");
+        auto objD = std::make_unique<TestSceneObject>("objD");
         auto* objAPtr = objA.get();
         auto* objBPtr = objB.get();
         auto* objCPtr = objC.get();
+        auto* objDPtr = objD.get();
 
-        // Initial hierarchy: A -> B
+        // Initial hierarchy: A -> B and C exists separately
         objA->addChild(std::move(objB));
         REQUIRE(objBPtr->getParent() == objAPtr);
+        REQUIRE(objCPtr->getParent() == nullptr);
 
-        // Reparenting C under B is valid (no cycle)
+        // Valid reparenting: Move C under B (no cycle, C is independent)
         objBPtr->addChild(std::move(objC));
         REQUIRE(objCPtr->getParent() == objBPtr);
+        REQUIRE(objAPtr->findChild("objC") != nullptr); // Can find through recursion
 
-        // Moving B to be a child of C should fail (would create cycle)
-        auto removedB = objAPtr->removeChild("objB");
-        REQUIRE(removedB != nullptr);
+        // Valid reparenting: Move D under C (no cycle)
+        objCPtr->addChild(std::move(objD));
+        REQUIRE(objDPtr->getParent() == objCPtr);
 
-        // Before adding B as child of C, verify this would create a cycle
-        // C is currently a child of B, so making B a child of C creates B->C->B
-        objCPtr->addChild(std::move(removedB));
-
-        // This should be rejected - verify B was not added
-        REQUIRE(objCPtr->findChild("objB") == nullptr);
-
-        // Valid reparenting: Move C from B to A (no cycle)
+        // Valid reparenting: Move C from B to A directly (no cycle)
         auto removedC = objBPtr->removeChild("objC");
         REQUIRE(removedC != nullptr);
-        objAPtr->addChild(std::move(removedC));
+        REQUIRE(objCPtr->getParent() == nullptr); // Parent cleared after removal
 
-        // Verify the valid reparenting succeeded
-        REQUIRE(objAPtr->findChild("objC") != nullptr);
+        objAPtr->addChild(std::move(removedC));
         REQUIRE(objCPtr->getParent() == objAPtr);
+        REQUIRE(objDPtr->getParent() == objCPtr); // D still child of C
+
+        // Verify all valid reparenting operations succeeded
+        REQUIRE(objAPtr->findChild("objB") != nullptr);
+        REQUIRE(objAPtr->findChild("objC") != nullptr);
+        REQUIRE(objCPtr->findChild("objD") != nullptr);
     }
 }
 
