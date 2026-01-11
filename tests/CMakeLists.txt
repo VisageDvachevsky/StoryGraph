@@ -55,6 +55,8 @@ add_executable(unit_tests
     unit/test_build_system.cpp
     # Issue #574 - Secure memory for encryption keys
     unit/test_secure_memory.cpp
+    # Issue #480 - EventBus deduplication tests
+    unit/test_event_bus.cpp
 )
 
 target_link_libraries(unit_tests
