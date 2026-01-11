@@ -79,33 +79,36 @@ void EventBus::dispatchEvent(const EditorEvent &event) {
   // Increment dispatch depth to defer modifications
   m_dispatchDepth++;
 
-  // Access subscribers directly without copying
-  // Lock only during iteration to read subscribers
+  // Copy subscriber list to avoid holding mutex during handler execution
+  // This prevents deadlock when handlers call subscribe/unsubscribe
+  std::vector<Subscriber> subscribersCopy;
   {
     std::lock_guard<std::mutex> lock(m_mutex);
+    subscribersCopy = m_subscribers;
+  }
 
-    // Dispatch to all matching subscribers
-    for (const auto &subscriber : m_subscribers) {
-      bool shouldHandle = true;
+  // Dispatch to all matching subscribers without holding the mutex
+  // This allows handlers to safely call subscribe/unsubscribe
+  for (const auto &subscriber : subscribersCopy) {
+    bool shouldHandle = true;
 
-      // Check type filter
-      if (subscriber.typeFilter.has_value() &&
-          subscriber.typeFilter.value() != event.type) {
-        shouldHandle = false;
-      }
+    // Check type filter
+    if (subscriber.typeFilter.has_value() &&
+        subscriber.typeFilter.value() != event.type) {
+      shouldHandle = false;
+    }
 
-      // Check custom filter
-      if (shouldHandle && subscriber.customFilter.has_value() &&
-          !subscriber.customFilter.value()(event)) {
-        shouldHandle = false;
-      }
+    // Check custom filter
+    if (shouldHandle && subscriber.customFilter.has_value() &&
+        !subscriber.customFilter.value()(event)) {
+      shouldHandle = false;
+    }
 
-      if (shouldHandle && subscriber.handler) {
-        try {
-          subscriber.handler(event);
-        } catch (...) {
-          // Log error but continue dispatching
-        }
+    if (shouldHandle && subscriber.handler) {
+      try {
+        subscriber.handler(event);
+      } catch (...) {
+        // Log error but continue dispatching
       }
     }
   }

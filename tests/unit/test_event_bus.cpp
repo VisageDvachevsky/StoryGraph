@@ -282,6 +282,158 @@ TEST_CASE("EventBus: Modify subscribers during dispatch",
 }
 
 // ============================================================================
+// Concurrent Dispatch Tests (Issue #569)
+// ============================================================================
+
+TEST_CASE("EventBus: Concurrent dispatch from multiple threads",
+          "[unit][editor][eventbus][concurrent][thread-safety]") {
+  EventBus bus;
+
+  SECTION("Multiple threads dispatching simultaneously") {
+    std::atomic<int> eventCount{0};
+    std::atomic<int> handlerCallCount{0};
+
+    // Subscribe handlers
+    std::vector<EventSubscription> subs;
+    for (int i = 0; i < 10; i++) {
+      auto sub = bus.subscribe([&handlerCallCount](const EditorEvent &) {
+        handlerCallCount++;
+      });
+      subs.push_back(sub);
+    }
+
+    // Launch multiple dispatcher threads
+    std::vector<std::thread> threads;
+    for (int i = 0; i < 4; i++) {
+      threads.emplace_back([&bus, &eventCount]() {
+        for (int j = 0; j < 100; j++) {
+          TestEvent event;
+          event.value = eventCount.fetch_add(1);
+          bus.publish(event);
+        }
+      });
+    }
+
+    // Wait for all threads
+    for (auto &t : threads) {
+      t.join();
+    }
+
+    // Verify all events were dispatched
+    REQUIRE(eventCount == 400);
+    REQUIRE(handlerCallCount == 4000); // 400 events * 10 handlers
+
+    // Clean up
+    for (auto &sub : subs) {
+      bus.unsubscribe(sub);
+    }
+  }
+
+  SECTION("Concurrent dispatch with subscribe/unsubscribe") {
+    std::atomic<int> eventCount{0};
+    std::atomic<int> handlerCallCount{0};
+    std::atomic<bool> running{true};
+
+    // Launch dispatcher threads
+    std::vector<std::thread> threads;
+    for (int i = 0; i < 2; i++) {
+      threads.emplace_back([&]() {
+        while (running) {
+          TestEvent event;
+          event.value = eventCount.fetch_add(1);
+          bus.publish(event);
+          std::this_thread::sleep_for(std::chrono::microseconds(100));
+        }
+      });
+    }
+
+    // Launch subscribe/unsubscribe threads
+    std::vector<EventSubscription> subs;
+    for (int i = 0; i < 2; i++) {
+      threads.emplace_back([&]() {
+        std::vector<EventSubscription> localSubs;
+        while (running) {
+          // Add subscriber
+          auto sub = bus.subscribe([&](const EditorEvent &) {
+            handlerCallCount++;
+          });
+          localSubs.push_back(sub);
+
+          std::this_thread::sleep_for(std::chrono::microseconds(200));
+
+          // Remove oldest subscriber if we have many
+          if (localSubs.size() > 5) {
+            bus.unsubscribe(localSubs.front());
+            localSubs.erase(localSubs.begin());
+          }
+        }
+
+        // Cleanup
+        for (auto &sub : localSubs) {
+          bus.unsubscribe(sub);
+        }
+      });
+    }
+
+    // Run for a short time
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    running = false;
+
+    // Wait for all threads
+    for (auto &t : threads) {
+      if (t.joinable()) {
+        t.join();
+      }
+    }
+
+    // Just verify no crash occurred
+    REQUIRE(eventCount > 0);
+    REQUIRE(handlerCallCount >= 0);
+  }
+
+  SECTION("Handler subscribing during concurrent dispatch") {
+    std::atomic<int> eventCount{0};
+    std::atomic<int> recursiveSubCount{0};
+    std::vector<EventSubscription> recursiveSubs;
+
+    // Handler that subscribes during dispatch
+    auto sub = bus.subscribe([&](const EditorEvent &) {
+      if (recursiveSubCount < 10) {
+        auto newSub = bus.subscribe([](const EditorEvent &) {});
+        recursiveSubs.push_back(newSub);
+        recursiveSubCount++;
+      }
+    });
+
+    // Launch multiple dispatcher threads
+    std::vector<std::thread> threads;
+    for (int i = 0; i < 4; i++) {
+      threads.emplace_back([&]() {
+        for (int j = 0; j < 50; j++) {
+          TestEvent event;
+          event.value = eventCount.fetch_add(1);
+          bus.publish(event);
+        }
+      });
+    }
+
+    // Wait for all threads
+    for (auto &t : threads) {
+      t.join();
+    }
+
+    // Verify events were dispatched
+    REQUIRE(eventCount == 200);
+
+    // Clean up
+    bus.unsubscribe(sub);
+    for (auto &s : recursiveSubs) {
+      bus.unsubscribe(s);
+    }
+  }
+}
+
+// ============================================================================
 // Correctness Tests
 // ============================================================================
 
